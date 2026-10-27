@@ -1,43 +1,30 @@
 # Meu Político de Estimação
 
-Portal público que mostra, em linguagem simples, o desempenho de cada deputado federal e senador: presença, votos, gastos da cota e projetos — sempre com a fonte oficial.
+Portal público que mostra, em linguagem simples, o que cada deputado federal e senador faz no mandato: presença, votos, gastos e projetos, a partir de dados oficiais da Câmara e do Senado.
 
-## Como funciona
-Site estático regenerado todo dia às 06:00 (horário de Brasília). Sem servidor e sem banco de dados em execução.
+## Princípio de neutralidade
 
-```
-GitHub Actions (cron diário)
-  1. Coleta        → APIs e arquivos da Câmara e do Senado
-  2. Tratamento    → normaliza, valida, agrega por parlamentar (JSON)
-  3. Enriquecimento → IA só em itens novos (resumos e etiquetas)
-  4. Build         → Astro gera ~600 páginas + índice Pagefind
-  5. Deploy        → Cloudflare Pages
-```
-
-## Stack
-TypeScript (Node 22) · Astro · Pagefind · GitHub Actions · Cloudflare Pages · Claude Haiku · Cloudflare Web Analytics
-
-## Custo-alvo
-~R$ 10–20/mês (teto: R$ 50/mês).
-
-## Estrutura
-| Pasta | Conteúdo |
-|---|---|
-| `pipeline/` | coleta, tratamento, enriquecimento e trava de qualidade |
-| `data/` | JSON gerado pelo pipeline (não versionado) |
-| `src/` | site Astro |
-| `docs/` | brief, PRD, arquitetura e stories (BMAD) |
-| `.github/workflows/` | rotina diária |
-
-## Rodar localmente
-```bash
-npm install
-npm run pipeline   # coleta e trata os dados
-npm run dev        # site em http://localhost:4321
-```
+- O portal mostra **fatos com fonte**. Nunca dá nota, ranking ou adjetivo a um parlamentar.
+- Todo dado tem link para a origem oficial e a data em que foi coletado.
+- Quando a fonte não tem a informação (por exemplo, voto individual em votação simbólica), o portal diz isso explicitamente.
 
 ## Fontes
-Dados Abertos da Câmara dos Deputados e Dados Abertos do Senado Federal. Encontrou erro? Abra uma issue.
 
-## Licença
-MIT
+- [Dados Abertos da Câmara dos Deputados](https://dadosabertos.camara.leg.br)
+- [Dados Abertos do Senado Federal](https://legis.senado.leg.br/dadosabertos)
+- API administrativa do Senado (CEAPS)
+
+Detalhes e limitações confirmadas: `bmad/docs/analise-fontes.md`.
+
+## Desenvolvimento
+
+```bash
+pnpm install
+pnpm test        # testes (usam respostas gravadas, sem chamar as APIs)
+pnpm lint        # ESLint + Prettier
+pnpm typecheck   # TypeScript
+
+pnpm coleta:parlamentares   # coleta real: gera data/parlamentares.json
+```
+
+Planejamento do projeto (brief, PRD, arquitetura, stories): pasta `bmad/`.

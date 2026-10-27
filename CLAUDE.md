@@ -1,15 +1,17 @@
 # Contexto para o Claude Code
 
-Projeto: portal estático sobre desempenho de parlamentares federais. Arquitetura aprovada: site estático regenerado diariamente.
+Portal estático sobre desempenho de parlamentares federais. Arquitetura: site estático regenerado diariamente (sem servidor/banco em execução). Teto de custo: R$ 50/mês.
 
-## Regras
-- Implemente apenas a story ativa em `docs/stories/`. Carregue PRD/arquitetura só nas seções que a story referenciar (lazy-load).
-- TypeScript estrito em tudo. Testes com Vitest junto do código.
-- Teto de custo: R$ 50/mês. Nada de servidor, banco em execução ou serviço pago novo sem decisão registrada em `docs/architecture/`.
-- Textos de métricas saem de modelos fixos, sem IA. IA só para resumos de projetos e etiquetas de impacto.
-- Nunca exibir CPF vindo das fontes.
-- Trava: se o volume de dados cair mais de 30% de um dia para o outro, não publicar.
+## Como trabalhar
 
-## Endpoints proibidos
-- Câmara: `/despesas` (vazio) — usar arquivo `cotas/Ano-AAAA.json.zip`
-- Senado: `/votacao` e `/autorias` (503)
+- Assuma a persona `bmad/agents/dev.md` e implemente só a story ativa em `bmad/stories/` (status em `bmad/stories/index.md`).
+- Carregue PRD e arquitetura apenas nas seções que a story listar em "Referências" (lazy-load).
+- Antes de concluir: `pnpm test`, `pnpm lint`, `pnpm typecheck`.
+- Commits pequenos, um por tarefa da story.
+
+## Regras fixas
+
+- Fontes só as de `bmad/docs/analise-fontes.md`. Proibido: Câmara `/despesas` (vazio); Senado `/votacao` e `/autorias` (503).
+- Nunca persistir CPF, e-mail, telefone ou outro dado pessoal das fontes.
+- Textos de métricas por modelos fixos; IA só para resumos de projetos e etiquetas de impacto.
+- Dúvida não coberta pela story → parar e perguntar.

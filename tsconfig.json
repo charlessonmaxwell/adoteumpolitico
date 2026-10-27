@@ -1,8 +1,14 @@
 {
-  "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
-    "noUncheckedIndexedAccess": true
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["node"]
   },
-  "include": ["src", "pipeline", "tests"],
-  "exclude": ["dist", "data"]
+  "include": ["pipeline/**/*.ts", "tests/**/*.ts"]
 }
