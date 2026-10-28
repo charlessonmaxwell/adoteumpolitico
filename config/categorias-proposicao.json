@@ -1,0 +1,15 @@
+{
+  "$comentario": "Classificação usada nos totais do perfil. Só 'legislativa' entra no total; as demais aparecem separadas.",
+  "tiposLegislativos": ["PL", "PLP", "PEC", "MPV", "PDL"],
+  "termosHomenagem": [
+    "denomina",
+    "institui o dia",
+    "institui a semana",
+    "declara patrono",
+    "declara patrona",
+    "inscreve no livro dos heróis",
+    "inscreve o nome",
+    "confere o título",
+    "capital nacional"
+  ]
+}
