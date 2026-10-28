@@ -13,7 +13,7 @@ Consultas feitas direto nas APIs oficiais (navegador), não em documentação de
 | Justificativa de faltas | **Só na página HTML** `camara.leg.br/deputados/{id}/presenca-plenario/{ano}` (ex.: Presença, Missão Autorizada, Licença para Tratamento de Saúde). Exige raspagem de 513 páginas | ⚠️ Possível, mas frágil |
 | Gastos da cota (endpoint) | **0 registros** para 18 deputados testados, anos 2023–2026 | ❌ Endpoint vazio |
 | Gastos (arquivo em lote) | `camara.leg.br/cotas/Ano-AAAA.{csv,json}.zip` — 2026: 4,4 MB (csv) / 5,5 MB (json), atualizado hoje 06:34. Conteúdo 2026: 118.851 despesas, 565 parlamentares (inclui suplentes/ex), **94% com URL do documento fiscal**. Contém CPF do parlamentar — não exibir | ✅ Via oficial de ingestão |
-| Proposições por autor | OK; mistura 16 tipos (PL, PEC, REQ, EMC, RIC…) | ⚠️ Filtrar tipos |
+| Proposições por autor | API lista sem situação e sem autor/coautor → **usar arquivos em lote** `proposicoes-AAAA.json` + `proposicoesAutores-AAAA.json` (2026: 47 mil proposições, 59 mil autorias, ~3 s) | ✅ Via arquivos (28/10/2026) |
 
 ## Senado Federal (legis.senado.leg.br/dadosabertos)
 | Dado | Resultado | Situação |
