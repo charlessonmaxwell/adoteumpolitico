@@ -34,3 +34,11 @@ export function paraData(v: unknown): string | null | "invalida" {
   const dt = new Date(`${iso}T00:00:00Z`);
   return !Number.isNaN(dt.getTime()) && dt.toISOString().startsWith(iso) ? iso : "invalida";
 }
+
+/** Remove CPF escrito em texto livre (ex.: nome de fornecedor "FULANO - 123.456.789-00"). */
+export function semCpf(texto: unknown): string {
+  return String(texto ?? "")
+    .replace(/\d{3}\.?\d{3}\.?\d{3}-?\d{2}(?!\d)/g, "")
+    .replace(/[\s\-–:]+$/, "")
+    .trim();
+}

@@ -4,7 +4,7 @@ import { baixarCotaCamara, urlCotaCamara, type CotaCamaraBruta } from "./gastos-
 import { baixarCeaps, urlCeaps, type CeapsBruta } from "./gastos-senado.js";
 import { idParlamentar, type Casa } from "../modelo/parlamentar.js";
 import type { Despesa, DespesaInvalida } from "../modelo/despesa.js";
-import { paraData, paraValor, somenteCnpj } from "../util/normalizacao.js";
+import { paraData, paraValor, semCpf, somenteCnpj } from "../util/normalizacao.js";
 import type { OpcoesHttp } from "../util/http.js";
 
 export const ANO_INICIAL = 2023;
@@ -73,7 +73,7 @@ function normalizar(
     ano,
     mes,
     categoria: String(c.categoria ?? "").trim(),
-    fornecedor: String(c.fornecedor ?? "").trim(),
+    fornecedor: semCpf(c.fornecedor),
     cnpjFornecedor: somenteCnpj(c.cnpjCpf),
     valor: valor as number,
     urlDocumento: c.urlDocumento,

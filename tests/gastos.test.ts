@@ -76,7 +76,7 @@ describe("Story 1.3 — gastos", () => {
 
   it("CA1: nenhum CPF (do parlamentar ou de fornecedor pessoa física) sai na saída", async () => {
     const fetcher = fetcherGastos(
-      [cota(1, { cnpjCPF: "111.222.333-44" })],
+      [cota(1, { cnpjCPF: "111.222.333-44", fornecedor: "JOAO DA SILVA- 999.888.777-66" })],
       [ceaps(1, { cpfCnpj: "555.666.777-88" })],
     );
     const r = await coletarGastos([2026], { fetcher, ...semEspera }, HOJE);
@@ -86,6 +86,7 @@ describe("Story 1.3 — gastos", () => {
     expect(saida).not.toContain(CPF_PARLAMENTAR);
     expect(saida).not.toContain("FULANO DE TAL");
     expect(r.validas.every((d) => d.cnpjFornecedor === null)).toBe(true);
+    expect(r.validas[0]?.fornecedor).toBe("JOAO DA SILVA");
   });
 
   it("CA2: Câmara preserva o link do documento fiscal", async () => {
