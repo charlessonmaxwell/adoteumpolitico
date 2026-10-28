@@ -91,10 +91,10 @@ export function normalizarCamara(
     normalizar(
       "camara",
       {
-        idOrigem: b.numeroDeputadoID,
+        idOrigem: b.idDeputado,
         data: b.dataEmissao,
-        ano: b.numeroAno,
-        mes: b.numeroMes,
+        ano: b.ano,
+        mes: b.mes,
         valor: b.valorLiquido,
         categoria: b.descricao,
         fornecedor: b.fornecedor,

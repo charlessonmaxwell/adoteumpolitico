@@ -8,14 +8,15 @@ export const urlCotaCamara = (ano: number) => `https://www.camara.leg.br/cotas/A
 
 /** Campos do arquivo que usamos. Os demais (cpf, passageiro, etc.) são ignorados na leitura. */
 export interface CotaCamaraBruta {
-  numeroDeputadoID?: number | string | null;
+  /** Id do deputado na API v2. Ausente em despesas de lideranças. NÃO confundir com `numeroDeputadoID` (id interno). */
+  idDeputado?: number | string | null;
   descricao?: string;
   fornecedor?: string;
   cnpjCPF?: string;
   dataEmissao?: string | null;
   valorLiquido?: number | string;
-  numeroMes?: number | string;
-  numeroAno?: number | string;
+  mes?: number | string;
+  ano?: number | string;
   urlDocumento?: string | null;
 }
 

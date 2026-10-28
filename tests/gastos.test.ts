@@ -12,14 +12,15 @@ const CPF_PARLAMENTAR = "12345678901";
 const cota = (i: number, extra: Record<string, unknown> = {}) => ({
   nomeParlamentar: `Deputado ${i}`,
   cpf: CPF_PARLAMENTAR,
-  numeroDeputadoID: 200000 + i,
+  idDeputado: 200000 + i,
+  numeroDeputadoID: 2000 + i, // id interno: não deve ser usado
   descricao: "COMBUSTÍVEIS E LUBRIFICANTES.",
   fornecedor: "POSTO EXEMPLO LTDA",
   cnpjCPF: "12.345.678/0001-90",
   dataEmissao: "2026-03-10T00:00:00",
-  valorLiquido: 250.5,
-  numeroMes: 3,
-  numeroAno: 2026,
+  valorLiquido: "250.5",
+  mes: 3,
+  ano: 2026,
   passageiro: "FULANO DE TAL",
   urlDocumento: i % 10 ? `https://www.camara.leg.br/cota-parlamentar/nota-fiscal/${i}` : "",
   ...extra,
@@ -110,7 +111,10 @@ describe("Story 1.3 — gastos", () => {
 
   it("tarefa 5: data futura, inválida ou sem parlamentar fica fora dos totais", async () => {
     const fetcher = fetcherGastos(
-      [cota(1, { dataEmissao: "2026-13-40" }), cota(2, { numeroDeputadoID: null })],
+      [
+        cota(1, { dataEmissao: "2026-13-40" }),
+        cota(2, { idDeputado: undefined, nomeParlamentar: "LIDERANÇA DO PARTIDO" }),
+      ],
       [ceaps(1, { data: "2026-10-30" }), ceaps(2)],
     );
     const { validas, invalidas } = await coletarGastos([2026], { fetcher, ...semEspera }, HOJE);
