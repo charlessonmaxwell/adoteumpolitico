@@ -15,8 +15,9 @@ export async function coletarProposicoes(
   cfg: ConfigCategorias = carregarConfig(),
   opcoes: OpcoesHttp = {},
 ): Promise<Proposicao[]> {
-  const camara: Proposicao[] = [];
-  for (const ano of anos) camara.push(...(await coletarProposicoesCamara(ano, cfg, opcoes)));
+  // concat em vez de push(...lote): com ~100 mil itens o spread estoura a pilha
+  let camara: Proposicao[] = [];
+  for (const ano of anos) camara = camara.concat(await coletarProposicoesCamara(ano, cfg, opcoes));
   const senadores = parlamentares.filter((p) => p.casa === "senado");
   const senado = await coletarProposicoesSenado(senadores, cfg, opcoes);
   return [...camara, ...senado];
