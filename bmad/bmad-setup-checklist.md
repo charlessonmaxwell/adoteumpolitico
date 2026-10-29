@@ -1,4 +1,4 @@
-# BMAD — Checklist de Setup · Meu Político de Estimação
+# BMAD — Checklist de Setup · Adote um Político
 
 ## Instalado (manual, Claude.ai — sem npm)
 ```

@@ -11,7 +11,7 @@ const porUf = new Map<string, number>();
 for (const r of resumos) porUf.set(r.parlamentar.uf, (porUf.get(r.parlamentar.uf) ?? 0) + 1);
 const ufs = Object.entries(UFS).sort(([, a], [, b]) => a.localeCompare(b, "pt-BR"));
 ---
-<Base titulo="Meu Político de Estimação: o que seu deputado e seu senador fazem" descricao="Veja em linguagem simples se seu deputado e seu senador vão às sessões, quanto gastam, o que propõem e como votam. Dados oficiais, sem nota nem ranking.">
+<Base titulo="Adote um Político: o que seu deputado e seu senador fazem" descricao="Veja em linguagem simples se seu deputado e seu senador vão às sessões, quanto gastam, o que propõem e como votam. Dados oficiais, sem nota nem ranking.">
   <section class="abertura">
     <div class="conteiner abertura-in">
       <div class="chamada">

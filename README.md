@@ -1,4 +1,4 @@
-# Meu Político de Estimação
+# Adote um Político
 
 Portal público que mostra, em linguagem simples, o que cada deputado federal e senador faz no mandato: presença, votos, gastos e projetos, a partir de dados oficiais da Câmara e do Senado.
 

@@ -1,4 +1,4 @@
-# PRD — Visão Geral · Meu Político de Estimação
+# PRD — Visão Geral · Adote um Político
 
 ## Problema
 O eleitor comum não tem um lugar simples para saber o que seu deputado ou senador faz no mandato. Os dados existem (dados abertos oficiais), mas estão dispersos, em linguagem técnica, e as iniciativas existentes ou atribuem notas (risco de viés) ou cobrem só um recorte.

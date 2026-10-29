@@ -1,4 +1,4 @@
-# Project Brief — Meu Político de Estimação
+# Project Brief — Adote um Político
 
 > Status: em construção pelo Analyst. Checkpoint humano obrigatório antes da fase PM.
 

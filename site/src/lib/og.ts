@@ -111,7 +111,7 @@ export async function imagemPerfil(d: DadosPrevia): Promise<Buffer> {
     h(
       "div",
       { flexDirection: "column", flex: 1, height: 502, justifyContent: "space-between" },
-      h("div", { fontSize: 28, color: COR.suave }, "Meu Político de Estimação"),
+      h("div", { fontSize: 28, color: COR.suave }, "Adote um Político"),
       h(
         "div",
         { flexDirection: "column", gap: 16 },
@@ -154,7 +154,7 @@ export async function imagemInicio(): Promise<Buffer> {
       fontFamily: "Lexend",
       color: COR.tinta,
     },
-    linha("Meu Político de Estimação", { fontSize: 30, color: COR.suave, marginBottom: 150 }),
+    linha("Adote um Político", { fontSize: 30, color: COR.suave, marginBottom: 150 }),
     linha("Você votou.", {
       fontFamily: "Archivo",
       fontSize: 112,
