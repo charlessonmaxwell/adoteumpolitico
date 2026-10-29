@@ -5,7 +5,7 @@ interface Props {
   descricao: string;
   imagem?: string;
 }
-const { titulo, descricao, imagem } = Astro.props;
+const { titulo, descricao, imagem = "/og/inicio.png" } = Astro.props;
 const url = new URL(Astro.url.pathname, Astro.site);
 ---
 <!doctype html>
@@ -20,7 +20,13 @@ const url = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:title" content={titulo} />
     <meta property="og:description" content={descricao} />
     <meta property="og:url" content={url} />
-    {imagem && <meta property="og:image" content={new URL(imagem, Astro.site)} />}
+    <meta property="og:image" content={new URL(imagem, Astro.site)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={titulo} />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="Meu Político de Estimação" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#eef2f1" />
     <script is:inline>
       // Aplica o modo salvo antes de desenhar a página (evita piscar). Sem escolha salva = claro.

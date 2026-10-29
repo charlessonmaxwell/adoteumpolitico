@@ -6,7 +6,12 @@ import {
   frasesProjetos,
   frasesVotacoes,
 } from "../site/src/lib/frases.js";
-import { formatarMoedaCurta, humanizarCategoria, pelaUf } from "../site/src/lib/formato.js";
+import {
+  formatarMoedaCurta,
+  humanizarCategoria,
+  iniciais,
+  pelaUf,
+} from "../site/src/lib/formato.js";
 import type { ResumoParlamentar } from "../pipeline/src/rotina/agregacao.js";
 
 const base = JSON.parse(
@@ -102,5 +107,7 @@ describe("Story 2.3 — frases", () => {
     expect(pelaUf("CE")).toBe("pelo Ceará");
     expect(pelaUf("BA")).toBe("pela Bahia");
     expect(pelaUf("SE")).toBe("por Sergipe");
+    expect(iniciais("Maria do Socorro Albuquerque")).toBe("MS");
+    expect(iniciais("Danilo Forte")).toBe("DF");
   });
 });

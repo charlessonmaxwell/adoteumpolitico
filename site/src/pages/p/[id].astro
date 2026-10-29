@@ -7,7 +7,7 @@ import Linhas from "../../components/Linhas.astro";
 import Compartilhar from "../../components/Compartilhar.astro";
 import { dados, cargo, paginaOficial } from "../../lib/dados";
 import { frasesGastos, frasesPresenca, frasesProjetos, frasesVotacoes, VOTO_ROTULO } from "../../lib/frases";
-import { dataBr, formatarMoeda, formatarMoedaCurta, humanizarCategoria, pelaUf } from "../../lib/formato";
+import { dataBr, formatarMoeda, formatarMoedaCurta, humanizarCategoria, iniciais, pelaUf } from "../../lib/formato";
 import type { ResumoParlamentar } from "../../../../pipeline/src/rotina/agregacao";
 
 export function getStaticPaths() {
@@ -57,13 +57,13 @@ const fatiasVotos = [
   { rotulo: "Votou (secreta)", valor: v.votou ?? 0, cor: "var(--dado-claro)" },
   { rotulo: "Abstenção ou obstrução", valor: (v.abstencao ?? 0) + (v.obstrucao ?? 0), cor: "var(--linha)" },
 ];
-const iniciais = p.nome.split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]).join("");
+const ini = iniciais(p.nome);
 const titulo = `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato`;
 ---
-<Base titulo={titulo} descricao={`Presença, gastos, projetos e votos de ${p.nome}, ${cargo(p).toLowerCase()} ${pelaUf(p.uf)}. Dados oficiais, sem nota nem ranking.`}>
+<Base titulo={titulo} imagem={`/og/${p.id}.png`} descricao={`Presença, gastos, projetos e votos de ${p.nome}, ${cargo(p).toLowerCase()} ${pelaUf(p.uf)}. Dados oficiais, sem nota nem ranking.`}>
   <div class="conteiner">
     <header class="cabecalho">
-      <div class="foto" aria-hidden={p.urlFoto ? undefined : "true"} data-iniciais={iniciais}>
+      <div class="foto" aria-hidden={p.urlFoto ? undefined : "true"} data-iniciais={ini}>
         {p.urlFoto && <img src={p.urlFoto} alt={`Foto de ${p.nome}`} width="160" height="200" loading="eager" />}
       </div>
       <div>

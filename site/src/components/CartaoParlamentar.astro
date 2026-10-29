@@ -1,13 +1,14 @@
 ---
 import type { Parlamentar } from "../../../pipeline/src/modelo/parlamentar";
+import { iniciais } from "../lib/formato";
 interface Props {
   p: Parlamentar;
 }
 const { p } = Astro.props;
-const iniciais = p.nome.split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]).join("");
+const ini = iniciais(p.nome);
 ---
 <a class="cartao" href={`/p/${p.id}/`}>
-  <span class="foto" data-iniciais={iniciais}>{p.urlFoto && <img src={p.urlFoto} alt="" width="64" height="80" loading="lazy" />}</span>
+  <span class="foto" data-iniciais={ini}>{p.urlFoto && <img src={p.urlFoto} alt="" width="64" height="80" loading="lazy" />}</span>
   <span class="info">
     <span class="nome">{p.nome}</span>
     <span class="meta">{p.partido}, {p.uf}</span>

@@ -101,3 +101,12 @@ const PREP: Record<string, string> = {
   TO: "pelo",
 };
 export const pelaUf = (uf: string) => `${PREP[uf] ?? "por"} ${UFS[uf] ?? uf}`;
+
+/** "Maria do Socorro Albuquerque" → "MS" (ignora de, da, do, dos, das, e). */
+export const iniciais = (nome: string) =>
+  nome
+    .split(/\s+/)
+    .filter((p) => p && !/^(d[aeo]s?|e)$/i.test(p))
+    .slice(0, 2)
+    .map((p) => p[0]!.toUpperCase())
+    .join("");
