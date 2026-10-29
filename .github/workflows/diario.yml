@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 9 * * *" # 06:00 em Brasília
   workflow_dispatch:
+    inputs:
+      ignorar_trava:
+        description: "Publicar mesmo com queda > 30% (só após revisar uma mudança intencional de estrutura)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -36,6 +41,8 @@ jobs:
 
       - name: Coletar, validar e agregar
         id: rotina
+        env:
+          IGNORAR_TRAVA: ${{ github.event.inputs.ignorar_trava == 'true' }}
         run: NODE_OPTIONS=--max-old-space-size=6144 pnpm rotina publicado saida
 
       - name: Publicar na branch data

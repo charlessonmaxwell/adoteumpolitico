@@ -198,6 +198,20 @@ describe("Story 1.5 — rotina diária", () => {
     await expect(readdir(p.saida)).rejects.toThrow(); // nada foi escrito
   });
 
+  it("trava pode ser ignorada manualmente (mudança intencional de estrutura)", async () => {
+    const p = await pastas();
+    await executarRotina({ ...opcoes(p, coletores(100)), saida: p.anterior });
+    const avisos: string[] = [];
+    await expect(
+      executarRotina({
+        ...opcoes(p, coletores(10)),
+        ignorarTrava: true,
+        log: (m) => void avisos.push(m),
+      }),
+    ).resolves.toMatchObject({ mudou: true });
+    expect(avisos.some((a) => a.includes("Trava ignorada"))).toBe(true);
+  });
+
   it("queda de até 30% passa", async () => {
     const p = await pastas();
     await executarRotina({ ...opcoes(p, coletores(100)), saida: p.anterior });

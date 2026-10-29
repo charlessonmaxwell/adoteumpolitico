@@ -58,6 +58,8 @@ export interface Meta {
 export interface OpcoesRotina {
   /** Pasta com a última publicação (branch `data`); pode não existir na primeira execução. */
   anterior: string;
+  /** Só para execução manual após mudança intencional de estrutura (revisada por uma pessoa). */
+  ignorarTrava?: boolean;
   saida: string;
   anos?: number[];
   coletores?: Coletores;
@@ -183,7 +185,9 @@ export async function executarRotina(o: OpcoesRotina): Promise<{ meta: Meta; mud
   const metaAnterior = await lerJson<Meta>(join(o.anterior, "meta.json"));
   await etapa("validacao", async () => {
     const quedas = verificarQuedas(metaAnterior?.contagens ?? null, contagens);
-    if (quedas.length) throw new ErroTrava(quedas);
+    if (quedas.length && o.ignorarTrava) {
+      log(`⚠ Trava ignorada manualmente. Quedas: ${new ErroTrava(quedas).message}`);
+    } else if (quedas.length) throw new ErroTrava(quedas);
   });
 
   const agg = await etapa("agregacao", async () =>
@@ -256,7 +260,8 @@ export function relatorioFalha(e: unknown): string {
 async function main() {
   const [anterior = "publicado", saida = "saida"] = process.argv.slice(2);
   try {
-    const { meta, mudou } = await executarRotina({ anterior, saida });
+    const ignorarTrava = process.env.IGNORAR_TRAVA === "true";
+    const { meta, mudou } = await executarRotina({ anterior, saida, ignorarTrava });
     console.log(
       `OK: ${Object.keys(meta.contagens).length} contagens; ${mudou ? "houve mudança" : "sem mudança"}`,
     );
