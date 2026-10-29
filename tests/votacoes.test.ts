@@ -106,6 +106,7 @@ const htmlPresenca = `
 <tr class="info-data"> <td class="info-data__data-formatada"> 15/12/2025 <span class="info-presenca-dia">Presença</span> </td> <td >&nbsp;</td> <td class="info-presenca-dia"> Presença </td> </tr>
 <tr class="info-data__child"> <td > <span class="ml-3">EXTRAORDINÁRIA Nº 286 - 15/12/2025</span> </td> <td > Presença </td> <td class="info-presenca-dia">&nbsp;</td> </tr>
 <tr class="info-data__child"> <td > <span class="ml-3">SESSÃO CONJUNTA Nº 030 - 19/12/2025</span> </td> <td > Ausência </td> <td class="info-presenca-dia">&nbsp;</td> </tr>
+<tr class="info-data__child"> <td > <span class="ml-3">ORDINÁRIA Nº 11 - 21/03/2025</span> </td> <td > Presença <span>Observações ?</span> </td> <td class="info-presenca-dia">&nbsp;</td> </tr>
 <tr class="info-data__child"> <td > <span class="ml-3">ORDINÁRIA Nº 10 - 20/03/2025</span> </td> <td > Missão Autorizada </td> <td class="info-presenca-dia">&nbsp;</td> </tr>
 <table><tbody>
 <tr> <td> <b>Total de sessões deliberativas com Ordem do Dia iniciada, na Sessão Legislativa*</b> </td> <td> <strong>127</strong> </td> <td > <strong>100,00%</strong> </td> </tr>
@@ -229,6 +230,14 @@ describe("Story 1.2 — Câmara: presença (página oficial)", () => {
         motivo: null,
         metrica: "sessao",
         referencia: "SESSÃO CONJUNTA Nº 030 - 19/12/2025",
+      },
+      {
+        idParlamentar: "camara-62881",
+        data: "2025-03-21",
+        situacao: "presente",
+        motivo: null,
+        metrica: "sessao",
+        referencia: "ORDINÁRIA Nº 11 - 21/03/2025",
       },
       {
         idParlamentar: "camara-62881",

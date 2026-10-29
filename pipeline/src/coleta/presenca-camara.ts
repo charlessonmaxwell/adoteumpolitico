@@ -23,7 +23,8 @@ const texto = (s: string) =>
     .trim();
 
 function situacaoDe(status: string): Pick<Presenca, "situacao" | "motivo"> {
-  if (/^presen[çc]a$/i.test(status)) return { situacao: "presente", motivo: null };
+  // "Presença Observações ?" = presença com nota (ícone na página)
+  if (/^presen[çc]a\b/i.test(status)) return { situacao: "presente", motivo: null };
   if (/^aus[êe]ncia$/i.test(status)) return { situacao: "ausente", motivo: null };
   // Qualquer outro texto é a justificativa oficial (ex.: "Missão Autorizada")
   return { situacao: "ausencia_justificada", motivo: status };
