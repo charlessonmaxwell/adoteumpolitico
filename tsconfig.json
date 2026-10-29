@@ -10,5 +10,5 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["pipeline/**/*.ts", "tests/**/*.ts"]
+  "include": ["pipeline/**/*.ts", "tests/**/*.ts", "site/src/lib/**/*.ts"]
 }

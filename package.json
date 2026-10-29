@@ -19,7 +19,10 @@
     "coleta:proposicoes": "tsx pipeline/src/coleta/proposicoes.ts",
     "coleta:votacoes": "tsx pipeline/src/coleta/votacoes.ts",
     "coleta:presenca-camara": "tsx pipeline/src/coleta/presenca-camara.ts",
-    "rotina": "tsx pipeline/src/rotina/index.ts"
+    "rotina": "tsx pipeline/src/rotina/index.ts",
+    "site:dev": "astro dev",
+    "site:build": "astro build",
+    "site:check": "astro check"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
@@ -32,6 +35,9 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/lexend": "^5.3.0",
+    "astro": "^5.18.2",
     "fflate": "^0.8.3"
   }
 }

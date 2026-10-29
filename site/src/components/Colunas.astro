@@ -1,0 +1,25 @@
+---
+/** Colunas verticais (ex.: gasto por ano). Zero JavaScript. */
+interface Props {
+  itens: { rotulo: string; valor: number; texto: string }[];
+  descricao: string;
+}
+const { itens, descricao } = Astro.props;
+const max = Math.max(...itens.map((i) => i.valor), 1);
+---
+<div class="colunas" role="img" aria-label={descricao}>
+  {itens.map((i) => (
+    <div class="col">
+      <span class="valor">{i.texto}</span>
+      <span class="barra" style={`height:${Math.max((i.valor / max) * 100, 2)}%`} />
+      <span class="eixo">{i.rotulo}</span>
+    </div>
+  ))}
+</div>
+<style>
+  .colunas { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0.75rem; height: 11rem; align-items: end; }
+  .col { display: grid; grid-template-rows: auto 1fr auto; height: 100%; align-items: end; text-align: center; }
+  .barra { display: block; background: var(--dado); border-radius: 4px 4px 0 0; align-self: end; }
+  .valor { font-family: var(--numeros); font-size: 0.85rem; font-variant-numeric: tabular-nums; color: var(--tinta); align-self: end; padding-bottom: 0.25rem; }
+  .eixo { font-size: 0.85rem; color: var(--grafite); border-top: 1px solid var(--linha); padding-top: 0.3rem; }
+</style>

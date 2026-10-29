@@ -1,0 +1,25 @@
+---
+/** Barras horizontais com rótulo (ex.: gastos por categoria). */
+interface Props {
+  itens: { rotulo: string; valor: number; texto: string }[];
+}
+const { itens } = Astro.props;
+const max = Math.max(...itens.map((i) => i.valor), 1);
+---
+<ul class="linhas">
+  {itens.map((i) => (
+    <li>
+      <span class="rotulo">{i.rotulo}</span>
+      <span class="texto">{i.texto}</span>
+      <span class="trilho"><span style={`width:${Math.max((i.valor / max) * 100, 1)}%`} /></span>
+    </li>
+  ))}
+</ul>
+<style>
+  .linhas { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.55rem; }
+  li { display: grid; grid-template-columns: 1fr auto; gap: 0.2rem 0.75rem; }
+  .rotulo { font-size: 0.92rem; }
+  .texto { font-family: var(--numeros); font-variant-numeric: tabular-nums; font-size: 0.92rem; text-align: right; }
+  .trilho { grid-column: 1 / -1; height: 0.5rem; background: var(--trilho); border-radius: 3px; overflow: hidden; }
+  .trilho span { display: block; height: 100%; background: var(--dado); }
+</style>

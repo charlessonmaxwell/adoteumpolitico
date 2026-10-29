@@ -12,7 +12,9 @@
 
 ## Decisões
 - **Responsivo:** desktop primeiro, adaptado de 360px em diante (RNF-04)
-- **Busca:** Pagefind, índice gerado no build; tolera erro de digitação
+- **Busca:** ~~Pagefind~~ busca própria no navegador sobre índice dos 594 nomes (~30 KB) — Pagefind não tolera erro de digitação (decisão de 29/10/2026)
+- **Identidade:** "extrato do mandato" — frase → gráfico → "ver os números" → fonte. Lexend (texto) + Archivo semicondensada (números). Paleta sem cores de partido; ametista para dados, âmbar para faltas. Fontes hospedadas no próprio site (sem Google Fonts: LGPD)
+- **Gráficos:** HTML/CSS gerado no build, zero JavaScript
 - **Compartilhamento:** cada perfil gera imagem de prévia (Open Graph) no build — nome, foto e UF, sem números (evita recorte fora de contexto)
 - **Fonte visível:** todo dado com link para a origem e data de coleta (RNF-08)
 - **Textos de métricas:** modelos de frase fixos ("faltou 12 de 100 sessões"), sem IA — custo zero e sem risco de alucinação

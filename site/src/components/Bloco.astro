@@ -1,0 +1,45 @@
+---
+/** Bloco do perfil: frase → gráfico → "ver os números" → fonte. */
+interface Props {
+  titulo: string;
+  principal: string | null;
+  detalhes?: string[];
+  vazio?: string;
+  fonte: { nome: string; url: string };
+  atualizadoEm: string;
+}
+const { titulo, principal, detalhes = [], vazio, fonte, atualizadoEm } = Astro.props;
+const id = titulo.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\W+/g, "-");
+---
+<section class="bloco" aria-labelledby={id}>
+  <h2 id={id}>{titulo}</h2>
+  {principal ? (
+    <>
+      <p class="principal">{principal}</p>
+      {detalhes.length > 0 && <ul class="detalhes">{detalhes.map((d) => <li>{d}</li>)}</ul>}
+      <div class="grafico"><slot name="grafico" /></div>
+      {Astro.slots.has("numeros") && (
+        <details>
+          <summary>Ver os números</summary>
+          <slot name="numeros" />
+        </details>
+      )}
+    </>
+  ) : (
+    <p class="vazio">{vazio}</p>
+  )}
+  <p class="fonte">Fonte: <a href={fonte.url} rel="external noopener" target="_blank">{fonte.nome}</a>. Dados de {atualizadoEm}.</p>
+</section>
+<style>
+  .bloco { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.5rem 1.5rem 1.1rem; display: flex; flex-direction: column; gap: 0.9rem; }
+  h2 { font-family: var(--numeros); font-stretch: 87%; font-weight: 700; font-size: 1.05rem; color: var(--grafite); margin: 0; letter-spacing: 0.01em; }
+  .principal { font-size: 1.45rem; line-height: 1.3; margin: 0; max-width: 34ch; text-wrap: balance; }
+  .detalhes { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; color: var(--tinta-suave); }
+  .grafico { margin-top: 0.3rem; }
+  .vazio { color: var(--grafite); margin: 0; }
+  details { border-top: 1px dashed var(--linha); padding-top: 0.7rem; }
+  summary { cursor: pointer; color: var(--acento-texto); font-weight: 700; }
+  summary:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; border-radius: 4px; }
+  .fonte { margin: auto 0 0; padding-top: 0.6rem; font-size: 0.85rem; color: var(--grafite); }
+  .fonte a { color: inherit; }
+</style>

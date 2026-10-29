@@ -1,0 +1,11 @@
+---
+import Base from "../layouts/Base.astro";
+import { dados } from "../lib/dados";
+const { resumos } = dados();
+---
+<Base titulo="Meu Político de Estimação" descricao="Veja o que seu deputado e seu senador fazem no mandato: presença, gastos, projetos e votos, com a fonte oficial.">
+  <div class="conteiner">
+    <h1>Encontre seu parlamentar</h1>
+    <ul>{resumos.map((r) => <li><a href={`/p/${r.parlamentar.id}/`}>{r.parlamentar.nome}</a> ({r.parlamentar.partido}-{r.parlamentar.uf})</li>)}</ul>
+  </div>
+</Base>

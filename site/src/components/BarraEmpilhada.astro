@@ -1,0 +1,28 @@
+---
+/** Barra horizontal empilhada com legenda. Zero JavaScript. */
+interface Props {
+  fatias: { rotulo: string; valor: number; cor: string }[];
+  descricao: string;
+}
+const { fatias, descricao } = Astro.props;
+const total = fatias.reduce((a, f) => a + f.valor, 0) || 1;
+const visiveis = fatias.filter((f) => f.valor > 0);
+---
+<figure class="empilhada">
+  <div class="trilho" role="img" aria-label={descricao}>
+    {visiveis.map((f) => <span style={`flex-grow:${f.valor};background:${f.cor}`} title={`${f.rotulo}: ${f.valor}`} />)}
+  </div>
+  <figcaption>
+    {visiveis.map((f) => (
+      <span class="item"><i style={`background:${f.cor}`} />{f.rotulo} <b>{f.valor.toLocaleString("pt-BR")}</b> <small>({Math.round((f.valor / total) * 100)}%)</small></span>
+    ))}
+  </figcaption>
+</figure>
+<style>
+  .trilho { display: flex; gap: 2px; height: 1.75rem; border-radius: 6px; overflow: hidden; background: var(--trilho); }
+  .trilho span { min-width: 3px; }
+  figcaption { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; margin-top: 0.6rem; font-size: 0.92rem; color: var(--grafite); }
+  .item { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .item i { width: 0.8rem; height: 0.8rem; border-radius: 2px; display: inline-block; }
+  .item b { color: var(--tinta); font-variant-numeric: tabular-nums; }
+</style>

@@ -1,0 +1,49 @@
+---
+import "../styles/global.css";
+interface Props {
+  titulo: string;
+  descricao: string;
+  imagem?: string;
+}
+const { titulo, descricao, imagem } = Astro.props;
+const url = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titulo}</title>
+    <meta name="description" content={descricao} />
+    <link rel="canonical" href={url} />
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content={titulo} />
+    <meta property="og:description" content={descricao} />
+    <meta property="og:url" content={url} />
+    {imagem && <meta property="og:image" content={new URL(imagem, Astro.site)} />}
+    <meta name="theme-color" content="#f3f4f2" />
+  </head>
+  <body>
+    <header class="topo">
+      <div class="conteiner topo-in">
+        <a href="/" class="marca">Meu Político de Estimação</a>
+        <a href="/" class="buscar">Buscar outro parlamentar</a>
+      </div>
+    </header>
+    <main><slot /></main>
+    <footer class="rodape">
+      <div class="conteiner">
+        <p>Dados oficiais da Câmara dos Deputados e do Senado Federal, atualizados todos os dias. Este site não dá nota nem faz ranking: mostra os fatos e a fonte de cada um.</p>
+        <p><a href="https://github.com/charlessonmaxwell/meupoliticodeestimacao">Código aberto</a></p>
+      </div>
+    </footer>
+  </body>
+</html>
+<style>
+  .topo { border-bottom: 1px solid var(--linha); background: var(--papel); }
+  .topo-in { display: flex; justify-content: space-between; align-items: center; min-height: 3.5rem; gap: 1rem; }
+  .marca { font-family: var(--numeros); font-stretch: 87%; font-weight: 800; color: var(--tinta); text-decoration: none; font-size: 1.1rem; }
+  .buscar { font-size: 0.95rem; }
+  .rodape { margin-top: 4rem; border-top: 1px solid var(--linha); color: var(--grafite); font-size: 0.92rem; padding: 1.5rem 0 3rem; }
+  .rodape p { max-width: 65ch; }
+</style>

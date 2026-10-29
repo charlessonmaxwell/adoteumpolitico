@@ -1,0 +1,80 @@
+@import "@fontsource-variable/lexend";
+@import "@fontsource-variable/archivo/wdth.css";
+
+/*
+ * Identidade "extrato do mandato". Paleta sem cores associadas a partidos
+ * (vermelho, azul, verde-amarelo, laranja) — story 2.0, CA2.
+ */
+:root {
+  --papel: #f3f4f2;
+  --folha: #ffffff;
+  --tinta: #1e242b;
+  --tinta-suave: #39424b;
+  --grafite: #5b6670;
+  --linha: #d9dcd8;
+  --trilho: #e7e8e4;
+  --dado: #5b47d6; /* ametista: dados */
+  --dado-claro: #b7adf0;
+  --acento-texto: #4a37c2;
+  --falta: #b26b00; /* âmbar: ausência sem justificativa */
+  --justificada: #c9c3e9;
+  --foco: #5b47d6;
+  --texto: "Lexend Variable", system-ui, sans-serif;
+  --numeros: "Archivo Variable", "Archivo", system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--texto);
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 350;
+}
+a {
+  color: var(--acento-texto);
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+img {
+  max-width: 100%;
+  display: block;
+}
+.conteiner {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+@media (min-width: 48rem) {
+  .conteiner {
+    padding: 0 2rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+figure {
+  margin: 0;
+}
+b,
+strong,
+summary,
+th {
+  font-weight: 600;
+}

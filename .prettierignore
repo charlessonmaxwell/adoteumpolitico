@@ -5,3 +5,5 @@ pnpm-lock.yaml
 tests/fixtures
 publicado
 saida
+site/fixtures
+.astro
