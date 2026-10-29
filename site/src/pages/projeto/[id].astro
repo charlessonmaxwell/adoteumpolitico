@@ -47,7 +47,19 @@ const titulo = `${proj.titulo}: como votaram os ${quem}`;
     <p class="volta"><a href="/#busca">Buscar parlamentar</a></p>
     <p class="casa">{casa}</p>
     <h1>{proj.titulo}</h1>
-    {proj.ementa && <p class="ementa">{proj.ementa}</p>}
+    {proj.explicacao && (
+      <section class="explicacao">
+        <h2>Explicando de um jeito simples</h2>
+        <p>{proj.explicacao}</p>
+        <p class="selo-ia">Explicação feita por inteligência artificial a partir do texto oficial. Confira abaixo.</p>
+      </section>
+    )}
+    {proj.ementa && (
+      <div class="oficial">
+        <p class="rotulo-oficial">{proj.explicacao ? "Texto oficial (como está no Congresso)" : "O que diz o texto oficial"}</p>
+        <p class="ementa">{proj.ementa}</p>
+      </div>
+    )}
 
     {principal ? (
       <section class="caixa">
@@ -136,6 +148,11 @@ const titulo = `${proj.titulo}: como votaram os ${quem}`;
   .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
   .casa { margin: 0; color: var(--grafite); font-weight: 600; }
   h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1; margin: 0.2rem 0 0.8rem; color: var(--dado); }
+  .explicacao { background: var(--folha); border-left: 5px solid var(--dado); border-radius: 10px; padding: 1rem 1.3rem; margin: 0 0 1.2rem; max-width: 70ch; }
+  .explicacao h2 { margin: 0 0 0.4rem; }
+  .explicacao p { margin: 0; font-size: 1.15rem; }
+  .explicacao .selo-ia { margin-top: 0.6rem; font-size: 0.85rem; color: var(--grafite); }
+  .rotulo-oficial { margin: 0 0 0.2rem; font-size: 0.85rem; font-weight: 700; color: var(--grafite); text-transform: uppercase; letter-spacing: 0.03em; }
   .ementa { font-size: 1.15rem; max-width: 65ch; color: var(--tinta-suave); margin: 0 0 1.5rem; }
   h2 { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.35rem; margin: 0 0 0.8rem; }
   .caixa { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.3rem 1.4rem; margin-bottom: 1.5rem; }

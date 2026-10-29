@@ -22,6 +22,8 @@ export interface ProjetoVotado {
   casa: Casa;
   titulo: string;
   ementa: string;
+  /** Explicação popular gerada por IA (opcional; o texto oficial continua em `ementa`). */
+  explicacao?: string;
   idPrincipal: string | null;
   votacoes: VotacaoDoProjeto[];
 }
