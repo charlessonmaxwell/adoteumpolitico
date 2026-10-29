@@ -6,5 +6,5 @@ export default defineConfig({
   outDir: "./site/dist",
   output: "static",
   trailingSlash: "always",
-  site: process.env.SITE_URL ?? "https://meupoliticodeestimacao.pages.dev",
+  site: process.env.SITE_URL ?? "https://adoteumpolitico.pages.dev",
 });
