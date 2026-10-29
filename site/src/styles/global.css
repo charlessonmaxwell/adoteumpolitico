@@ -2,24 +2,26 @@
 @import "@fontsource-variable/archivo/wdth.css";
 
 /*
- * Identidade "extrato do mandato". Paleta sem cores associadas a partidos
+ * Identidade "extrato do mandato". Paleta sem cores fortes associadas a partidos
  * (vermelho, azul, verde-amarelo, laranja) — story 2.0, CA2.
  */
 :root {
-  --papel: #f3f4f2;
+  /* Petróleo (padrão, escolhido em 29/10/2026) */
+  --papel: #eef2f1;
   --folha: #ffffff;
   --tinta: #1e242b;
   --tinta-suave: #39424b;
   --grafite: #5b6670;
-  --linha: #d9dcd8;
-  --trilho: #e7e8e4;
-  --dado: #5b47d6; /* ametista: dados */
-  --dado-claro: #b7adf0;
-  --dado-fundo: #ebe8fb;
-  --acento-texto: #4a37c2;
-  --falta: #b26b00; /* âmbar: ausência sem justificativa */
-  --justificada: #c9c3e9;
-  --foco: #5b47d6;
+  --linha: #d3dcda;
+  --trilho: #e2e8e6;
+  --dado: #0e6b73; /* petróleo: dados */
+  --dado-claro: #8cc7cb;
+  --dado-fundo: #dcefef;
+  --acento-texto: #0b5a61;
+  --falta: #a8650a; /* âmbar: ausência sem justificativa */
+  --justificada: #b9dcde;
+  --foco: #0e6b73;
+  color-scheme: light;
   --texto: "Lexend Variable", system-ui, sans-serif;
   --numeros: "Archivo Variable", "Archivo", system-ui, sans-serif;
 }
@@ -80,31 +82,7 @@ th {
   font-weight: 600;
 }
 
-/* Paletas em avaliação (escolha do usuário). A padrão é a do :root. */
-[data-tema="petroleo"] {
-  --papel: #eef2f1;
-  --linha: #d3dcda;
-  --trilho: #e2e8e6;
-  --dado: #0e6b73;
-  --dado-claro: #8cc7cb;
-  --dado-fundo: #dcefef;
-  --acento-texto: #0b5a61;
-  --justificada: #b9dcde;
-  --falta: #a8650a;
-  --foco: #0e6b73;
-}
-[data-tema="framboesa"] {
-  --papel: #f5f2f3;
-  --linha: #e0d8db;
-  --trilho: #ece6e8;
-  --dado: #9e2a6b;
-  --dado-claro: #e0a6c6;
-  --dado-fundo: #f6e3ee;
-  --acento-texto: #8a215c;
-  --justificada: #ecc8dc;
-  --falta: #9a6b00;
-  --foco: #9e2a6b;
-}
+/* Modo noturno: opcional, ligado pelo botão do topo (escolha salva no navegador) */
 [data-tema="noturno"] {
   --papel: #14161b;
   --folha: #1d2027;
@@ -113,11 +91,12 @@ th {
   --grafite: #9aa3ad;
   --linha: #333844;
   --trilho: #2a2e37;
-  --dado: #a294ff;
-  --dado-claro: #5d539c;
-  --dado-fundo: #2c2850;
-  --acento-texto: #b9aeff;
-  --justificada: #4b4578;
+  --dado: #45c2c9;
+  --dado-claro: #2a6f74;
+  --dado-fundo: #173a3d;
+  --acento-texto: #6fd3d9;
+  --justificada: #2f5a5d;
   --falta: #e3a43a;
-  --foco: #a294ff;
+  --foco: #45c2c9;
+  color-scheme: dark;
 }

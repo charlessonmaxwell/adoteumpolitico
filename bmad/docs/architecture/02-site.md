@@ -13,7 +13,7 @@
 ## Decisões
 - **Responsivo:** desktop primeiro, adaptado de 360px em diante (RNF-04)
 - **Busca:** ~~Pagefind~~ busca própria no navegador sobre índice dos 594 nomes (~30 KB) — Pagefind não tolera erro de digitação (decisão de 29/10/2026)
-- **Identidade:** "extrato do mandato" — frase → gráfico → "ver os números" → fonte. Lexend (texto) + Archivo semicondensada (números). Paleta sem cores de partido; ametista para dados, âmbar para faltas. Fontes hospedadas no próprio site (sem Google Fonts: LGPD)
+- **Identidade:** "extrato do mandato" — frase → gráfico → "ver os números" → fonte. Lexend (texto) + Archivo semicondensada (números). Paleta padrão petróleo (dados) + âmbar (faltas), escolhida pelo usuário em 29/10/2026; modo noturno opcional por botão no topo (escolha salva no navegador; sem escolha = claro). Fontes hospedadas no próprio site (sem Google Fonts: LGPD)
 - **Gráficos:** HTML/CSS gerado no build, zero JavaScript
 - **Compartilhamento:** cada perfil gera imagem de prévia (Open Graph) no build — nome, foto e UF, sem números (evita recorte fora de contexto)
 - **Fonte visível:** todo dado com link para a origem e data de coleta (RNF-08)

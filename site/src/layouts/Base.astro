@@ -21,13 +21,25 @@ const url = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={descricao} />
     <meta property="og:url" content={url} />
     {imagem && <meta property="og:image" content={new URL(imagem, Astro.site)} />}
-    <meta name="theme-color" content="#f3f4f2" />
+    <meta name="theme-color" content="#eef2f1" />
+    <script is:inline>
+      // Aplica o modo salvo antes de desenhar a página (evita piscar). Sem escolha salva = claro.
+      try {
+        if (localStorage.getItem("tema") === "noturno") document.documentElement.dataset.tema = "noturno";
+      } catch {}
+    </script>
   </head>
   <body>
     <header class="topo">
       <div class="conteiner topo-in">
         <a href="/" class="marca">Meu Político de Estimação</a>
-        <a href="/" class="buscar">Buscar outro parlamentar</a>
+        <div class="acoes">
+          <a href="/" class="buscar">Buscar outro parlamentar</a>
+          <button type="button" class="modo" id="alternar-tema" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg>
+            <span>Modo noturno</span>
+          </button>
+        </div>
       </div>
     </header>
     <main><slot /></main>
@@ -37,13 +49,39 @@ const url = new URL(Astro.url.pathname, Astro.site);
         <p><a href="https://github.com/charlessonmaxwell/meupoliticodeestimacao">Código aberto</a></p>
       </div>
     </footer>
+    <script is:inline>
+      (function () {
+        var b = document.getElementById("alternar-tema");
+        var raiz = document.documentElement;
+        var meta = document.querySelector('meta[name="theme-color"]');
+        function aplicar(noturno) {
+          if (noturno) raiz.dataset.tema = "noturno";
+          else delete raiz.dataset.tema;
+          b.setAttribute("aria-pressed", String(noturno));
+          b.querySelector("span").textContent = noturno ? "Modo claro" : "Modo noturno";
+          if (meta) meta.setAttribute("content", noturno ? "#14161b" : "#eef2f1");
+        }
+        aplicar(raiz.dataset.tema === "noturno");
+        b.addEventListener("click", function () {
+          var noturno = raiz.dataset.tema !== "noturno";
+          aplicar(noturno);
+          try { localStorage.setItem("tema", noturno ? "noturno" : "claro"); } catch (e) {}
+        });
+      })();
+    </script>
   </body>
 </html>
 <style>
   .topo { border-bottom: 1px solid var(--linha); background: var(--papel); }
   .topo-in { display: flex; justify-content: space-between; align-items: center; min-height: 3.5rem; gap: 1rem; }
   .marca { font-family: var(--numeros); font-stretch: 87%; font-weight: 800; color: var(--tinta); text-decoration: none; font-size: 1.1rem; }
+  .acoes { display: flex; align-items: center; gap: 1rem; }
   .buscar { font-size: 0.95rem; }
+  .modo { display: inline-flex; align-items: center; gap: 0.4rem; font: inherit; font-size: 0.9rem; color: var(--tinta); background: var(--folha); border: 1px solid var(--linha); border-radius: 999px; padding: 0.35rem 0.8rem; cursor: pointer; }
+  .modo svg { width: 1.1rem; height: 1.1rem; }
+  .modo:hover { border-color: var(--dado); }
+  .modo:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+  @media (max-width: 34rem) { .buscar { display: none; } .modo span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
   .rodape { margin-top: 4rem; border-top: 1px solid var(--linha); color: var(--grafite); font-size: 0.92rem; padding: 1.5rem 0 3rem; }
   .rodape p { max-width: 65ch; }
 </style>
