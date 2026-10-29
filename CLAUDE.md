@@ -15,3 +15,4 @@ Portal estático sobre desempenho de parlamentares federais. Arquitetura: site e
 - Nunca persistir CPF, e-mail, telefone ou outro dado pessoal das fontes.
 - Textos de métricas por modelos fixos; IA só para resumos de projetos e etiquetas de impacto.
 - Dúvida não coberta pela story → parar e perguntar.
+- Após toda ação concluída, atualizar obrigatoriamente o Notion (base "Tarefas do MVP").
