@@ -35,6 +35,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - run: echo "INICIO=$(date +%s)" >> "$GITHUB_ENV"
       - run: pnpm install --frozen-lockfile
 
       - name: Baixar só o que o site usa da branch data
@@ -100,6 +101,19 @@ jobs:
       - name: Resumo
         run: |
           echo "### Site no ar: ${{ steps.endereco.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enviar métricas ao Grafana
+        if: always()
+        continue-on-error: true
+        env:
+          GRAFANA_INFLUX_URL: ${{ secrets.GRAFANA_INFLUX_URL }}
+          GRAFANA_USUARIO: ${{ secrets.GRAFANA_USUARIO }}
+          GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
+        run: |
+          ok=$([ "${{ job.status }}" = "success" ] && echo sucesso || echo falha)
+          paginas=$(find site/dist -name '*.html' 2>/dev/null | wc -l)
+          echo "{\"workflow\":\"publicar\",\"resultado\":\"$ok\",\"duracaoTotalS\":$(( $(date +%s) - INICIO )),\"etapasS\":{},\"contagens\":{\"paginas\":$paginas},\"travaDisparou\":false,\"mudou\":null}" > metricas.json
+          node scripts/enviar-metricas.mjs metricas.json
 
       - name: Abrir issue de falha
         if: failure()

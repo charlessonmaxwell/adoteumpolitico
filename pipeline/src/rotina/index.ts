@@ -14,6 +14,7 @@ import type { Presenca, ResumoPresencaCamara } from "../modelo/votacao.js";
 import { agregar, type Dados } from "./agregacao.js";
 import { agruparPorProjeto } from "./votos-por-projeto.js";
 import { ErroTrava, verificarQuedas, type Contagens } from "./trava.js";
+import { gravarMetricas } from "../monitoramento/metricas.js";
 
 /** Coletores injetáveis (testes usam versões simuladas). */
 export interface Coletores {
@@ -73,6 +74,7 @@ export class ErroEtapa extends Error {
     public readonly etapa: string,
     public readonly causa: unknown,
     public readonly contagens: Contagens,
+    public readonly duracoes: Record<string, number> = {},
   ) {
     super(`Etapa "${etapa}" falhou: ${causa instanceof Error ? causa.message : String(causa)}`);
   }
@@ -103,19 +105,24 @@ const porCasaAno = <T extends { casa: string }>(
   return m;
 };
 
-export async function executarRotina(o: OpcoesRotina): Promise<{ meta: Meta; mudou: boolean }> {
+export async function executarRotina(
+  o: OpcoesRotina,
+): Promise<{ meta: Meta; mudou: boolean; duracoes: Record<string, number> }> {
   const c = o.coletores ?? coletoresReais;
   const anos = o.anos ?? anosDeColeta();
   const log = o.log ?? console.log;
   const contagens: Contagens = {};
+  const duracoes: Record<string, number> = {};
   const etapa = async <T>(nome: string, f: () => Promise<T>): Promise<T> => {
     const t = Date.now();
     try {
       const r = await f();
-      log(`✓ ${nome} (${Math.round((Date.now() - t) / 1000)}s)`);
+      duracoes[nome] = Math.round((Date.now() - t) / 100) / 10;
+      log(`✓ ${nome} (${Math.round(duracoes[nome])}s)`);
       return r;
     } catch (e) {
-      throw new ErroEtapa(nome, e, contagens);
+      duracoes[nome] = Math.round((Date.now() - t) / 100) / 10;
+      throw new ErroEtapa(nome, e, contagens, duracoes);
     }
   };
 
@@ -240,7 +247,7 @@ export async function executarRotina(o: OpcoesRotina): Promise<{ meta: Meta; mud
     await writeFile(caminho, JSON.stringify(conteudo));
   }
   await writeFile(join(o.saida, "meta.json"), JSON.stringify(meta, null, 2));
-  return { meta, mudou };
+  return { meta, mudou, duracoes };
 }
 
 /** Texto da issue automática: etapa, erro e contagens. */
@@ -273,16 +280,37 @@ export function relatorioFalha(e: unknown): string {
 
 async function main() {
   const [anterior = "publicado", saida = "saida"] = process.argv.slice(2);
+  const inicio = Date.now();
+  const total = () => Math.round((Date.now() - inicio) / 1000);
   try {
     const ignorarTrava = process.env.IGNORAR_TRAVA === "true";
-    const { meta, mudou } = await executarRotina({ anterior, saida, ignorarTrava });
+    const { meta, mudou, duracoes } = await executarRotina({ anterior, saida, ignorarTrava });
     console.log(
       `OK: ${Object.keys(meta.contagens).length} contagens; ${mudou ? "houve mudança" : "sem mudança"}`,
     );
     if (process.env.GITHUB_OUTPUT)
       await writeFile(process.env.GITHUB_OUTPUT, `mudou=${mudou}\n`, { flag: "a" });
+    await gravarMetricas({
+      workflow: "diario",
+      resultado: "sucesso",
+      duracaoTotalS: total(),
+      etapasS: duracoes,
+      contagens: meta.contagens,
+      travaDisparou: false,
+      mudou,
+    });
   } catch (e) {
     await writeFile("relatorio-falha.md", relatorioFalha(e));
+    await gravarMetricas({
+      workflow: "diario",
+      resultado: "falha",
+      etapaFalha: e instanceof ErroEtapa ? e.etapa : "desconhecida",
+      duracaoTotalS: total(),
+      etapasS: e instanceof ErroEtapa ? e.duracoes : {},
+      contagens: e instanceof ErroEtapa ? e.contagens : {},
+      travaDisparou: e instanceof ErroEtapa && e.causa instanceof ErroTrava,
+      mudou: null,
+    });
     console.error(e);
     process.exit(1);
   }

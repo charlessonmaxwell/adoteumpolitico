@@ -49,6 +49,15 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: scripts/publicar-dados.sh publicado "Presença da Câmara de $(date -u +%F)"
 
+      - name: Enviar métricas ao Grafana
+        if: always()
+        continue-on-error: true
+        env:
+          GRAFANA_INFLUX_URL: ${{ secrets.GRAFANA_INFLUX_URL }}
+          GRAFANA_USUARIO: ${{ secrets.GRAFANA_USUARIO }}
+          GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
+        run: node scripts/enviar-metricas.mjs metricas.json
+
       - name: Abrir issue de falha
         if: failure()
         env:

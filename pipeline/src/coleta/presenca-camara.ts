@@ -4,6 +4,7 @@ import { getTexto, type OpcoesHttp } from "../util/http.js";
 import type { Parlamentar } from "../modelo/parlamentar.js";
 import type { Presenca, ResumoPresencaCamara } from "../modelo/votacao.js";
 import { coletarParlamentares } from "./parlamentares.js";
+import { gravarMetricas } from "../monitoramento/metricas.js";
 
 /**
  * Presença oficial da Câmara, lida da página do deputado (a API de eventos conta ~25% menos sessões).
@@ -133,32 +134,63 @@ async function lerJson<T>(caminho: string): Promise<T[]> {
 }
 
 async function main() {
-  const anos = process.argv.slice(2).map(Number).filter(Boolean);
-  if (!anos.length) anos.push(new Date().getFullYear());
-  const deputados = (await coletarParlamentares()).filter((p) => p.casa === "camara");
-  const dir = process.env.DATA_DIR ?? "data";
-  await mkdir(`${dir}/presenca`, { recursive: true });
-  for (const ano of anos) {
-    const r = await coletarPresencaCamara(deputados, ano);
-    const taxa = r.falhas.length / deputados.length;
-    if (taxa > FALHA_MAXIMA) {
-      throw new Error(
-        `Presença ${ano}: ${r.falhas.length} de ${deputados.length} páginas falharam (${Math.round(taxa * 100)}%). Possível mudança de layout; dados anteriores mantidos.`,
+  const inicio = Date.now();
+  const extras: Record<string, number> = {};
+  let travou = false;
+  try {
+    const anos = process.argv.slice(2).map(Number).filter(Boolean);
+    if (!anos.length) anos.push(new Date().getFullYear());
+    const deputados = (await coletarParlamentares()).filter((p) => p.casa === "camara");
+    const dir = process.env.DATA_DIR ?? "data";
+    await mkdir(`${dir}/presenca`, { recursive: true });
+    for (const ano of anos) {
+      const r = await coletarPresencaCamara(deputados, ano);
+      const taxa = r.falhas.length / deputados.length;
+      extras[`deputados_lidos_${ano}`] = r.resumos.length;
+      extras[`falhas_${ano}`] = r.falhas.length;
+      if (taxa > FALHA_MAXIMA) {
+        travou = true;
+        throw new Error(
+          `Presença ${ano}: ${r.falhas.length} de ${deputados.length} páginas falharam (${Math.round(taxa * 100)}%). Possível mudança de layout; dados anteriores mantidos.`,
+        );
+      }
+      const base = `${dir}/presenca/camara-${ano}`;
+      const presencas = mesclar(await lerJson<Presenca>(`${base}.json`), r.presencas, r.falhas);
+      const resumos = mesclar(
+        await lerJson<ResumoPresencaCamara>(`${base}-resumo.json`),
+        r.resumos,
+        r.falhas,
+      );
+      await writeFile(`${base}.json`, JSON.stringify(presencas));
+      await writeFile(`${base}-resumo.json`, JSON.stringify(resumos));
+      console.log(
+        `Presença ${ano}: ${r.resumos.length} deputados, ${r.falhas.length} falhas (dados anteriores mantidos)`,
       );
     }
-    const base = `${dir}/presenca/camara-${ano}`;
-    const presencas = mesclar(await lerJson<Presenca>(`${base}.json`), r.presencas, r.falhas);
-    const resumos = mesclar(
-      await lerJson<ResumoPresencaCamara>(`${base}-resumo.json`),
-      r.resumos,
-      r.falhas,
-    );
-    await writeFile(`${base}.json`, JSON.stringify(presencas));
-    await writeFile(`${base}-resumo.json`, JSON.stringify(resumos));
-    console.log(
-      `Presença ${ano}: ${r.resumos.length} deputados, ${r.falhas.length} falhas (dados anteriores mantidos)`,
-    );
+  } catch (e) {
+    await gravarMetricas({
+      workflow: "presenca",
+      resultado: "falha",
+      etapaFalha: "presenca",
+      duracaoTotalS: Math.round((Date.now() - inicio) / 1000),
+      etapasS: {},
+      contagens: {},
+      travaDisparou: travou,
+      mudou: null,
+      extras,
+    });
+    throw e;
   }
+  await gravarMetricas({
+    workflow: "presenca",
+    resultado: "sucesso",
+    duracaoTotalS: Math.round((Date.now() - inicio) / 1000),
+    etapasS: {},
+    contagens: {},
+    travaDisparou: false,
+    mudou: true,
+    extras,
+  });
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

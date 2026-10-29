@@ -1,0 +1,62 @@
+{
+  "title": "Meu Político de Estimação — saúde das rotinas",
+  "schemaVersion": 39,
+  "time": { "from": "now-30d", "to": "now" },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Última execução (1 = sucesso)",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 5 },
+      "targets": [
+        {
+          "query": "SELECT last(\"sucesso\") FROM \"rotina_execucao\" WHERE $timeFilter GROUP BY \"workflow\"",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Trava disparada (30 dias)",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 5 },
+      "targets": [
+        {
+          "query": "SELECT sum(\"trava_disparou\") FROM \"rotina_execucao\" WHERE $timeFilter",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Duração total (s)",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 5 },
+      "targets": [
+        {
+          "query": "SELECT \"duracao_total_s\" FROM \"rotina_execucao\" WHERE $timeFilter GROUP BY \"workflow\"",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Duração por etapa (s)",
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "query": "SELECT \"duracao_s\" FROM \"rotina_etapa\" WHERE $timeFilter GROUP BY \"etapa\"",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Volume coletado",
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "query": "SELECT \"valor\" FROM \"rotina_contagem\" WHERE $timeFilter GROUP BY \"tipo\", \"casa\", \"ano\"",
+          "rawQuery": true
+        }
+      ]
+    }
+  ]
+}
