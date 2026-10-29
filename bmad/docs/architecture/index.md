@@ -9,3 +9,4 @@
 | 2 | Site | `02-site.md` | Aguardando aprovação |
 | 3 | Uso de IA | `03-ia.md` | Aguardando aprovação |
 | 4 | Custos e riscos | `04-custos-riscos.md` | Aguardando aprovação |
+- [05 — Rastreio de emendas parlamentares (proposta)](05-emendas.md)
