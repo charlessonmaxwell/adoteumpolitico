@@ -79,7 +79,8 @@ jobs:
         run: pnpm dlx wrangler@4 pages deploy site/dist --project-name "$PROJETO" --branch main --commit-dirty=true
 
       - name: Resumo
-        run: echo "### Site no ar: ${{ steps.endereco.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo "### Site no ar: ${{ steps.endereco.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Abrir issue de falha
         if: failure()
