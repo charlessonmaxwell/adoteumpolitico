@@ -116,7 +116,7 @@ const titulo = `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato`;
         ]} />
       </Bloco>
 
-      <Bloco titulo="Como votou?" icone="urna" destaque={vot.destaque} principal={vot.principal} detalhes={vot.detalhes} fonte={{ nome: camara ? "Câmara dos Deputados, votações" : "Senado Federal, votações", url: oficial }} atualizadoEm={atualizado}>
+      <Bloco titulo="Como votou?" icone="urna" destaque={vot.destaque} principal={vot.principal} link={{ href: `/p/${p.id}/votos/`, texto: "Ver o voto em cada projeto" }} detalhes={vot.detalhes} fonte={{ nome: camara ? "Câmara dos Deputados, votações" : "Senado Federal, votações", url: oficial }} atualizadoEm={atualizado}>
         <BarraEmpilhada slot="grafico" fatias={fatiasVotos} descricao={vot.principal} />
         <table slot="numeros">
           <thead><tr><th>Registro</th><th>Vezes</th></tr></thead>

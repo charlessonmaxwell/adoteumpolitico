@@ -1,0 +1,162 @@
+---
+import Base from "../../layouts/Base.astro";
+import BarraEmpilhada from "../../components/BarraEmpilhada.astro";
+import SeloVoto from "../../components/SeloVoto.astro";
+import Texto from "../../components/Texto.astro";
+import { dados, projetos } from "../../lib/dados";
+import { dataBr, plural, UFS } from "../../lib/formato";
+import { RESULTADO, SELO, semPlacar } from "../../lib/votos";
+import { ROTULO_CATEGORIA } from "../../../../pipeline/src/coleta/categoria-votacao";
+import type { ProjetoVotado } from "../../../../pipeline/src/rotina/votos-por-projeto";
+import type { ValorVoto } from "../../../../pipeline/src/modelo/votacao";
+
+export function getStaticPaths() {
+  return projetos().map((p) => ({ params: { id: p.id }, props: { proj: p } }));
+}
+const { proj } = Astro.props as { proj: ProjetoVotado };
+const { resumos, meta } = dados();
+const porId = new Map(resumos.map((r) => [r.parlamentar.id, r.parlamentar]));
+const casa = proj.casa === "camara" ? "Câmara dos Deputados" : "Senado Federal";
+const quem = proj.casa === "camara" ? "deputados" : "senadores";
+const principal = proj.votacoes.find((v) => v.id === proj.idPrincipal) ?? null;
+const outras = proj.votacoes.filter((v) => v.id !== proj.idPrincipal).reverse();
+
+const ORDEM: ValorVoto[] = ["sim", "nao", "votou", "abstencao", "obstrucao", "presidente", "presente_sem_voto", "ausente", "nao_informado"];
+const contar = (votos: Record<string, ValorVoto>) => {
+  const c: Partial<Record<ValorVoto, number>> = {};
+  for (const v of Object.values(votos)) c[v] = (c[v] ?? 0) + 1;
+  return c;
+};
+const placar = principal ? contar(principal.votos) : {};
+const grupos = principal
+  ? ORDEM.map((voto) => ({
+      voto,
+      pessoas: Object.entries(principal.votos)
+        .filter(([, v]) => v === voto)
+        .map(([id]) => porId.get(id))
+        .filter((p) => p !== undefined)
+        .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
+    })).filter((g) => g.pessoas.length)
+  : [];
+const foraDoCargo = principal ? Object.keys(principal.votos).filter((id) => !porId.has(id)).length : 0;
+const ufs = [...new Set(grupos.flatMap((g) => g.pessoas.map((p) => p.uf)))].sort();
+const titulo = `${proj.titulo}: como votaram os ${quem}`;
+---
+<Base titulo={titulo} descricao={`${proj.titulo} (${casa}): ${proj.ementa.slice(0, 140)}`}>
+  <div class="conteiner">
+    <p class="volta"><a href="/#busca">Buscar parlamentar</a></p>
+    <p class="casa">{casa}</p>
+    <h1>{proj.titulo}</h1>
+    {proj.ementa && <p class="ementa">{proj.ementa}</p>}
+
+    {principal ? (
+      <section class="caixa">
+        <h2>Votação do projeto</h2>
+        <p class="o-que">{semPlacar(principal.descricao)}</p>
+        <p class="res"><strong>{RESULTADO(principal.resultado)}</strong> em {dataBr(principal.data + "T12:00:00")}{principal.tipo === "secreta" && ". Votação secreta: só se sabe quem votou, não em quê"}.</p>
+        <BarraEmpilhada
+          descricao={`Placar: ${ORDEM.filter((v) => placar[v]).map((v) => `${SELO[v].texto} ${placar[v]}`).join(", ")}`}
+          fatias={[
+            { rotulo: "Sim", valor: placar.sim ?? 0, cor: "var(--dado)" },
+            { rotulo: "Não", valor: placar.nao ?? 0, cor: "var(--tinta-suave)" },
+            { rotulo: "Voto secreto", valor: placar.votou ?? 0, cor: "var(--dado-claro)" },
+            { rotulo: "Outros", valor: (placar.abstencao ?? 0) + (placar.obstrucao ?? 0) + (placar.presidente ?? 0) + (placar.presente_sem_voto ?? 0) + (placar.nao_informado ?? 0), cor: "var(--linha)" },
+            { rotulo: "Faltou", valor: placar.ausente ?? 0, cor: "var(--falta)" },
+          ]}
+        />
+      </section>
+
+      <section class="quem-votou">
+        <div class="cab-lista">
+          <h2>Quem votou o quê</h2>
+          <label class="filtro-uf">
+            <span>Estado</span>
+            <select data-uf>
+              <option value="">Todos</option>
+              {ufs.map((uf) => <option value={uf}>{UFS[uf] ?? uf}</option>)}
+            </select>
+          </label>
+        </div>
+        {grupos.map((g) => (
+          <details open={g.voto === "sim" || g.voto === "nao" || g.voto === "votou"} class="grupo">
+            <summary><SeloVoto voto={g.voto} pequeno /> <span data-conta>{g.pessoas.length}</span> {plural(g.pessoas.length, "pessoa", "pessoas")}</summary>
+            <ul class="nomes">
+              {g.pessoas.map((p) => (
+                <li data-uf={p.uf}><a href={`/p/${p.id}/votos/`}>{p.nome}</a> <span>{p.partido}-{p.uf}</span></li>
+              ))}
+            </ul>
+          </details>
+        ))}
+        {foraDoCargo > 0 && <p class="nota-fora">Mais {foraDoCargo} {plural(foraDoCargo, "voto de quem já não está", "votos de quem já não está")} no cargo.</p>}
+        <p class="nota-fora">Só aparece quem tem voto registrado nesta votação.</p>
+      </section>
+    ) : (
+      <p class="caixa">Este projeto só teve votações de procedimento com voto registrado (veja abaixo).</p>
+    )}
+
+    {outras.length > 0 && (
+      <section>
+        <h2>Outras votações deste projeto</h2>
+        <ul class="outras">
+          {outras.map((v) => {
+            const c = contar(v.votos);
+            return (
+              <li>
+                <span class="o-cat">{ROTULO_CATEGORIA[v.categoria]}, {dataBr(v.data + "T12:00:00")}</span>
+                <span>{semPlacar(v.descricao)}{v.categoria === "destaque" ? " (votar SIM é manter o trecho)" : ""}</span>
+                <span class="o-placar">{RESULTADO(v.resultado)}. Sim {c.sim ?? 0}, Não {c.nao ?? 0}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    )}
+    <p class="fonte">Fonte: {casa}, votações nominais do plenário. <Texto texto="Votações nominais registram o voto de cada um." /> Dados de {dataBr(meta.atualizadoEm)}.</p>
+  </div>
+</Base>
+<script>
+  const sel = document.querySelector<HTMLSelectElement>("[data-uf]");
+  sel?.addEventListener("change", () => {
+    const uf = sel.value;
+    document.querySelectorAll<HTMLElement>(".grupo").forEach((g) => {
+      let n = 0;
+      g.querySelectorAll<HTMLElement>("li[data-uf]").forEach((li) => {
+        const ok = !uf || li.dataset.uf === uf;
+        li.hidden = !ok;
+        if (ok) n++;
+      });
+      const conta = g.querySelector("[data-conta]");
+      if (conta) conta.textContent = String(n);
+      g.hidden = n === 0;
+      if (uf && n > 0) (g as HTMLDetailsElement).open = true;
+    });
+  });
+</script>
+<style>
+  .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
+  .casa { margin: 0; color: var(--grafite); font-weight: 600; }
+  h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1; margin: 0.2rem 0 0.8rem; color: var(--dado); }
+  .ementa { font-size: 1.15rem; max-width: 65ch; color: var(--tinta-suave); margin: 0 0 1.5rem; }
+  h2 { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.35rem; margin: 0 0 0.8rem; }
+  .caixa { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.3rem 1.4rem; margin-bottom: 1.5rem; }
+  .o-que { margin: 0 0 0.4rem; }
+  .res { margin: 0 0 1rem; color: var(--tinta-suave); }
+  .cab-lista { display: flex; justify-content: space-between; align-items: end; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+  .cab-lista h2 { margin: 0; }
+  .filtro-uf { display: grid; gap: 0.2rem; font-weight: 600; font-size: 0.9rem; }
+  .filtro-uf select { font: inherit; padding: 0.5rem 0.7rem; border-radius: 8px; border: 2px solid var(--linha); background: var(--folha); color: var(--tinta); }
+  .grupo { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 0.8rem 1rem; margin-bottom: 0.6rem; }
+  .grupo[hidden] { display: none; }
+  .grupo summary { cursor: pointer; display: flex; align-items: center; gap: 0.6rem; font-weight: 600; }
+  .nomes { list-style: none; padding: 0; margin: 0.8rem 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.35rem 1rem; }
+  .nomes li[hidden] { display: none; }
+  .nomes a { color: var(--tinta); }
+  .nomes span { color: var(--grafite); font-size: 0.88rem; }
+  .nota-fora { color: var(--grafite); font-size: 0.9rem; margin: 0.4rem 0; }
+  section { margin-bottom: 2rem; }
+  .outras { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; }
+  .outras li { display: grid; gap: 0.2rem; background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 0.8rem 1rem; }
+  .o-cat { font-size: 0.85rem; font-weight: 700; color: var(--grafite); }
+  .o-placar { color: var(--grafite); font-size: 0.9rem; }
+  .fonte { color: var(--grafite); font-size: 0.85rem; }
+</style>

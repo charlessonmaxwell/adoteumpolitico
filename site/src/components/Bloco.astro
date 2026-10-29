@@ -11,8 +11,9 @@ interface Props {
   vazio?: string;
   fonte: { nome: string; url: string };
   atualizadoEm: string;
+  link?: { href: string; texto: string };
 }
-const { titulo, icone, destaque, principal, detalhes = [], vazio, fonte, atualizadoEm } = Astro.props;
+const { titulo, icone, destaque, principal, detalhes = [], vazio, fonte, atualizadoEm, link } = Astro.props;
 const usados = new Set<string>();
 const id = titulo.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\W+/g, "-");
 ---
@@ -36,6 +37,7 @@ const id = titulo.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace
   ) : (
     <p class="vazio">{vazio}</p>
   )}
+  {link && <a class="link-detalhe" href={link.href}>{link.texto}</a>}
   <p class="fonte">Fonte: <a href={fonte.url} rel="external noopener" target="_blank">{fonte.nome}</a>. Dados de {atualizadoEm}.</p>
 </section>
 <style>
@@ -52,6 +54,9 @@ const id = titulo.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace
   details { border-top: 1px dashed var(--linha); padding-top: 0.7rem; }
   summary { cursor: pointer; color: var(--acento-texto); font-weight: 700; }
   summary:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; border-radius: 4px; }
+  .link-detalhe { display: inline-flex; align-self: flex-start; font-weight: 700; color: var(--folha); background: var(--dado); padding: 0.6rem 1.1rem; border-radius: 999px; text-decoration: none; }
+  .link-detalhe:hover { filter: brightness(1.1); }
+  .link-detalhe:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
   .fonte { margin: auto 0 0; padding-top: 0.6rem; font-size: 0.85rem; color: var(--grafite); }
   .fonte a { color: inherit; }
 </style>

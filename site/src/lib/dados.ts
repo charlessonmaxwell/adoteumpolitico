@@ -4,6 +4,7 @@ import type { ResumoParlamentar } from "../../../pipeline/src/rotina/agregacao.j
 import type { Meta } from "../../../pipeline/src/rotina/index.js";
 import type { Parlamentar } from "../../../pipeline/src/modelo/parlamentar.js";
 import type { Medias } from "./frases.js";
+import type { ProjetoVotado, VotoEmProjeto } from "../../../pipeline/src/rotina/votos-por-projeto.js";
 
 /** Pasta com a publicação da branch `data`. Sem ela, usa os dados simulados (desenvolvimento e CI). */
 const DIR = resolve(process.env.DADOS_DIR ?? "site/fixtures");
@@ -35,3 +36,21 @@ export const paginaOficial = (p: Parlamentar) =>
   p.casa === "camara"
     ? `https://www.camara.leg.br/deputados/${p.idOrigem}`
     : `https://www25.senado.leg.br/web/senadores/senador/-/perfil/${p.idOrigem}`;
+
+/** Votos do parlamentar agrupados por projeto (story 3.1). Vazio se não houver arquivo. */
+export function votosDe(id: string): VotoEmProjeto[] {
+  const arq = join(DIR, "votos", `${id}.json`);
+  return existsSync(arq) ? (JSON.parse(readFileSync(arq, "utf8")) as VotoEmProjeto[]) : [];
+}
+
+let cacheProjetos: ProjetoVotado[] | null = null;
+export function projetos(): ProjetoVotado[] {
+  if (cacheProjetos) return cacheProjetos;
+  const pasta = join(DIR, "projetos");
+  cacheProjetos = existsSync(pasta)
+    ? readdirSync(pasta)
+        .filter((f) => f.endsWith(".json"))
+        .map((f) => JSON.parse(readFileSync(join(pasta, f), "utf8")) as ProjetoVotado)
+    : [];
+  return cacheProjetos;
+}

@@ -49,7 +49,7 @@ export interface VotoEmProjeto {
 }
 
 const EH_PRINCIPAL = new Set<CategoriaVotacao>(["principal", "autoridade"]);
-const MAX_EMENTA = 260;
+const MAX_EMENTA = 180;
 const encurtar = (s: string) =>
   s.length > MAX_EMENTA ? s.slice(0, MAX_EMENTA - 1).trimEnd() + "…" : s;
 

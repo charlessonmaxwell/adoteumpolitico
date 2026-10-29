@@ -48,7 +48,7 @@ describe("Story 3.1 — votos por projeto", () => {
   it("parlamentar vê o voto na principal e as outras votações em que votou", () => {
     const l = r.porParlamentar.get("camara-1")!;
     expect(l).toHaveLength(1);
-    expect(l[0]!.principal).toMatchObject({ voto: "sim", descricao: "Redação final" });
+    expect(l[0]!.principal).toMatchObject({ voto: "sim", resultado: "aprovada" });
     expect(l[0]!.outras.map((o) => [o.categoria, o.voto])).toEqual([
       ["procedimento", "nao"],
       ["principal", "sim"],

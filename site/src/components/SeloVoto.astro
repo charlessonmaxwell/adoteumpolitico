@@ -1,0 +1,18 @@
+---
+import { SELO } from "../lib/votos";
+interface Props {
+  voto: keyof typeof SELO;
+  pequeno?: boolean;
+}
+const { voto, pequeno = false } = Astro.props;
+const s = SELO[voto];
+---
+<span class:list={["selo-voto", s.classe, { pequeno }]}>{s.texto}</span>
+<style is:global>
+  .selo-voto { display: inline-flex; align-items: center; font-weight: 700; font-size: 0.95rem; padding: 0.3rem 0.75rem; border-radius: 999px; white-space: nowrap; border: 1px solid transparent; }
+  .pequeno { font-size: 0.82rem; padding: 0.15rem 0.55rem; }
+  .sim { background: var(--dado); color: var(--folha); }
+  .nao { background: var(--tinta-suave); color: var(--folha); }
+  .falta { background: transparent; color: var(--falta); border-color: var(--falta); }
+  .neutro { background: var(--trilho); color: var(--tinta-suave); }
+</style>
