@@ -51,6 +51,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           [ -n "$CLOUDFLARE_API_TOKEN" ] || { echo "::error::Secret CLOUDFLARE_API_TOKEN não cadastrado" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
+          # Diagnóstico seguro: mostra só se o token é válido, nunca o valor
+          V=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" https://api.cloudflare.com/client/v4/user/tokens/verify | jq -c '{success, status: .result.status, errors: [.errors[]?.message]}')
+          echo "::notice::Token: $V"
           if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             # Sem o secret: descobre a conta pelo próprio token (o ID não é sigiloso, mas fica mascarado)
             CLOUDFLARE_ACCOUNT_ID=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" https://api.cloudflare.com/client/v4/accounts | jq -r '.result[0].id // empty')
@@ -59,9 +62,6 @@ jobs:
           fi
           echo "::add-mask::$CLOUDFLARE_ACCOUNT_ID"
           echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> "$GITHUB_ENV"
-          # Diagnóstico seguro: mostra só se o token é válido, nunca o valor
-          V=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" https://api.cloudflare.com/client/v4/user/tokens/verify | jq -c '{success, status: .result.status, errors: [.errors[]?.message]}')
-          echo "::notice::Token: $V"
           pnpm dlx wrangler@4 pages project create "$PROJETO" --production-branch main > criar.log 2>&1 || true
           echo "::notice::Criar projeto: $(grep -iE 'success|already|exist|error|✘' criar.log | head -3 | tr '\n' ' ')"
 
