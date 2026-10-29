@@ -54,3 +54,8 @@ async function comRetentativa<T>(
   }
   throw ultimoErro;
 }
+
+/** GET de página HTML (raspagem), com a mesma política de retentativa. */
+export async function getTexto(url: string, opcoes: OpcoesHttp = {}): Promise<string> {
+  return comRetentativa(url, "text/html", (r) => r.text(), opcoes);
+}
