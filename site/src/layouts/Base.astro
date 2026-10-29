@@ -43,6 +43,10 @@ const url = new URL(Astro.url.pathname, Astro.site);
       <div class="conteiner topo-in">
         <a href="/" class="marca">Adote um Político</a>
         <div class="acoes">
+          <a href="/panorama/" class="buscar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
+            <span>Panorama</span>
+          </a>
           <a href="/#busca" class="buscar" aria-label="Buscar parlamentar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.4-4.4" /></svg>
             <span>Buscar</span>
@@ -58,7 +62,7 @@ const url = new URL(Astro.url.pathname, Astro.site);
     <footer class="rodape">
       <div class="conteiner">
         <p>Aqui não tem nota nem ranking: só os fatos, com a fonte oficial de cada um. Os dados vêm da Câmara dos Deputados e do Senado Federal e são atualizados todo dia.</p>
-        <p class="links"><a href="/como-funciona/">Como funciona</a> <a href="https://github.com/charlessonmaxwell/adoteumpolitico">Código aberto</a> <a href="https://github.com/charlessonmaxwell/adoteumpolitico/issues/new">Achou um erro?</a></p>
+        <p class="links"><a href="/panorama/">Panorama do Congresso</a> <a href="/como-funciona/">Como funciona</a> <a href="https://github.com/charlessonmaxwell/adoteumpolitico">Código aberto</a> <a href="https://github.com/charlessonmaxwell/adoteumpolitico/issues/new">Achou um erro?</a></p>
       </div>
     </footer>
     <script is:inline>

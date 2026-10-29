@@ -57,3 +57,9 @@ export function projetos(): ProjetoVotado[] {
     : [];
   return cacheProjetos;
 }
+
+/** Números gerais do Congresso (página Panorama). Null se a publicação ainda não tem o arquivo. */
+export function panorama(): import("../../../pipeline/src/rotina/panorama.js").Panorama | null {
+  const arq = join(DIR, "panorama.json");
+  return existsSync(arq) ? JSON.parse(readFileSync(arq, "utf8")) : null;
+}

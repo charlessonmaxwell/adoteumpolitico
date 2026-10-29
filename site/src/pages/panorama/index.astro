@@ -1,0 +1,150 @@
+---
+import Base from "../../layouts/Base.astro";
+import Colunas from "../../components/Colunas.astro";
+import Linhas from "../../components/Linhas.astro";
+import Icone from "../../components/Icone.astro";
+import { dados, panorama, projetos } from "../../lib/dados";
+import { dataBr, formatarMoeda, formatarMoedaCurta, formatarNumero, humanizarCategoria, plural, UFS } from "../../lib/formato";
+import type { PanoramaCasa } from "../../../../pipeline/src/rotina/panorama";
+
+const pan = panorama();
+const { meta } = dados();
+const explicacoes = new Map(projetos().map((p) => [p.id, (p as { explicacao?: string }).explicacao]));
+const resumoProjeto = (id: string, ementa: string) => explicacoes.get(id) ?? ementa.split("NOVA EMENTA:").pop()!.trim();
+const media1 = (v: number | null) => (v === null ? "—" : formatarNumero(Math.round(v * 10) / 10));
+const pct = (v: number | null) => (v === null ? "—" : `${Math.round(v * 100)}%`);
+const casas = pan
+  ? ([
+      ["camara", "Câmara dos Deputados", "deputados", pan.camara],
+      ["senado", "Senado Federal", "senadores", pan.senado],
+    ] as [string, string, string, PanoramaCasa][])
+  : [];
+---
+<Base titulo="Panorama do Congresso: os números gerais" descricao="Quanto custa, quem vai às votações, quantos projetos viram lei e como votam a Câmara e o Senado. Números gerais, sem ranking de parlamentares.">
+  <div class="conteiner pagina-panorama">
+    <p class="volta"><a href="/">Início</a></p>
+    <h1>Panorama do Congresso</h1>
+    <p class="intro">Os números gerais da Câmara e do Senado desde 2023. Aqui nenhum parlamentar aparece em lista de "quem mais" ou "quem menos": partidos e estados aparecem em ordem alfabética, com médias. Para ver uma pessoa, <a href="/#busca">busque o nome</a>.</p>
+
+    {!pan ? (
+      <p class="vazio">O panorama aparece depois da próxima atualização dos dados.</p>
+    ) : (
+      <>
+        <nav class="abas" aria-label="Escolha a casa">
+          {casas.map(([id, nome]) => <a href={`#${id}`}>{nome}</a>)}
+        </nav>
+
+        {casas.map(([id, nome, quem, c]) => (
+          <section id={id} class="casa">
+            <h2>{nome} <span>{c.parlamentares} {quem} no cargo hoje</span></h2>
+
+            <div class="grade">
+              <article class="cartao">
+                <h3><span class="selo"><Icone nome="dinheiro" /></span>Quanto custou a cota</h3>
+                <p class="destaque"><strong>{formatarMoedaCurta(c.gastos.total)}</strong> <span>gastos desde 2023 pelos {quem} atuais</span></p>
+                <p>Metade dos {quem} gastou mais de <strong>{formatarMoedaCurta(c.gastos.medianaPorParlamentar ?? 0)}</strong> no período, e metade gastou menos. A média é {formatarMoedaCurta(c.gastos.mediaPorParlamentar ?? 0)} por pessoa.</p>
+                <Colunas itens={Object.entries(c.gastos.porAno).map(([a, v]) => ({ rotulo: a, valor: v, texto: formatarMoedaCurta(v).replace("R$ ", "") }))} descricao={`Gasto por ano: ${Object.entries(c.gastos.porAno).map(([a, v]) => `${a}, ${formatarMoedaCurta(v)}`).join("; ")}`} />
+                <p class="nota">O ano atual ainda não terminou. Gastos podem chegar com até 3 meses de atraso.</p>
+              </article>
+
+              <article class="cartao">
+                <h3><span class="selo"><Icone nome="dinheiro" /></span>Com o que mais gastaram</h3>
+                <Linhas itens={c.gastos.porCategoria.slice(0, 6).map((x) => ({ rotulo: humanizarCategoria(x.categoria), valor: x.total, texto: formatarMoedaCurta(x.total) }))} />
+                <details>
+                  <summary>Empresas que mais receberam</summary>
+                  <table>
+                    <thead><tr><th>Empresa</th><th>Recebeu</th></tr></thead>
+                    <tbody>{c.gastos.empresas.map((e) => <tr><td>{e.nome}</td><td class="num">{formatarMoeda(e.total)}</td></tr>)}</tbody>
+                  </table>
+                  <p class="nota">Só empresas (com CNPJ). Somando os pagamentos de todos os {quem}.</p>
+                </details>
+              </article>
+
+              <article class="cartao">
+                <h3><span class="selo"><Icone nome="calendario" /></span>{id === "camara" ? "Foram às sessões?" : "Apareceram nas votações?"}</h3>
+                <p class="destaque"><strong>{pct(c.presenca.media)}</strong> <span>{id === "camara" ? "dos dias de votação, em média" : "das votações, em média"}</span></p>
+                <Linhas itens={c.presenca.faixas.map((f) => ({ rotulo: f.rotulo, valor: f.parlamentares, texto: `${f.parlamentares} ${plural(f.parlamentares, quem.slice(0, -1), quem)}` }))} />
+                <p class="nota">{id === "camara" ? "Conta os dias com sessão de votação. Falta justificada (doença, missão oficial) entra como falta." : "No Senado, conta a presença em cada votação nominal, não os dias. Por isso não dá para comparar com a Câmara."}</p>
+              </article>
+
+              <article class="cartao">
+                <h3><span class="selo"><Icone nome="documento" /></span>Projetos que viraram lei</h3>
+                <p class="destaque"><strong>{formatarNumero(c.projetos.viraramLei)}</strong> <span>de {formatarNumero(c.projetos.apresentados)} projetos de lei apresentados pelos {quem} atuais desde 2023</span></p>
+                <p><strong>{c.projetos.parlamentaresComLei}</strong> dos {c.parlamentares} {quem} assinaram (como autor ou coautor) pelo menos um projeto que virou lei. Além disso, foram {formatarNumero(c.projetos.homenagens)} projetos de homenagem, como datas comemorativas e nomes de ruas.</p>
+                <p class="nota">Projeto de lei costuma levar anos para virar lei; muitos dos apresentados ainda estão andando.</p>
+              </article>
+
+              <article class="cartao largo">
+                <h3><span class="selo"><Icone nome="urna" /></span>Como votaram</h3>
+                <p class="destaque"><strong>{formatarNumero(c.votacoes.nominais)}</strong> <span>votações com registro de voto de cada um. {c.votacoes.aprovadas} aprovadas e {c.votacoes.rejeitadas} rejeitadas.</span></p>
+                <h4>As votações de projeto mais apertadas</h4>
+                <ul class="apertadas">
+                  {c.votacoes.apertadas.map((a) => (
+                    <li><a href={`/projeto/${a.idProposicao}/`}>{a.titulo.replace(/\s*\(.*\)$/, "")}</a> <span class="placar">Sim {a.sim} × Não {a.nao}</span><span class="ementa">{resumoProjeto(a.idProposicao, a.ementa)}</span></li>
+                  ))}
+                </ul>
+              </article>
+            </div>
+
+            <details class="grupos">
+              <summary>Médias por partido (ordem alfabética)</summary>
+              <div class="rolagem">
+                <table>
+                  <thead><tr><th>Partido</th><th>{quem[0]!.toUpperCase() + quem.slice(1)}</th><th>Gasto médio</th><th>Presença média</th><th>Projetos de lei criados (média)</th></tr></thead>
+                  <tbody>{c.porPartido.map((g) => <tr><td>{g.nome}</td><td class="num">{g.parlamentares}</td><td class="num">{formatarMoedaCurta(g.gastoMedio ?? 0)}</td><td class="num">{pct(g.presencaMedia)}</td><td class="num">{media1(g.projetosMedio)}</td></tr>)}</tbody>
+                </table>
+              </div>
+              <p class="nota">Partido com poucos {quem} tem média que muda muito por causa de uma só pessoa. Quem assumiu no meio do mandato (suplente) teve menos tempo para gastar e propor. O partido é o atual de cada um.</p>
+            </details>
+            <details class="grupos">
+              <summary>Médias por estado (ordem alfabética)</summary>
+              <div class="rolagem">
+                <table>
+                  <thead><tr><th>Estado</th><th>{quem[0]!.toUpperCase() + quem.slice(1)}</th><th>Gasto médio</th><th>Presença média</th><th>Projetos de lei criados (média)</th></tr></thead>
+                  <tbody>{c.porEstado.map((g) => <tr><td><a href={`/uf/${g.nome.toLowerCase()}/`}>{UFS[g.nome] ?? g.nome}</a></td><td class="num">{g.parlamentares}</td><td class="num">{formatarMoedaCurta(g.gastoMedio ?? 0)}</td><td class="num">{pct(g.presencaMedia)}</td><td class="num">{media1(g.projetosMedio)}</td></tr>)}</tbody>
+                </table>
+              </div>
+              <p class="nota">A cota muda por estado: quem mora mais longe de Brasília tem direito a gastar mais com passagens.</p>
+            </details>
+          </section>
+        ))}
+        <p class="fonte">Fonte: Câmara dos Deputados e Senado Federal (dados abertos). Só os parlamentares no cargo hoje, de 2023 até agora. Dados de {dataBr(meta.atualizadoEm)}. <a href="/como-funciona/">Como contamos</a>.</p>
+      </>
+    )}
+  </div>
+</Base>
+<style is:global>
+  .pagina-panorama .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
+  .pagina-panorama h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.4rem, 6vw, 3.8rem); line-height: 1; margin: 0 0 0.6rem; color: var(--dado); }
+  .pagina-panorama .intro { max-width: 62ch; font-size: 1.1rem; color: var(--tinta-suave); }
+  .pagina-panorama .abas { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 1.5rem 0; position: sticky; top: 0; z-index: 2; background: var(--fundo); padding: 0.6rem 0; }
+  .pagina-panorama .abas a { padding: 0.5rem 1rem; border: 2px solid var(--dado); border-radius: 999px; font-weight: 700; text-decoration: none; color: var(--dado); }
+  .pagina-panorama .casa { margin: 2rem 0 3rem; scroll-margin-top: 4rem; }
+  .pagina-panorama h2 { font-family: var(--numeros); font-stretch: 85%; font-weight: 800; font-size: 1.9rem; margin: 0 0 1rem; }
+  .pagina-panorama h2 span { display: block; font-family: inherit; font-size: 1rem; font-weight: 600; color: var(--grafite); font-stretch: 100%; }
+  .pagina-panorama .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; }
+  .pagina-panorama .cartao { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 0.8rem; min-width: 0; }
+  .pagina-panorama .cartao.largo { grid-column: 1 / -1; }
+  .pagina-panorama .cartao p { margin: 0; }
+  .pagina-panorama h3 { display: flex; align-items: center; gap: 0.6rem; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.25rem; margin: 0; }
+  .pagina-panorama h4 { margin: 0.4rem 0 0; font-size: 1rem; }
+  .pagina-panorama .selo { display: inline-grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--dado); color: var(--folha); flex: none; }
+  .pagina-panorama .selo :global(svg), .pagina-panorama .selo svg { width: 1.2rem; height: 1.2rem; }
+  .pagina-panorama .destaque { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.6rem; }
+  .pagina-panorama .destaque strong { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: 2.4rem; line-height: 1; color: var(--dado); }
+  .pagina-panorama .destaque span { color: var(--tinta-suave); }
+  .pagina-panorama .nota { font-size: 0.85rem; color: var(--grafite); }
+  .pagina-panorama table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .pagina-panorama th, .pagina-panorama td { text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--linha); }
+  .pagina-panorama td.num, .pagina-panorama th:not(:first-child) { text-align: right; white-space: nowrap; }
+  .pagina-panorama details summary { cursor: pointer; font-weight: 700; color: var(--dado); padding: 0.3rem 0; }
+  .pagina-panorama .grupos { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 0.9rem 1.2rem; margin-top: 1rem; }
+  .pagina-panorama .rolagem { overflow-x: auto; }
+  .pagina-panorama .apertadas { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.7rem; }
+  .pagina-panorama .apertadas li { display: grid; grid-template-columns: 1fr auto; gap: 0.15rem 1rem; border-bottom: 1px dashed var(--linha); padding-bottom: 0.6rem; }
+  .pagina-panorama .apertadas a { font-weight: 700; }
+  .pagina-panorama .placar { font-weight: 700; white-space: nowrap; }
+  .pagina-panorama .apertadas .ementa { grid-column: 1 / -1; color: var(--tinta-suave); font-size: 0.9rem; }
+  .pagina-panorama .fonte { margin: 1rem 0 3rem; color: var(--grafite); font-size: 0.85rem; }
+  .pagina-panorama .vazio { color: var(--grafite); }
+</style>

@@ -43,7 +43,7 @@ jobs:
           git clone -q --depth 1 --filter=blob:none --sparse --branch data \
             "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" dados
           cd dados
-          git sparse-checkout set --no-cone '/resumo/' '/votos/' '/projetos/' '/medias.json' '/meta.json' '/parlamentares.json'
+          git sparse-checkout set --no-cone '/resumo/' '/votos/' '/projetos/' '/medias.json' '/panorama.json' '/meta.json' '/parlamentares.json'
           echo "Perfis: $(ls resumo | wc -l)"
 
       - name: Criar o projeto na Cloudflare (só na primeira vez)

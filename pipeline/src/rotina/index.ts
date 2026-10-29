@@ -13,6 +13,7 @@ import type { DespesaInvalida } from "../modelo/despesa.js";
 import type { Presenca, ResumoPresencaCamara } from "../modelo/votacao.js";
 import { agregar, type Dados } from "./agregacao.js";
 import { agruparPorProjeto } from "./votos-por-projeto.js";
+import { montarPanorama } from "./panorama.js";
 import { ErroTrava, verificarQuedas, type Contagens } from "./trava.js";
 import { gravarMetricas } from "../monitoramento/metricas.js";
 import {
@@ -249,6 +250,16 @@ export async function executarRotina(
   for (const [k, v] of Object.entries(exp.contagem)) contagens[`explicacoes-${k}`] = v;
   for (const p of exp.projetos) arquivos.set(`projetos/${p.id}.json`, p);
   arquivos.set("medias.json", agg.medias);
+  const panorama = await etapa("panorama", async () =>
+    montarPanorama({
+      resumos: agg.resumos,
+      despesas: gastos.validas,
+      proposicoes,
+      votacoes: vot.votacoes,
+      votos: vot.votos,
+    }),
+  );
+  arquivos.set("panorama.json", panorama);
 
   // Impressão digital do conteúdo (sem horário de coleta): igual à anterior = nada mudou (CA3)
   const hash = createHash("sha256");
