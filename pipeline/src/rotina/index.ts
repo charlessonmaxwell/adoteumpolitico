@@ -15,6 +15,13 @@ import { agregar, type Dados } from "./agregacao.js";
 import { agruparPorProjeto } from "./votos-por-projeto.js";
 import { ErroTrava, verificarQuedas, type Contagens } from "./trava.js";
 import { gravarMetricas } from "../monitoramento/metricas.js";
+import {
+  chamarIAReal,
+  explicarProjetos,
+  textoCompletoCamara,
+  type ChamarIA,
+  type ProjetoComExplicacao,
+} from "../explicacao/index.js";
 
 /** Coletores injetáveis (testes usam versões simuladas). */
 export interface Coletores {
@@ -67,6 +74,9 @@ export interface OpcoesRotina {
   coletores?: Coletores;
   agora?: () => Date;
   log?: (msg: string) => void;
+  /** IA para a explicação popular dos projetos; null/ausente = só moldes fixos e reaproveitamento. */
+  ia?: ChamarIA | null;
+  textoCompleto?: (id: string) => Promise<string | null>;
 }
 
 export class ErroEtapa extends Error {
@@ -223,7 +233,21 @@ export async function executarRotina(
   const atuais = new Set(parlamentares.map((p) => p.id));
   for (const [id, lista] of vp.porParlamentar)
     if (atuais.has(id)) arquivos.set(`votos/${id}.json`, lista);
-  for (const p of vp.projetos) arquivos.set(`projetos/${p.id}.json`, p);
+  const exp = await etapa("explicacoes", async () => {
+    const anteriores = new Map<string, ProjetoComExplicacao>();
+    for (const p of vp.projetos) {
+      const a = await lerJson<ProjetoComExplicacao>(join(o.anterior, "projetos", `${p.id}.json`));
+      if (a) anteriores.set(p.id, a);
+    }
+    return explicarProjetos(vp.projetos, {
+      anteriores,
+      ia: o.ia ?? null,
+      textoCompleto: o.textoCompleto,
+      log,
+    });
+  });
+  for (const [k, v] of Object.entries(exp.contagem)) contagens[`explicacoes-${k}`] = v;
+  for (const p of exp.projetos) arquivos.set(`projetos/${p.id}.json`, p);
   arquivos.set("medias.json", agg.medias);
 
   // Impressão digital do conteúdo (sem horário de coleta): igual à anterior = nada mudou (CA3)
@@ -284,7 +308,13 @@ async function main() {
   const total = () => Math.round((Date.now() - inicio) / 1000);
   try {
     const ignorarTrava = process.env.IGNORAR_TRAVA === "true";
-    const { meta, mudou, duracoes } = await executarRotina({ anterior, saida, ignorarTrava });
+    const { meta, mudou, duracoes } = await executarRotina({
+      anterior,
+      saida,
+      ignorarTrava,
+      ia: process.env.ANTHROPIC_API_KEY ? chamarIAReal(process.env.ANTHROPIC_API_KEY) : null,
+      textoCompleto: textoCompletoCamara,
+    });
     console.log(
       `OK: ${Object.keys(meta.contagens).length} contagens; ${mudou ? "houve mudança" : "sem mudança"}`,
     );

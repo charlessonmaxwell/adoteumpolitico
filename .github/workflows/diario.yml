@@ -43,6 +43,7 @@ jobs:
         id: rotina
         env:
           IGNORAR_TRAVA: ${{ github.event.inputs.ignorar_trava == 'true' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: NODE_OPTIONS=--max-old-space-size=6144 pnpm rotina publicado saida
 
       - name: Publicar na branch data

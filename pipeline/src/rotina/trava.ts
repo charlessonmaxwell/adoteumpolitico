@@ -18,7 +18,8 @@ export function verificarQuedas(anterior: Contagens | null, atual: Contagens): Q
   if (!anterior) return [];
   const quedas: Queda[] = [];
   for (const [chave, antes] of Object.entries(anterior)) {
-    if (antes <= 0) continue;
+    // Contagens de explicações variam de propósito (reaproveitadas × novas): não são volume de fonte
+    if (antes <= 0 || chave.startsWith("explicacoes-")) continue;
     const agora = atual[chave] ?? 0;
     const queda = (antes - agora) / antes;
     if (queda > QUEDA_MAXIMA) quedas.push({ chave, anterior: antes, atual: agora, queda });
