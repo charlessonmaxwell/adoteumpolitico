@@ -18,4 +18,8 @@ export const RESULTADO = (r: "aprovada" | "rejeitada" | null) =>
   r === "aprovada" ? "Aprovado" : r === "rejeitada" ? "Rejeitado" : "Resultado não informado";
 
 /** Tira o placar ("Sim: 320; Não: 67...") da descrição: ele aparece em separado. */
-export const semPlacar = (d: string) => d.replace(/\s*Sim:\s*\d+.*$/i, "").replace(/\.$/, "").trim() || d;
+export const semPlacar = (d: string) =>
+  d
+    .replace(/\s*Sim:\s*\d+.*$/i, "")
+    .replace(/\.$/, "")
+    .trim() || d;

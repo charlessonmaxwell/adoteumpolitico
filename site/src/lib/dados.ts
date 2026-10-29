@@ -4,7 +4,10 @@ import type { ResumoParlamentar } from "../../../pipeline/src/rotina/agregacao.j
 import type { Meta } from "../../../pipeline/src/rotina/index.js";
 import type { Parlamentar } from "../../../pipeline/src/modelo/parlamentar.js";
 import type { Medias } from "./frases.js";
-import type { ProjetoVotado, VotoEmProjeto } from "../../../pipeline/src/rotina/votos-por-projeto.js";
+import type {
+  ProjetoVotado,
+  VotoEmProjeto,
+} from "../../../pipeline/src/rotina/votos-por-projeto.js";
 
 /** Pasta com a publicação da branch `data`. Sem ela, usa os dados simulados (desenvolvimento e CI). */
 const DIR = resolve(process.env.DADOS_DIR ?? "site/fixtures");
