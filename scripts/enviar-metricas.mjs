@@ -1,4 +1,4 @@
-/* global fetch, Buffer, AbortSignal, process, console */
+/* global fetch, Buffer, AbortSignal */
 // Envia metricas.json ao Grafana Cloud (protocolo Influx). Nunca falha o workflow:
 // sem configuração ou com erro de rede, só registra um aviso.
 // Uso: node scripts/enviar-metricas.mjs [metricas.json]
