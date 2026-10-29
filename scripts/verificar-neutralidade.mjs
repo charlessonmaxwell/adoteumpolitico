@@ -1,5 +1,6 @@
 // Story 2.2, CA2: nenhum texto com nota, ranking ou adjetivo sobre o parlamentar.
-// Roda no CI sobre o site gerado.
+// Roda no CI sobre o site gerado. Verifica as páginas que falam de parlamentares (perfil e estado);
+// as páginas institucionais declaram a política do site ("sem nota, sem ranking") e ficam de fora.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -29,7 +30,8 @@ function andar(d) {
     else if (c.endsWith(".html")) arquivos.push(c);
   }
 }
-andar(process.argv[2] ?? "site/dist");
+const raiz = process.argv[2] ?? "site/dist";
+for (const sub of ["p", "uf"]) andar(join(raiz, sub));
 
 const erros = [];
 for (const a of arquivos) {
