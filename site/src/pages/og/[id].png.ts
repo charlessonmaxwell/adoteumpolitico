@@ -4,7 +4,10 @@ import { pelaUf } from "../../lib/formato";
 import { fotoComoDataUri, imagemPerfil } from "../../lib/og";
 
 export function getStaticPaths() {
-  return dados().resumos.map((r) => ({ params: { id: r.parlamentar.id }, props: { p: r.parlamentar } }));
+  return dados().resumos.map((r) => ({
+    params: { id: r.parlamentar.id },
+    props: { p: r.parlamentar },
+  }));
 }
 
 export const GET: APIRoute = async ({ props }) => {
