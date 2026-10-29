@@ -3,6 +3,7 @@ import { BASE_SENADO } from "./senado.js";
 import { idParlamentar, type Parlamentar } from "../modelo/parlamentar.js";
 import type { Licenca, Presenca, ValorVoto, Votacao, Voto } from "../modelo/votacao.js";
 import { limparTexto } from "./proposicoes-camara.js";
+import { categorizarVotacao } from "./categoria-votacao.js";
 
 /** Substituto oficial dos endpoints /plenario/lista/votacao e /senador/{cod}/votacoes (descontinuados). */
 export const urlVotacaoSenado = (ano: number) =>
@@ -18,6 +19,8 @@ interface VotacaoSenadoBruta {
   votacaoSecreta?: string;
   resultadoVotacao?: string | null;
   idProcesso?: number | null;
+  identificacao?: string;
+  ementa?: string;
   descricaoVotacao?: string;
   votos?: VotoSenadoBruto[];
 }
@@ -69,6 +72,10 @@ export async function coletarVotacoesSenado(ano: number, opcoes: OpcoesHttp = {}
       resultado:
         v.resultadoVotacao === "A" ? "aprovada" : v.resultadoVotacao === "R" ? "rejeitada" : null,
       idProposicao: v.idProcesso ? `senado-${v.idProcesso}` : null,
+      projeto: v.idProcesso
+        ? { titulo: limparTexto(v.identificacao), ementa: limparTexto(v.ementa) }
+        : null,
+      categoria: categorizarVotacao(String(v.descricaoVotacao ?? "")),
       descricao: limparTexto(v.descricaoVotacao),
       urlFonte: urlVotacaoSenado(ano),
     });

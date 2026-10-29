@@ -12,6 +12,7 @@ import type { Parlamentar } from "../modelo/parlamentar.js";
 import type { DespesaInvalida } from "../modelo/despesa.js";
 import type { Presenca, ResumoPresencaCamara } from "../modelo/votacao.js";
 import { agregar, type Dados } from "./agregacao.js";
+import { agruparPorProjeto } from "./votos-por-projeto.js";
 import { ErroTrava, verificarQuedas, type Contagens } from "./trava.js";
 
 /** Coletores injetáveis (testes usam versões simuladas). */
@@ -181,6 +182,10 @@ export async function executarRotina(o: OpcoesRotina): Promise<{ meta: Meta; mud
     arquivos.set(`presenca/camara-${ano}-resumo.json`, p.resumos);
   }
 
+  contagens["projetos-votados"] = new Set(
+    vot.votacoes.filter((v) => v.tipo !== "simbolica" && v.idProposicao).map((v) => v.idProposicao),
+  ).size;
+
   // Validação: trava contra fonte quebrada
   const metaAnterior = await lerJson<Meta>(join(o.anterior, "meta.json"));
   await etapa("validacao", async () => {
@@ -203,6 +208,15 @@ export async function executarRotina(o: OpcoesRotina): Promise<{ meta: Meta; mud
     }),
   );
   for (const r of agg.resumos) arquivos.set(`resumo/${r.parlamentar.id}.json`, r);
+
+  // Votos por projeto (story 3.1): um arquivo por parlamentar e um por projeto
+  const vp = await etapa("votos-por-projeto", async () =>
+    agruparPorProjeto(vot.votacoes, vot.votos),
+  );
+  const atuais = new Set(parlamentares.map((p) => p.id));
+  for (const [id, lista] of vp.porParlamentar)
+    if (atuais.has(id)) arquivos.set(`votos/${id}.json`, lista);
+  for (const p of vp.projetos) arquivos.set(`projetos/${p.id}.json`, p);
   arquivos.set("medias.json", agg.medias);
 
   // Impressão digital do conteúdo (sem horário de coleta): igual à anterior = nada mudou (CA3)

@@ -1,3 +1,4 @@
+import type { CategoriaVotacao } from "../coleta/categoria-votacao.js";
 import type { Casa } from "./parlamentar.js";
 
 export interface Votacao {
@@ -9,6 +10,9 @@ export interface Votacao {
   resultado: "aprovada" | "rejeitada" | null;
   /** Mesmo formato do id de Proposicao (`camara-<id>` / `senado-<idProcesso>`), quando houver. */
   idProposicao: string | null;
+  /** Identificação e ementa do projeto votado, quando houver (ex.: "PLP 186/2026"). */
+  projeto: { titulo: string; ementa: string } | null;
+  categoria: CategoriaVotacao;
   descricao: string;
   urlFonte: string;
 }

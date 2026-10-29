@@ -2,6 +2,7 @@ import { getJson, type OpcoesHttp } from "../util/http.js";
 import { idParlamentar } from "../modelo/parlamentar.js";
 import type { ValorVoto, Votacao, Voto } from "../modelo/votacao.js";
 import { limparTexto } from "./proposicoes-camara.js";
+import { categorizarVotacao } from "./categoria-votacao.js";
 
 const ARQ = "https://dadosabertos.camara.leg.br/arquivos/";
 export const urlVotacoes = (ano: number) => `${ARQ}votacoes/json/votacoes-${ano}.json`;
@@ -23,7 +24,7 @@ interface VotoBruto {
 }
 interface VotPropBruta {
   idVotacao: string;
-  proposicao_?: { id?: number };
+  proposicao_?: { id?: number; titulo?: string; ementa?: string };
 }
 
 const VOTO: Record<string, ValorVoto> = {
@@ -42,9 +43,16 @@ export async function coletarVotacoesCamara(ano: number, opcoes: OpcoesHttp = {}
   const plenario = vot.filter((v) => v.siglaOrgao === "PLEN");
   const idsPlenario = new Set(plenario.map((v) => v.id));
   const comVoto = new Set(votos.map((v) => v.idVotacao));
-  const prop = new Map<string, number>();
-  for (const x of vp)
-    if (x.proposicao_?.id && !prop.has(x.idVotacao)) prop.set(x.idVotacao, x.proposicao_.id);
+  const prop = new Map<string, { id: number; titulo: string; ementa: string }>();
+  for (const x of vp) {
+    const p = x.proposicao_;
+    if (p?.id && !prop.has(x.idVotacao))
+      prop.set(x.idVotacao, {
+        id: p.id,
+        titulo: limparTexto(p.titulo),
+        ementa: limparTexto(p.ementa),
+      });
+  }
 
   const votacoes: Votacao[] = plenario.map((v) => ({
     id: `camara-${v.id}`,
@@ -52,7 +60,11 @@ export async function coletarVotacoesCamara(ano: number, opcoes: OpcoesHttp = {}
     data: String(v.data ?? "").slice(0, 10),
     tipo: comVoto.has(v.id) ? "nominal" : "simbolica",
     resultado: v.aprovacao === 1 ? "aprovada" : v.aprovacao === 0 ? "rejeitada" : null,
-    idProposicao: prop.has(v.id) ? `camara-${prop.get(v.id)}` : null,
+    idProposicao: prop.has(v.id) ? `camara-${prop.get(v.id)!.id}` : null,
+    projeto: prop.has(v.id)
+      ? { titulo: prop.get(v.id)!.titulo, ementa: prop.get(v.id)!.ementa }
+      : null,
+    categoria: categorizarVotacao(String(v.descricao ?? "")),
     descricao: limparTexto(v.descricao),
     urlFonte: `https://dadosabertos.camara.leg.br/api/v2/votacoes/${v.id}`,
   }));
