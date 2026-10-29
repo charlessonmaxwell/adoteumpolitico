@@ -51,7 +51,14 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           [ -n "$CLOUDFLARE_API_TOKEN" ] || { echo "::error::Secret CLOUDFLARE_API_TOKEN não cadastrado" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
-          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || { echo "::error::Secret CLOUDFLARE_ACCOUNT_ID não cadastrado" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            # Sem o secret: descobre a conta pelo próprio token (o ID não é sigiloso, mas fica mascarado)
+            CLOUDFLARE_ACCOUNT_ID=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" https://api.cloudflare.com/client/v4/accounts | jq -r '.result[0].id // empty')
+            [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || { echo "::error::Não foi possível descobrir a conta pelo token. Cadastre o secret CLOUDFLARE_ACCOUNT_ID."; exit 1; }
+            echo "::notice::Account ID descoberto pelo token"
+          fi
+          echo "::add-mask::$CLOUDFLARE_ACCOUNT_ID"
+          echo "CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID" >> "$GITHUB_ENV"
           # Diagnóstico seguro: mostra só se o token é válido, nunca o valor
           V=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" https://api.cloudflare.com/client/v4/user/tokens/verify | jq -c '{success, status: .result.status, errors: [.errors[]?.message]}')
           echo "::notice::Token: $V"
@@ -62,7 +69,7 @@ jobs:
         id: endereco
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || env.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           R=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJETO")
@@ -87,7 +94,7 @@ jobs:
       - name: Publicar na Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || env.CLOUDFLARE_ACCOUNT_ID }}
         run: pnpm dlx wrangler@4 pages deploy site/dist --project-name "$PROJETO" --branch main --commit-dirty=true
 
       - name: Resumo
