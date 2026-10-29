@@ -1,6 +1,6 @@
 # Rastreio de Emendas Parlamentares
 
-Status: **proposta** (aguardando aprovação). Fontes marcadas "a confirmar" dependem do spike E0.
+Status: **aprovada** em 29/10/2026 (atualização quinzenal). Fontes marcadas "a confirmar" dependem do spike E0.
 
 ## Objetivo
 Responder, com dados oficiais e sem nota/ranking:
@@ -28,7 +28,7 @@ flowchart LR
     TG[Transferegov<br/>plano de ação, relatório, convênio]
     IBGE[IBGE<br/>municípios]
   end
-  subgraph Rotina semanal - GitHub Actions
+  subgraph Rotina quinzenal - GitHub Actions
     C[Coleta<br/>zip/CSV e API] --> V[Validação<br/>trava -30%, sem CPF]
     V --> L[Ligação do autor<br/>nome/código → parlamentar]
     L --> N[Normalização<br/>modelo Emenda]
@@ -44,7 +44,7 @@ flowchart LR
 ```
 
 ## Frequência
-**Semanal** (domingo, depois da presença). Execução orçamentária muda devagar e os arquivos da CGU são grandes; diário não acrescenta informação. A rotina diária só lê o resultado mais recente.
+**Quinzenal** (decisão do produto): dias 1 e 15 de cada mês, de manhã cedo (o cron do GitHub não tem "a cada 2 semanas" exato). Execução orçamentária muda devagar e os arquivos da CGU são grandes. A rotina diária só lê o resultado mais recente; a página mostra "dados de emendas de DD/MM".
 
 ## Modelo de dados
 ```ts
@@ -104,13 +104,13 @@ Os CSVs brutos não são guardados (são re-baixáveis), como no resto do pipeli
 - Valor de ano corrente sempre com aviso "ano em andamento".
 
 ## Custo
-R$ 0: fontes públicas gratuitas; rotina no GitHub Actions (repositório público); páginas estáticas na Cloudflare. Impacto só no tempo da rotina semanal (estimativa a medir no E0).
+R$ 0: fontes públicas gratuitas; rotina no GitHub Actions (repositório público); páginas estáticas na Cloudflare. Impacto só no tempo da rotina quinzenal (estimativa a medir no E0).
 
 ## Riscos
 | Risco | Mitigação |
 |---|---|
 | Formato/URL da CGU muda | Spike E0 documenta; coletor com teste por fixture; trava |
-| Download grande ou bloqueado no Actions | Medir no E0; se preciso, só os anos 2023+ e cache semanal |
+| Download grande ou bloqueado no Actions | Medir no E0; se preciso, só os anos 2023+ e cache |
 | Autor ligado errado | Ligação conservadora + revisão manual + meta de 99% |
 | Dado do Transferegov incompleto | Mostrar "não informado" separado de "não prestou contas" |
 | Leitura enviesada ("quem mandou mais") | Sem ranking; mostrar sempre etapa e destino |

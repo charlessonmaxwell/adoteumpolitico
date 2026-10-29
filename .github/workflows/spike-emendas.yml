@@ -1,0 +1,82 @@
+name: Spike das fontes de emendas (E0)
+# Uso único/manual: baixa cada fonte e grava um resumo na branch spike-emendas (sem guardar os dados).
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  spike:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Portal da Transparência (CGU) — emendas
+        run: |
+          mkdir -p r cgu && R=r/resultado.md
+          echo "# Spike das fontes de emendas — $(date -u +%FT%TZ)" > $R
+          echo "## CGU" >> $R
+          for u in "https://portaldatransparencia.gov.br/download-de-dados/emendas-parlamentares/UNICO"; do
+            echo "### $u" >> $R
+            curl -sSL -A "Mozilla/5.0 adoteumpolitico" -o cgu/emendas.zip -w 'http=%{http_code} tamanho=%{size_download} final=%{url_effective} tipo=%{content_type}\n' "$u" >> $R 2>&1 || echo "falhou: $?" >> $R
+          done
+          if unzip -o -q cgu/emendas.zip -d cgu 2>>$R; then
+            for f in cgu/*.csv; do
+              echo "#### $(basename "$f") — $(wc -l < "$f") linhas, $(du -h "$f" | cut -f1)" >> $R
+              echo '```' >> $R
+              head -c 1500 "$f" | iconv -f latin1 -t utf-8 >> $R
+              echo >> $R; echo '```' >> $R
+            done
+          else
+            echo "Não é zip. Início do corpo:" >> $R; echo '```' >> $R; head -c 1200 cgu/emendas.zip >> $R; echo; echo '```' >> $R
+          fi
+      - name: Resumo da CGU por ano e tipo
+        run: |
+          python3 - <<'PY' >> r/resultado.md 2>&1 || true
+          import csv, glob, collections, io
+          for f in glob.glob("cgu/*.csv"):
+              rd = csv.DictReader(io.open(f, encoding="latin1"), delimiter=";")
+              cab = rd.fieldnames or []
+              print(f"\n### Colunas de {f}\n", ", ".join(cab))
+              ano = next((c for c in cab if "Ano" in c), None)
+              tipo = next((c for c in cab if "Tipo" in c and "Emenda" in c), None)
+              autor = next((c for c in cab if "Nome do Autor" in c or c.lower().startswith("autor")), None)
+              cont = collections.Counter(); autores = collections.Counter(); n = 0
+              for row in rd:
+                  n += 1
+                  cont[(row.get(ano), row.get(tipo))] += 1
+                  if autor and row.get(ano, "0") >= "2023": autores[row.get(autor)] += 1
+              print(f"\nLinhas: {n}\n")
+              for (a, t), c in sorted(cont.items(), key=lambda x: str(x[0]))[-30:]: print(f"- {a} | {t}: {c}")
+              print(f"\nAutores distintos desde 2023: {len(autores)}; exemplos: {list(autores)[:15]}")
+          PY
+      - name: Transferegov (API pública) — emendas Pix
+        run: |
+          R=r/resultado.md; echo "## Transferegov" >> $R
+          B=https://api-publica.transferegov.gestao.gov.br
+          for p in especiais/openapi.json especiais/docs; do
+            echo "### $B/$p" >> $R
+            curl -sSL -o tg.out -w 'http=%{http_code} tamanho=%{size_download} tipo=%{content_type}\n' "$B/$p" >> $R 2>&1 || echo "falhou" >> $R
+          done
+          python3 - <<'PY' >> $R 2>&1 || true
+          import json
+          try:
+              d = json.load(open("tg.out")) if open("tg.out").read(1) == "{" else None
+          except Exception as e:
+              d = None; print("openapi não lido:", e)
+          if d:
+              print("Caminhos:", ", ".join(sorted(d.get("paths", {}).keys())[:60]))
+          PY
+          for t in plano_acao_especial relatorio_gestao_especial empenho_especial executor_especial; do
+            echo "### amostra $t" >> $R; echo '```' >> $R
+            curl -sS "$B/especiais/$t?limit=2" | head -c 1500 >> $R 2>&1; echo >> $R; echo '```' >> $R
+          done
+      - name: IBGE municípios
+        run: |
+          R=r/resultado.md; echo "## IBGE" >> $R
+          curl -sS https://servicodados.ibge.gov.br/api/v1/localidades/municipios | python3 -c "import json,sys; d=json.load(sys.stdin); print('municípios:', len(d))" >> $R 2>&1 || echo falhou >> $R
+      - name: Gravar resultado na branch spike-emendas
+        if: always()
+        run: |
+          cd r && git init -q && git checkout -q -b spike-emendas
+          git config user.name "rotina" && git config user.email "rotina@users.noreply.github.com"
+          git add resultado.md && git commit -qm "Resultado do spike de emendas"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" spike-emendas
+          echo "::notice::Resultado gravado na branch spike-emendas ($(wc -c < resultado.md) bytes)"
