@@ -30,8 +30,11 @@ interface AutorBruto {
 }
 
 const num = (v: unknown) => (Number.isFinite(Number(v)) && v !== "" ? Number(v) : null);
+/** Espaços normalizados e sem CPF (ementas às vezes trazem "CPF nº 000.000.000-00"). */
 export const limparTexto = (s: unknown) =>
   String(s ?? "")
+    .replace(/,?\s*CPF\s*(?:n[ºo°.]*\s*)?:?\s*\d{3}\.\d{3}\.\d{3}-\d{2}/gi, "")
+    .replace(/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/g, "")
     .replace(/\s+/g, " ")
     .trim();
 

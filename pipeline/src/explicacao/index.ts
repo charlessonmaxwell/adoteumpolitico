@@ -25,14 +25,20 @@ const sigla = (titulo: string) => titulo.split(" ")[0]?.toUpperCase() ?? "";
 
 /** Nome e cargo em indicações ("o nome do Senhor FULANO ..., para exercer o cargo de X"). */
 function indicacao(ementa: string): { nome: string; cargo: string } | null {
-  const nome = /(?:Senhora?|Sr\.?|Sra\.?)\s+([A-ZÀ-Ý][A-ZÀ-Ý\s.'-]+[A-ZÀ-Ý])/.exec(ementa)?.[1];
-  const cargo =
-    /para (?:exercer o cargo de|compor o|compor a|ocupar o cargo de|exercer a função de)\s+([^,;]+?)(?:,|\.|;| na vaga|$)/i.exec(
+  const nome =
+    /(?:Senhora?|Sr\.?|Sra\.?|General de Exército)\s+([A-ZÀ-Ý][\p{L}.'-]*(?:\s+(?:de|da|do|das|dos|e|[A-ZÀ-Ý][\p{L}.'-]*))*)/u.exec(
       ementa,
     )?.[1];
+  const m =
+    /para (exercer o cargo de|o cargo de|compor o|compor a|ocupar o cargo de|exercer a função de)\s+([^,;]+?)(?:,|\.|;| na vaga| nos termos|$)/i.exec(
+      ementa,
+    );
+  const artigo = m?.[1]?.toLowerCase().startsWith("compor") ? `${m[1].slice(-1)} ` : "";
+  const cargo = m?.[2] ? artigo + m[2].replace(/\s+e$/, "") : undefined;
   if (!nome) return null;
   const nomeBonito = nome
     .trim()
+    .replace(/\s+(de|da|do|das|dos|e)$/i, "")
     .toLowerCase()
     .replace(/(^|\s)(\p{L})/gu, (_, e: string, l: string) => e + l.toUpperCase())
     .replace(/ (De|Da|Do|Das|Dos|E) /g, (m) => m.toLowerCase());
@@ -49,7 +55,12 @@ export function moldeFixo(p: Pick<ProjetoVotado, "titulo" | "ementa" | "casa">):
   ) {
     const i = indicacao(p.ementa);
     if (!i) return null;
-    return `${quem} votaram a indicação de ${i.nome} para ${i.cargo}. Quem indica é o presidente da República (ou outro órgão), mas o Senado precisa aprovar.`;
+    return `${quem} votaram a indicação de ${i.nome} para ${i.cargo}. A indicação vem de fora do Senado (do presidente da República ou de outro órgão), mas o Senado precisa aprovar.`;
+  }
+  if (s === "PDL" && /^escolhe (o|a) senhora?/i.test(p.ementa)) {
+    const i = indicacao(p.ementa);
+    if (!i) return null;
+    return `${quem} votaram a escolha de ${i.nome} para ${i.cargo}. Essa vaga é indicada pelo Congresso.`;
   }
   if (["REQ", "RQS"].includes(s)) {
     const alvo =
@@ -73,8 +84,9 @@ export function moldeFixo(p: Pick<ProjetoVotado, "titulo" | "ementa" | "casa">):
 export const ementaVaga = (ementa: string) =>
   ementa.length < 90 && /^altera\b/i.test(ementa.trim());
 
+// Palavras de opinião, só em minúscula e como palavra inteira ("Boa Vista" e "Bombeiros" passam)
 const PROIBIDAS =
-  /\b(bom|boa|ruim|polêmic|absurd|important|excelente|péssim|vergonh|histórico|injust|justo)\w*/i;
+  /(?<![\p{L}])(bom|boa|ruim|polêmic[oa]s?|absurd[oa]s?|important(e|es|íssim[oa])|excelente|péssim[oa]|vergonh\p{L}*|histórico|injust[oa])(?![\p{L}])/u;
 
 export const PROMPT = `Você explica projetos de lei do Congresso brasileiro para o povo, em português simples.
 Regras:

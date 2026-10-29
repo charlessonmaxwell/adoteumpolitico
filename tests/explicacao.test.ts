@@ -63,6 +63,9 @@ describe("explicação popular — moldes fixos", () => {
     );
     expect(validarExplicacao("SEM_INFORMACAO")).toBeNull();
     expect(validarExplicacao("Um projeto importante para o país.")).toBeNull();
+    expect(
+      validarExplicacao("Inclui Pacaraima na área de Boa Vista e ajuda os Bombeiros."),
+    ).not.toBeNull();
     expect(validarExplicacao(" Cria um programa  para reduzir a fila do INSS. ")).toBe(
       "Cria um programa para reduzir a fila do INSS.",
     );
@@ -106,5 +109,17 @@ describe("explicação popular — orquestração", () => {
     });
     expect(r.projetos[0]!.explicacao).toBeUndefined();
     expect(r.contagem.pendentes).toBe(1);
+  });
+});
+
+import { limparTexto } from "../pipeline/src/coleta/proposicoes-camara.js";
+describe("ementas sem CPF", () => {
+  it("remove CPF escrito no texto oficial", () => {
+    expect(
+      limparTexto(
+        "a prisão de FULANO (Deputado Federal pelo Rio de Janeiro, CPF no 750.100.207-00), por mim",
+      ),
+    ).toBe("a prisão de FULANO (Deputado Federal pelo Rio de Janeiro), por mim");
+    expect(limparTexto("Fornecedor 123.456.789-00 ok")).toBe("Fornecedor ok");
   });
 });
