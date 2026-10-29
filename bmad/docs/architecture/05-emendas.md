@@ -122,3 +122,25 @@ R$ 0: fontes públicas gratuitas; rotina no GitHub Actions (repositório públic
 4. **E1.3** Agregação + bloco no perfil + panorama.
 5. **E2.1** Favorecidos + página da cidade.
 6. **E3.1** Prestação de contas (Pix) e convênios.
+
+## Resultado do spike E0 (29/10/2026)
+Rodado pelo GitHub Actions (workflow `spike-emendas.yml`; resumo completo na branch `spike-emendas`).
+
+**CGU — Portal da Transparência: ✅ confirmada.** Um zip único de 32 MB (`dadosabertos-download.cgu.gov.br/.../EmendasParlamentares.zip`), CSV `;` em latin1, valores com vírgula, com três arquivos:
+| Arquivo | Linhas | Uso |
+|---|---|---|
+| `EmendasParlamentares.csv` (46 MB) | 94.761 (2014→2026; ~23 mil desde 2023) | E1: autor (código + nome), tipo, **código IBGE do município**, UF, função/subfunção, empenhado, liquidado, pago, restos a pagar |
+| `EmendasParlamentares_PorFavorecido.csv` (175 MB) | 828.546 | E2: favorecido (CNPJ/nome, natureza jurídica, **tipo pessoa física/jurídica**), UF/município, valor recebido por mês |
+| `EmendasParlamentares_Convenios.csv` (25 MB) | 85.403 | E3: convenente, objeto, número e valor do convênio |
+- Tipos: Individual (finalidade definida), **Individual – Transferências Especiais (Pix)**, Bancada, Comissão, Relator.
+- Autor vem com **código** (ex.: 1775) e **nome em maiúsculas sem acento** (ex.: "JANDIRA FEGHALI"); 967 autores distintos desde 2023 (inclui ex-parlamentares e bancadas). Ligação por nome normalizado + de/para manual.
+- Favorecido pessoa física é descartado (regra de não guardar dado pessoal).
+- **IBGE não é necessário:** o CSV já traz o código do município.
+
+**Transferegov — API pública `api-publica.transferegov.gestao.gov.br/especiais`: ✅ confirmada (com instabilidade).** 23 tabelas, paginadas (`?limit=`), atualizadas diariamente. As úteis para E3:
+- `planos-acao-especiais` (situação do plano de ação, ano), `executores-especiais` (CNPJ do município, **objeto**, valores), `meta-especiais` (metas físicas), `relatorios-gestao-novos-especiais` (**valor executado × pendente, situação do relatório**), `finalidade-especiais` (área), `beneficiarios-especiais`.
+- 3 tabelas responderam 502 no teste (relatórios de gestão antigos e saldo de conta): a coleta precisa de retentativa e tolerar ausência.
+- Algumas tabelas trazem CPF mascarado de servidores (`***.561.069-**`): esses campos **nunca** são guardados.
+- A chave de ligação plano de ação ↔ código da emenda será confirmada no início do E3.
+
+**Decisão:** seguir para E1 como desenhado. Download completo cabe na rotina quinzenal (zip de 32 MB).
