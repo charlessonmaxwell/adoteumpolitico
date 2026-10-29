@@ -141,7 +141,10 @@ export async function executarRotina(o: OpcoesRotina): Promise<{ meta: Meta; mud
     contagens[`despesas/${k}`] = l.length;
   }
   arquivos.set("qualidade/despesas-invalidas.json", gastos.invalidas);
-  for (const [k, l] of porCasaAno(proposicoes, (x) => x.ano)) {
+  // Pareceres e emendas da Câmara vêm com ano 0: usa o ano de apresentação
+  const anoProposicao = (x: (typeof proposicoes)[number]) =>
+    x.ano || (x.dataApresentacao ? Number(x.dataApresentacao.slice(0, 4)) : null);
+  for (const [k, l] of porCasaAno(proposicoes, anoProposicao)) {
     arquivos.set(`proposicoes/${k}.json`, l);
     contagens[`proposicoes/${k}`] = l.length;
   }
