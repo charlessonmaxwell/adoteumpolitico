@@ -13,7 +13,7 @@
 | 2.1 | Buscar parlamentar | 2 | 2.0 | Concluída |
 | 2.2 | Página de perfil | 2 | 2.0 | Concluída |
 | 2.3 | Textos em linguagem popular | 2 | 2.2 | Concluída |
-| 2.4 | Compartilhar perfil | 2 | 2.2 | Em andamento (botões prontos; falta imagem de prévia) |
+| 2.4 | Compartilhar perfil | 2 | 2.2 | Concluída |
 | 2.5 | Medição de visitas | 2 | 2.6 | Pronta |
 | 2.6 | Publicação | 2 | 2.1–2.4 | Pronta |
 
