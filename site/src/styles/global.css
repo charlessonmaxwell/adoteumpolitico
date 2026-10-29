@@ -79,3 +79,45 @@ summary,
 th {
   font-weight: 600;
 }
+
+/* Paletas em avaliação (escolha do usuário). A padrão é a do :root. */
+[data-tema="petroleo"] {
+  --papel: #eef2f1;
+  --linha: #d3dcda;
+  --trilho: #e2e8e6;
+  --dado: #0e6b73;
+  --dado-claro: #8cc7cb;
+  --dado-fundo: #dcefef;
+  --acento-texto: #0b5a61;
+  --justificada: #b9dcde;
+  --falta: #a8650a;
+  --foco: #0e6b73;
+}
+[data-tema="framboesa"] {
+  --papel: #f5f2f3;
+  --linha: #e0d8db;
+  --trilho: #ece6e8;
+  --dado: #9e2a6b;
+  --dado-claro: #e0a6c6;
+  --dado-fundo: #f6e3ee;
+  --acento-texto: #8a215c;
+  --justificada: #ecc8dc;
+  --falta: #9a6b00;
+  --foco: #9e2a6b;
+}
+[data-tema="noturno"] {
+  --papel: #14161b;
+  --folha: #1d2027;
+  --tinta: #eceef1;
+  --tinta-suave: #c3c8cf;
+  --grafite: #9aa3ad;
+  --linha: #333844;
+  --trilho: #2a2e37;
+  --dado: #a294ff;
+  --dado-claro: #5d539c;
+  --dado-fundo: #2c2850;
+  --acento-texto: #b9aeff;
+  --justificada: #4b4578;
+  --falta: #e3a43a;
+  --foco: #a294ff;
+}
