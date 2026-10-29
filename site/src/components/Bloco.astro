@@ -1,20 +1,26 @@
 ---
-/** Bloco do perfil: frase → gráfico → "ver os números" → fonte. */
+/** Bloco do perfil: ícone + pergunta → destaque → frase → gráfico → "ver os números" → fonte. */
+import Icone from "./Icone.astro";
 interface Props {
   titulo: string;
+  icone: "calendario" | "dinheiro" | "documento" | "urna";
+  destaque?: { valor: string; rotulo: string } | null;
   principal: string | null;
   detalhes?: string[];
   vazio?: string;
   fonte: { nome: string; url: string };
   atualizadoEm: string;
 }
-const { titulo, principal, detalhes = [], vazio, fonte, atualizadoEm } = Astro.props;
+const { titulo, icone, destaque, principal, detalhes = [], vazio, fonte, atualizadoEm } = Astro.props;
 const id = titulo.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\W+/g, "-");
 ---
 <section class="bloco" aria-labelledby={id}>
-  <h2 id={id}>{titulo}</h2>
+  <h2 id={id}><span class="selo"><Icone nome={icone} /></span>{titulo}</h2>
   {principal ? (
     <>
+      {destaque && (
+        <p class="destaque"><strong>{destaque.valor}</strong> <span>{destaque.rotulo}</span></p>
+      )}
       <p class="principal">{principal}</p>
       {detalhes.length > 0 && <ul class="detalhes">{detalhes.map((d) => <li>{d}</li>)}</ul>}
       <div class="grafico"><slot name="grafico" /></div>
@@ -32,8 +38,12 @@ const id = titulo.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace
 </section>
 <style>
   .bloco { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.5rem 1.5rem 1.1rem; display: flex; flex-direction: column; gap: 0.9rem; }
-  h2 { font-family: var(--numeros); font-stretch: 87%; font-weight: 700; font-size: 1.05rem; color: var(--grafite); margin: 0; letter-spacing: 0.01em; }
-  .principal { font-size: 1.45rem; line-height: 1.3; margin: 0; max-width: 34ch; text-wrap: balance; }
+  h2 { display: flex; align-items: center; gap: 0.7rem; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.3rem; color: var(--tinta); margin: 0; }
+  .selo { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--dado-fundo); color: var(--dado); font-size: 0.95rem; }
+  .destaque { margin: 0.2rem 0 0; display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+  .destaque strong { font-family: var(--numeros); font-stretch: 78%; font-weight: 800; font-size: clamp(3rem, 7vw, 4.2rem); line-height: 0.9; color: var(--dado); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .destaque span { color: var(--grafite); font-size: 1rem; max-width: 18ch; line-height: 1.25; }
+  .principal { font-size: 1.3rem; line-height: 1.35; margin: 0; max-width: 36ch; text-wrap: balance; }
   .detalhes { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; color: var(--tinta-suave); }
   .grafico { margin-top: 0.3rem; }
   .vazio { color: var(--grafite); margin: 0; }

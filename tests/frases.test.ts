@@ -30,10 +30,8 @@ const com = (mudar: (r: ResumoParlamentar) => void) => {
 describe("Story 2.3 — frases", () => {
   it("presença da Câmara: soma os anos e explica faltas", () => {
     const f = frasesPresenca(base)!;
-    expect(f.principal).toBe(
-      "Esteve presente em 169 dos 191 dias com sessão de votação desde 2025.",
-    );
-    expect(f.detalhes[0]).toBe("Faltou 11 sessões sem justificativa.");
+    expect(f.principal).toBe("Marcou presença em 169 dos 191 dias de votação desde 2025.");
+    expect(f.detalhes[0]).toBe("Faltou 11 vezes sem dar justificativa.");
   });
 
   it("CA2: singular e zero", () => {
@@ -44,27 +42,39 @@ describe("Story 2.3 — frases", () => {
         ];
     });
     expect(frasesPresenca(um)!.detalhes).toEqual([
-      "Faltou 1 sessão sem justificativa.",
-      "Não teve ausência justificada.",
+      "Faltou 1 vez sem dar justificativa.",
+      "Não teve falta justificada.",
     ]);
     const zero = com((r) => {
       if (r.presenca.metrica === "sessao")
         r.presenca.porAno = [{ ...r.presenca.porAno[0]!, ausenciasNaoJustificadas: 0 }];
     });
-    expect(frasesPresenca(zero)!.detalhes[0]).toBe("Não faltou nenhuma sessão sem justificativa.");
+    expect(frasesPresenca(zero)!.detalhes[0]).toBe("Não faltou nenhuma vez sem dar justificativa.");
     const semProj = com((r) => (r.projetos.legislativas = { autor: 0, coautor: 0, viraramLei: 0 }));
     expect(frasesProjetos(semProj, media).principal).toBe(
-      "Não apresentou projeto de lei como autor principal desde 2023.",
+      "Não criou nenhum projeto de lei como autor principal desde 2023.",
     );
     const umaLei = com((r) => (r.projetos.legislativas = { autor: 1, coautor: 0, viraramLei: 1 }));
     expect(frasesProjetos(umaLei, media).principal).toBe(
-      "Apresentou 1 projeto de lei como autor principal desde 2023.",
+      "Criou 1 projeto de lei como autor principal desde 2023.",
     );
     expect(frasesProjetos(umaLei, media).detalhes).toContain("1 virou lei.");
   });
 
   it("presença ainda não coletada → sem frase (o bloco mostra o motivo)", () => {
     expect(frasesPresenca(com((r) => (r.presenca = { metrica: "sessao", porAno: [] })))).toBeNull();
+  });
+
+  it("destaque em número grande por bloco", () => {
+    expect(frasesPresenca(base)!.destaque).toEqual({
+      valor: "88%",
+      rotulo: "dos dias de votação com presença",
+    });
+    expect(frasesGastos(base, media).destaque).toEqual({
+      valor: "R$ 1,77 mi",
+      rotulo: "da cota desde 2023",
+    });
+    expect(frasesProjetos(base, media).destaque?.valor).toBe("10");
   });
 
   it("CA4 (2.2): Senado fala em votações, nunca em sessões", () => {
@@ -77,7 +87,7 @@ describe("Story 2.3 — frases", () => {
     const todas = [frasesGastos(base, media), frasesProjetos(base, media), frasesVotacoes(base)]
       .flatMap((f) => [f.principal, ...f.detalhes])
       .join(" ");
-    expect(todas).toContain("A média entre os deputados no mesmo período é R$ 1,37 milhão.");
+    expect(todas).toContain("No mesmo período, cada deputado gastou em média R$ 1,37 milhão.");
     expect(todas).not.toMatch(/acima|abaixo|melhor|pior|mais que|menos que/i);
   });
 

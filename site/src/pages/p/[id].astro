@@ -33,16 +33,16 @@ if (r.presenca.metrica === "sessao") {
     r.presenca.metrica === "sessao" ? r.presenca.porAno.reduce((a, y) => a + (y[k] ?? 0), 0) : 0;
   fatiasPresenca = [
     { rotulo: "Presente", valor: soma("diasPresente"), cor: "var(--dado)" },
-    { rotulo: "Ausência justificada", valor: soma("diasAusenciaJustificada"), cor: "var(--justificada)" },
-    { rotulo: "Ausência sem justificativa", valor: soma("diasAusenciaNaoJustificada"), cor: "var(--falta)" },
+    { rotulo: "Falta justificada", valor: soma("diasAusenciaJustificada"), cor: "var(--justificada)" },
+    { rotulo: "Falta sem justificativa", valor: soma("diasAusenciaNaoJustificada"), cor: "var(--falta)" },
   ];
 } else {
   const anos = Object.values(r.presenca.porAno);
   const s = (k: string) => anos.reduce((a, c) => a + (c[k] ?? 0), 0);
   fatiasPresenca = [
-    { rotulo: "Compareceu", valor: s("presente"), cor: "var(--dado)" },
-    { rotulo: "Ausência justificada", valor: s("ausencia_justificada"), cor: "var(--justificada)" },
-    { rotulo: "Ausência sem justificativa", valor: s("ausente"), cor: "var(--falta)" },
+    { rotulo: "Presente", valor: s("presente"), cor: "var(--dado)" },
+    { rotulo: "Falta justificada", valor: s("ausencia_justificada"), cor: "var(--justificada)" },
+    { rotulo: "Falta sem justificativa", valor: s("ausente"), cor: "var(--falta)" },
     { rotulo: "Sem classificação", valor: s("outro"), cor: "var(--linha)" },
   ];
 }
@@ -69,29 +69,31 @@ const titulo = `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato`;
         <p class="cargo">{cargo(p)} {pelaUf(p.uf)}</p>
         <h1>{p.nome}</h1>
         <p class="partido">Partido: {p.partido}</p>
-        <p class="extrato">Extrato do mandato de 2023 até hoje, com dados atualizados em {atualizado}.</p>
+        <p class="extrato">Tudo o que fez no mandato desde 2023, com dados oficiais atualizados em {atualizado}.</p>
       </div>
     </header>
 
     <div class="grade">
       <Bloco
-        titulo={camara ? "Presença nas sessões" : "Comparecimento em votações"}
+        titulo={camara ? "Foi às sessões?" : "Apareceu nas votações?"}
+        icone="calendario"
+        destaque={pres?.destaque}
         principal={pres?.principal ?? null}
         detalhes={pres?.detalhes}
-        vazio={camara ? "A presença deste deputado ainda não foi coletada. Ela é lida uma vez por semana no site da Câmara." : "Não há votações nominais registradas para este senador no período."}
+        vazio={camara ? "Ainda não puxamos a presença deste deputado. Ela é atualizada uma vez por semana, direto do site da Câmara." : "Não tem votação com registro de voto para este senador no período."}
         fonte={{ nome: camara ? "Câmara dos Deputados, página de presença" : "Senado Federal, votações nominais", url: camara ? `https://www.camara.leg.br/deputados/${p.idOrigem}/presenca-plenario/${new Date().getFullYear()}` : oficial }}
         atualizadoEm={atualizado}
       >
         <BarraEmpilhada slot="grafico" fatias={fatiasPresenca} descricao={pres?.principal ?? ""} />
         {r.presenca.metrica === "sessao" && r.presenca.porAno.length > 0 && (
           <table slot="numeros">
-            <thead><tr><th>Ano</th><th>Dias com sessão</th><th>Presente</th><th>Justificadas</th><th>Sem justificativa</th></tr></thead>
+            <thead><tr><th>Ano</th><th>Dias de votação</th><th>Presente</th><th>Falta justificada</th><th>Falta sem justificativa</th></tr></thead>
             <tbody>{r.presenca.porAno.map((y) => <tr><td>{y.ano}</td><td>{y.diasComSessao}</td><td>{y.diasPresente}</td><td>{y.diasAusenciaJustificada}</td><td>{y.diasAusenciaNaoJustificada}</td></tr>)}</tbody>
           </table>
         )}
       </Bloco>
 
-      <Bloco titulo="Gastos da cota parlamentar" principal={gas.principal} detalhes={gas.detalhes} fonte={{ nome: camara ? "Câmara dos Deputados, cota parlamentar" : "Senado Federal, CEAPS", url: camara ? `https://www.camara.leg.br/transparencia/gastos-parlamentares?ano=${new Date().getFullYear()}&deputado=${p.idOrigem}` : "https://www12.senado.leg.br/transparencia/sen/" }} atualizadoEm={atualizado}>
+      <Bloco titulo="Quanto gastou?" icone="dinheiro" destaque={gas.destaque} principal={gas.principal} detalhes={gas.detalhes} fonte={{ nome: camara ? "Câmara dos Deputados, cota parlamentar" : "Senado Federal, CEAPS", url: camara ? `https://www.camara.leg.br/transparencia/gastos-parlamentares?ano=${new Date().getFullYear()}&deputado=${p.idOrigem}` : "https://www12.senado.leg.br/transparencia/sen/" }} atualizadoEm={atualizado}>
         <div slot="grafico" class="duplo">
           <Colunas itens={anosGasto.map(([ano, val]) => ({ rotulo: ano, valor: val, texto: formatarMoedaCurta(val).replace("R$ ", "") }))} descricao={`Gasto por ano: ${anosGasto.map(([a, val]) => `${a}, ${formatarMoedaCurta(val)}`).join("; ")}`} />
           <Linhas itens={topCategorias.map((c) => ({ rotulo: humanizarCategoria(c.categoria), valor: c.total, texto: formatarMoedaCurta(c.total) }))} />
@@ -104,15 +106,15 @@ const titulo = `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato`;
         )}
       </Bloco>
 
-      <Bloco titulo="Projetos apresentados" principal={proj.principal} detalhes={proj.detalhes} fonte={{ nome: camara ? "Câmara dos Deputados, proposições" : "Senado Federal, processos", url: oficial }} atualizadoEm={atualizado}>
+      <Bloco titulo="O que propôs?" icone="documento" destaque={proj.destaque} principal={proj.principal} detalhes={proj.detalhes} fonte={{ nome: camara ? "Câmara dos Deputados, proposições" : "Senado Federal, processos", url: oficial }} atualizadoEm={atualizado}>
         <BarraEmpilhada slot="grafico" descricao={proj.principal} fatias={[
-          { rotulo: "Autor principal", valor: r.projetos.legislativas.autor, cor: "var(--dado)" },
-          { rotulo: "Coautor", valor: r.projetos.legislativas.coautor, cor: "var(--dado-claro)" },
+          { rotulo: "Criou", valor: r.projetos.legislativas.autor, cor: "var(--dado)" },
+          { rotulo: "Assinou junto", valor: r.projetos.legislativas.coautor, cor: "var(--dado-claro)" },
           { rotulo: "Homenagens", valor: r.projetos.homenagens, cor: "var(--linha)" },
         ]} />
       </Bloco>
 
-      <Bloco titulo="Como votou" principal={vot.principal} detalhes={vot.detalhes} fonte={{ nome: camara ? "Câmara dos Deputados, votações" : "Senado Federal, votações", url: oficial }} atualizadoEm={atualizado}>
+      <Bloco titulo="Como votou?" icone="urna" destaque={vot.destaque} principal={vot.principal} detalhes={vot.detalhes} fonte={{ nome: camara ? "Câmara dos Deputados, votações" : "Senado Federal, votações", url: oficial }} atualizadoEm={atualizado}>
         <BarraEmpilhada slot="grafico" fatias={fatiasVotos} descricao={vot.principal} />
         <table slot="numeros">
           <thead><tr><th>Registro</th><th>Vezes</th></tr></thead>

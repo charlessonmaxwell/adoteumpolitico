@@ -18,8 +18,8 @@ const PROIBIDOS = [
   /\bfaltoso\b/i,
   /\bvagabund/i,
 ];
-// O rodapé declara a política ("não dá nota nem faz ranking"): permitido só nesse trecho exato.
-const PERMITIDO = /não dá nota nem faz ranking/gi;
+// O rodapé declara a política ("não tem nota nem ranking"): permitido só nesse trecho exato.
+const PERMITIDO = /não tem nota nem ranking/gi;
 
 const arquivos = [];
 function andar(d) {
