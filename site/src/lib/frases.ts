@@ -33,15 +33,16 @@ export function frasesPresenca(r: R): Frases | null {
     const dias = p.porAno.reduce((a, y) => a + (y.diasComSessao ?? 0), 0);
     const pres = p.porAno.reduce((a, y) => a + (y.diasPresente ?? 0), 0);
     const just = p.porAno.reduce((a, y) => a + (y.diasAusenciaJustificada ?? 0), 0);
-    const semJust = p.porAno.reduce((a, y) => a + (y.ausenciasNaoJustificadas ?? 0), 0);
+    // Tudo em dias, igual ao gráfico (num mesmo dia pode haver mais de uma sessão)
+    const semJust = p.porAno.reduce((a, y) => a + (y.diasAusenciaNaoJustificada ?? 0), 0);
     const desde = p.porAno[0]!.ano;
     return {
       destaque: { valor: formatarPct(pres, dias), rotulo: "dos dias de votação com presença" },
       principal: `Marcou presença em ${n(pres)} dos ${n(dias)} dias de votação desde ${desde}.`,
       detalhes: [
         semJust === 0
-          ? "Não faltou nenhuma vez sem dar justificativa."
-          : `Faltou ${n(semJust)} ${plural(semJust, "vez", "vezes")} sem dar justificativa.`,
+          ? "Não faltou nenhum dia sem dar justificativa."
+          : `Faltou ${n(semJust)} ${plural(semJust, "dia", "dias")} sem dar justificativa.`,
         just > 0
           ? `Em ${n(just)} ${plural(just, "dia", "dias")}, a falta foi justificada: viagem a serviço, licença ou decisão da Mesa.`
           : "Não teve falta justificada.",
@@ -154,7 +155,7 @@ export function frasesVotacoes(r: R): Frases {
   const v = r.votacoes.votos;
   return {
     destaque: { valor: n(votou), rotulo: `votos registrados, de ${n(total)} votações` },
-    principal: `Votou em ${n(votou)} das ${n(total)} votações em que o voto de cada um fica registrado.`,
+    principal: `Votou em ${n(votou)} das ${n(total)} votações nominais, em que o voto de cada um fica registrado.`,
     detalhes: [
       `Disse "sim" ${n(v.sim ?? 0)} ${plural(v.sim ?? 0, "vez", "vezes")} e "não" ${n(v.nao ?? 0)} ${plural(v.nao ?? 0, "vez", "vezes")}.`,
       "Muita coisa é decidida em votação simbólica, sem registro de quem votou o quê. Essas não entram na conta.",

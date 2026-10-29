@@ -4,8 +4,8 @@ export const GLOSSARIO: Record<string, string> = {
     "Verba mensal paga com dinheiro público para despesas do mandato: passagens, aluguel de escritório, combustível, divulgação. O valor muda conforme o estado.",
   "votação simbólica":
     "O presidente da sessão pergunta quem é contra e olha o plenário. Não fica registrado como cada um votou.",
-  "votações em que o voto de cada um fica registrado":
-    "Votação nominal: cada parlamentar vota no painel eletrônico e o voto de cada um fica público.",
+  "votações nominais":
+    "Cada parlamentar vota no painel eletrônico e o voto de cada um fica público. É diferente da votação simbólica.",
   "falta foi justificada":
     "Ausência com motivo aceito pela Casa: viagem a serviço (missão), licença médica, licença-maternidade ou decisão da Mesa.",
   "decisão da Mesa":

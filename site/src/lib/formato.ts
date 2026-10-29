@@ -30,7 +30,8 @@ export function humanizarCategoria(c: string): string {
     .replace(/\.$/, "")
     .replace(/\s*-\s*SIGEPA$/i, "")
     .replace(/,? compreendendo .*$/i, "");
-  const base = s === s.toUpperCase() ? s.toLowerCase() : s;
+  const limpo = s.replace(/\s+,\s*/g, ", ").replace(/\s{2,}/g, " ");
+  const base = limpo === limpo.toUpperCase() ? limpo.toLowerCase() : limpo;
   return base.charAt(0).toUpperCase() + base.slice(1);
 }
 

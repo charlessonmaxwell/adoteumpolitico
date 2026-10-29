@@ -8,18 +8,30 @@ interface Props {
 const { texto, usados = new Set() } = Astro.props;
 const partes = segmentar(texto, usados);
 const uid = () => "g" + Math.random().toString(36).slice(2, 9);
+// Pontuação logo depois de um termo fica colada nele (não pula de linha sozinha)
+const comId = partes.map((p) => ({ ...p, id: p.termo ? uid() : "", cola: "" }));
+for (let i = 0; i < comId.length - 1; i++) {
+  const atual = comId[i]!;
+  const prox = comId[i + 1]!;
+  const m = atual.termo && !prox.termo ? /^[.,;:!?)]+/.exec(prox.texto) : null;
+  if (m) {
+    atual.cola = m[0];
+    prox.texto = prox.texto.slice(m[0].length);
+  }
+}
 ---
-{partes.map((p) => {
-  if (!p.termo) return <Fragment set:text={p.texto} />;
-  const id = uid();
-  return (
-    <>
-      <button type="button" class="termo" popovertarget={id} aria-label={`${p.texto}: o que é?`}>{p.texto}</button><span popover id={id} class="explica" role="tooltip"><strong>{p.termo.charAt(0).toUpperCase() + p.termo.slice(1)}</strong> {GLOSSARIO[p.termo]}</span>
-    </>
-  );
-})}
+{comId.map((p) =>
+  p.termo ? (
+    <span class="termo-junto"><button type="button" class="termo" popovertarget={p.id} aria-label={`${p.texto}: o que é?`}>{p.texto}</button>{p.cola}</span>
+  ) : (
+    <Fragment set:text={p.texto} />
+  ),
+)}{comId.filter((p) => p.termo).map((p) => (
+  <span popover id={p.id} class="explica" role="tooltip"><strong>{p.termo!.charAt(0).toUpperCase() + p.termo!.slice(1)}</strong> {GLOSSARIO[p.termo!]}</span>
+))}
 <style is:global>
-  .termo { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: help; text-decoration: underline dotted var(--dado) 2px; text-underline-offset: 0.2em; }
+  .termo { display: inline; text-align: inherit; white-space: normal; font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: help; text-decoration: underline dotted var(--dado) 2px; text-underline-offset: 0.2em; }
+  .termo-junto { white-space: nowrap; }
   .termo:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; border-radius: 3px; }
   .explica { max-width: min(22rem, 90vw); margin: auto; padding: 1rem 1.1rem; border: 1px solid var(--linha); border-radius: 10px; background: var(--folha); color: var(--tinta); font-size: 0.95rem; line-height: 1.5; box-shadow: 0 10px 30px rgb(0 0 0 / 0.18); }
   .explica::backdrop { background: rgb(0 0 0 / 0.15); }
