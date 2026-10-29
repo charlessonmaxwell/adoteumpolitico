@@ -9,8 +9,8 @@ Consultas feitas direto nas APIs oficiais (navegador), não em documentação de
 | Votos individuais (endpoint) | Funciona para votações recentes (ex.: 14/10/2026 com 429 e 466 votos). Hipótese de "vazio após 05/2024" **refutada** | ✅ OK |
 | Votações nominais | Plenário set–out/2026: 80 votações, só **6 nominais** (resto simbólicas, sem voto individual) | ⚠️ Limitação estrutural |
 | Arquivo em lote de votos 2026 | Disponível, atualizado hoje (06:56) | ✅ Melhor via de ingestão |
-| Presença | Por sessão: `/eventos/{id}/deputados` (502 de 513 numa sessão). Sem endpoint de % pronto — cálculo próprio. API não traz justificativa | ⚠️ Calcular |
-| Justificativa de faltas | **Só na página HTML** `camara.leg.br/deputados/{id}/presenca-plenario/{ano}` (ex.: Presença, Missão Autorizada, Licença para Tratamento de Saúde). Exige raspagem de 513 páginas | ⚠️ Possível, mas frágil |
+| Presença (API `/eventos`) | Conta **98** sessões deliberativas em 2025 contra **127** do critério oficial (Ato da Mesa 191/2017) — números divergiriam do site da Câmara | ❌ Não usar (29/10/2026) |
+| Presença + justificativa (página HTML) | `camara.leg.br/deputados/{id}/presenca-plenario/{ano}`: uma linha por sessão (Presença / Ausência / motivo oficial) + quadro de totais oficiais. 513 páginas, semanal | ✅ Fonte principal (frágil a mudança de layout; trava de 20%) |
 | Gastos da cota (endpoint) | **0 registros** para 18 deputados testados, anos 2023–2026 | ❌ Endpoint vazio |
 | Gastos (arquivo em lote) | `camara.leg.br/cotas/Ano-AAAA.{csv,json}.zip` — 2026: 4,4 MB (csv) / 5,5 MB (json), atualizado hoje 06:34. Conteúdo 2026: 118.851 despesas, 565 parlamentares (inclui suplentes/ex), **94% com URL do documento fiscal**. Contém CPF do parlamentar — não exibir | ✅ Via oficial de ingestão |
 | Proposições por autor | API lista sem situação e sem autor/coautor → **usar arquivos em lote** `proposicoes-AAAA.json` + `proposicoesAutores-AAAA.json` (2026: 47 mil proposições, 59 mil autorias, ~3 s) | ✅ Via arquivos (28/10/2026) |
@@ -22,7 +22,9 @@ Consultas feitas direto nas APIs oficiais (navegador), não em documentação de
 | Votos por senador | 426 votos de um senador, último em 15/10/2026 | ✅ OK (resposta pesada: ~900 KB por senador) |
 | Votações do plenário | OK; out/2026: 3 votações nominais, nenhuma secreta | ✅ OK |
 | Projetos por autor (`/processo`) | 389 processos de um senador; ementa, situação, datas | ✅ OK |
-| Endpoints `/votacao` e `/autorias` | Erro 503 | ⚠️ Instáveis — usar alternativos |
+| `/votacao` | Funcionando em 29/10/2026 (~0,3 s). Substituto oficial dos endpoints de votação descontinuados; 1 chamada por ano traz votações + votos dos 81 | ✅ Usar |
+| `/autorias` | Erro 503 | ⚠️ Não usar |
+| `/plenario/lista/votacao` e `/senador/{cod}/votacoes` | Marcados como descontinuados pelo próprio Senado (desativação completa anunciada para 01/02/2026) | ❌ Não usar |
 | Gastos (CEAPS) | API `adm.senado.gov.br/adm-dadosabertos/api/v1/senadores/despesas_ceaps/{ano}` (JSON e CSV). 2026: 15.933 despesas, 89 senadores (inclui suplentes/ex), campos: tipo, fornecedor, CNPJ, data, valor, detalhamento | ✅ OK — atenção: há data de documento futura (30/10/2026), exige validação |
 
 | Presença | **Não existe por sessão.** Só comparecimento em votações nominais, com tipos (Atividade parlamentar, Comunicação de ausência, Afastamento etc.) + lista de licenças (`/senador/{codigo}/licencas`) | ⚠️ Métrica diferente da Câmara |

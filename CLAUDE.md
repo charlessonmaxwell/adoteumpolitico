@@ -11,7 +11,7 @@ Portal estático sobre desempenho de parlamentares federais. Arquitetura: site e
 
 ## Regras fixas
 
-- Fontes só as de `bmad/docs/analise-fontes.md`. Proibido: Câmara `/despesas` (vazio); Senado `/votacao` e `/autorias` (503).
+- Fontes só as de `bmad/docs/analise-fontes.md`. Proibido: Câmara `/despesas` (vazio); Senado `/autorias` (503) e os descontinuados `/plenario/lista/votacao` e `/senador/{cod}/votacoes` (usar `/votacao`).
 - Nunca persistir CPF, e-mail, telefone ou outro dado pessoal das fontes.
 - Textos de métricas por modelos fixos; IA só para resumos de projetos e etiquetas de impacto.
 - Dúvida não coberta pela story → parar e perguntar.
