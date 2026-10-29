@@ -44,3 +44,15 @@
 - `02-site.md` — páginas, busca, responsividade
 - `03-ia.md` — resumos populares e etiquetas de impacto
 - `04-custos-riscos.md` — custo mensal e riscos
+
+## Decisão revisada em 29/10/2026: manter sem banco em execução
+Questionada pelo usuário ("precisamos consultar"). Mantida, porque:
+- dados mudam 1x/dia na fonte; consulta pré-calculada às 6h vale o dia todo (carga só de leitura)
+- geração das ~650 páginas leva ~2 s (lote automático, sem trabalho manual)
+- busca do eleitor roda no navegador sobre índice de ~45 KB
+- dados tratados somam ~515 MB: banco hospedado estouraria planos gratuitos (~R$ 140/mês vs. teto de R$ 50)
+- CDN absorve picos de acesso; nada para invadir; mantém a última versão boa se a fonte quebrar
+
+**Necessidade registrada:** o usuário quer analisar os dados com consultas livres. **Opção B (pós-MVP, custo zero):** a rotina diária passa a publicar também um arquivo SQLite com todos os dados, consultável com SQL (DB Browser ou via Claude).
+
+**Gatilho para banco em execução (opção C):** funcionalidade com escrita ou estado por usuário (login, alertas, comentários) ou consulta livre sobre os detalhes no próprio site.
