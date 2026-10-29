@@ -136,7 +136,8 @@ async function main() {
   const anos = process.argv.slice(2).map(Number).filter(Boolean);
   if (!anos.length) anos.push(new Date().getFullYear());
   const deputados = (await coletarParlamentares()).filter((p) => p.casa === "camara");
-  await mkdir("data/presenca", { recursive: true });
+  const dir = process.env.DATA_DIR ?? "data";
+  await mkdir(`${dir}/presenca`, { recursive: true });
   for (const ano of anos) {
     const r = await coletarPresencaCamara(deputados, ano);
     const taxa = r.falhas.length / deputados.length;
@@ -145,7 +146,7 @@ async function main() {
         `Presença ${ano}: ${r.falhas.length} de ${deputados.length} páginas falharam (${Math.round(taxa * 100)}%). Possível mudança de layout; dados anteriores mantidos.`,
       );
     }
-    const base = `data/presenca/camara-${ano}`;
+    const base = `${dir}/presenca/camara-${ano}`;
     const presencas = mesclar(await lerJson<Presenca>(`${base}.json`), r.presencas, r.falhas);
     const resumos = mesclar(
       await lerJson<ResumoPresencaCamara>(`${base}-resumo.json`),

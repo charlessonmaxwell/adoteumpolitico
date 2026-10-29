@@ -1,0 +1,57 @@
+name: Presença da Câmara (semanal)
+
+on:
+  schedule:
+    - cron: "0 7 * * 0" # domingo, 04:00 em Brasília (antes da rotina diária)
+  workflow_dispatch:
+    inputs:
+      anos:
+        description: "Anos a coletar, separados por espaço (vazio = ano corrente). Ex.: 2023 2024 2025"
+        required: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: dados
+  cancel-in-progress: false
+
+jobs:
+  presenca:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120 # ~25 min por ano (513 páginas com pausa de 2s)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Baixar a última publicação (branch data)
+        run: |
+          if git ls-remote --exit-code --heads origin data >/dev/null; then
+            git clone -q --depth 1 --branch data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" publicado
+            rm -rf publicado/.git
+          else
+            mkdir publicado
+          fi
+
+      - name: Ler páginas oficiais de presença
+        env:
+          DATA_DIR: publicado
+        run: pnpm coleta:presenca-camara ${{ github.event.inputs.anos }}
+
+      - name: Publicar na branch data
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: scripts/publicar-dados.sh publicado "Presença da Câmara de $(date -u +%F)"
+
+      - name: Abrir issue de falha
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: scripts/abrir-issue-falha.sh "Falha na coleta semanal de presença da Câmara"

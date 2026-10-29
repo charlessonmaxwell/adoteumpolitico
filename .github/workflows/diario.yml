@@ -1,0 +1,56 @@
+name: Atualização diária de dados
+
+on:
+  schedule:
+    - cron: "0 9 * * *" # 06:00 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: dados # mesmo grupo do semanal: nunca publicam ao mesmo tempo
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30 # CA1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Baixar a última publicação (branch data)
+        run: |
+          if git ls-remote --exit-code --heads origin data >/dev/null; then
+            git clone -q --depth 1 --branch data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" publicado
+          else
+            mkdir publicado # primeira execução
+          fi
+
+      - name: Coletar, validar e agregar
+        id: rotina
+        run: NODE_OPTIONS=--max-old-space-size=6144 pnpm rotina publicado saida
+
+      - name: Publicar na branch data
+        if: steps.rotina.outputs.mudou == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: scripts/publicar-dados.sh saida "Dados de $(date -u +%F)"
+
+      - name: Sem mudança
+        if: steps.rotina.outputs.mudou == 'false'
+        run: echo "Fontes sem mudança desde a última publicação; nada a publicar."
+
+      - name: Abrir issue de falha
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: scripts/abrir-issue-falha.sh "Falha na atualização diária de dados"

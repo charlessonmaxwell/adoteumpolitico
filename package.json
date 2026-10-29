@@ -18,7 +18,8 @@
     "coleta:gastos": "tsx pipeline/src/coleta/gastos.ts",
     "coleta:proposicoes": "tsx pipeline/src/coleta/proposicoes.ts",
     "coleta:votacoes": "tsx pipeline/src/coleta/votacoes.ts",
-    "coleta:presenca-camara": "tsx pipeline/src/coleta/presenca-camara.ts"
+    "coleta:presenca-camara": "tsx pipeline/src/coleta/presenca-camara.ts",
+    "rotina": "tsx pipeline/src/rotina/index.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
