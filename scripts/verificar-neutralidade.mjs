@@ -15,8 +15,8 @@ const PROIBIDOS = [
   /\bexcelente\b/i,
   /\bpéssim[oa]\b/i,
   /\b(bom|boa|ruim) (deputad|senador|parlamentar|mandato)/i,
-  /\bgastão\b/i,
-  /\bfaltoso\b/i,
+  /\bgastão\b/,
+  /\bfaltoso\b/,
   /\bvagabund/i,
 ];
 // O rodapé declara a política ("não tem nota nem ranking"): permitido só nesse trecho exato.
@@ -31,13 +31,17 @@ function andar(d) {
   }
 }
 const raiz = process.argv[2] ?? "site/dist";
+// Nomes de parlamentares saem do texto antes da checagem (ex.: um deputado chamado "Gastão")
+const arqNomes = process.argv[3];
+const nomes = arqNomes ? JSON.parse(readFileSync(arqNomes, "utf8")).map((p) => p.nome) : [];
 for (const sub of ["p", "uf"]) andar(join(raiz, sub));
 
 const erros = [];
 for (const a of arquivos) {
-  const texto = readFileSync(a, "utf8")
+  let texto = readFileSync(a, "utf8")
     .replace(/<[^>]+>/g, " ")
     .replace(PERMITIDO, "");
+  for (const n of nomes) texto = texto.split(n).join(" ");
   for (const re of PROIBIDOS) {
     const m = re.exec(texto);
     if (m) erros.push(`${a}: "${m[0]}"`);

@@ -89,7 +89,7 @@ jobs:
         run: pnpm site:build
 
       - name: Conferir neutralidade dos textos
-        run: node scripts/verificar-neutralidade.mjs site/dist
+        run: node scripts/verificar-neutralidade.mjs site/dist dados/parlamentares.json
 
       - name: Publicar na Cloudflare Pages
         env:

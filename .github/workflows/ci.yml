@@ -19,4 +19,4 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm site:build
-      - run: node scripts/verificar-neutralidade.mjs site/dist
+      - run: node scripts/verificar-neutralidade.mjs site/dist site/fixtures/parlamentares.json
