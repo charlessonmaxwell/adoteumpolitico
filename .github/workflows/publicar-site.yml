@@ -54,9 +54,9 @@ jobs:
           [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || { echo "::error::Secret CLOUDFLARE_ACCOUNT_ID não cadastrado" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1; }
           # Diagnóstico seguro: mostra só se o token é válido, nunca o valor
           V=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" https://api.cloudflare.com/client/v4/user/tokens/verify | jq -c '{success, status: .result.status, errors: [.errors[]?.message]}')
-          echo "Token: $V" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "::notice::Token: $V"
           pnpm dlx wrangler@4 pages project create "$PROJETO" --production-branch main > criar.log 2>&1 || true
-          echo "Criar projeto: $(grep -iE 'success|already|exist|error|✘' criar.log | head -3 | tr '\n' ' ')" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "::notice::Criar projeto: $(grep -iE 'success|already|exist|error|✘' criar.log | head -3 | tr '\n' ' ')"
 
       - name: Descobrir o endereço do site
         id: endereco
@@ -68,10 +68,11 @@ jobs:
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJETO")
           SUB=$(echo "$R" | jq -r '.result.subdomain // empty')
           if [ -z "$SUB" ]; then
-            echo "Erro ao ler o projeto: $(echo "$R" | jq -c '[.errors[]? | {code, message}]')" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "::error::Erro ao ler o projeto: $(echo "$R" | jq -c '[.errors[]? | {code, message}]')"
             exit 1
           fi
           echo "url=https://$SUB" >> "$GITHUB_OUTPUT"
+          echo "::notice::Endereço do site: https://$SUB"
           echo "Endereço: https://$SUB"
 
       - name: Gerar o site
