@@ -1,0 +1,57 @@
+---
+import Base from "../layouts/Base.astro";
+import { dados } from "../lib/dados";
+import { dataBr } from "../lib/formato";
+import { GLOSSARIO } from "../lib/glossario";
+const { meta } = dados();
+---
+<Base titulo="Como funciona: de onde vêm os números" descricao="De onde vêm os dados, como a gente conta cada número e o que este site não faz.">
+  <article class="conteiner texto">
+    <h1>Como funciona</h1>
+    <p class="lead">Este site junta, num lugar só e em linguagem simples, o que os 513 deputados federais e os 81 senadores fazem no mandato. Os dados foram atualizados pela última vez em {dataBr(meta.atualizadoEm)}.</p>
+
+    <h2>De onde vêm os dados</h2>
+    <ul>
+      <li><strong>Câmara dos Deputados:</strong> portal de dados abertos (cadastro, votações, projetos e gastos da cota) e a página oficial de presença de cada deputado.</li>
+      <li><strong>Senado Federal:</strong> portal de dados abertos (cadastro, votações, projetos, licenças) e a transparência da cota dos senadores (CEAPS).</li>
+    </ul>
+    <p>Todo dia de manhã cedo, um programa baixa os dados novos. Se uma fonte vier quebrada (por exemplo, com muito menos informação que no dia anterior), o site não é atualizado e continua mostrando a última versão boa.</p>
+
+    <h2>Como a gente conta</h2>
+    <ul>
+      <li><strong>Presença na Câmara:</strong> usamos o mesmo critério da página oficial de presença de cada deputado, com as faltas justificadas separadas das não justificadas.</li>
+      <li><strong>Presença no Senado:</strong> o Senado não publica presença por sessão. Mostramos se o senador votou nas votações em que o voto fica registrado.</li>
+      <li><strong>Votos:</strong> só entram as votações nominais. Nas simbólicas, não existe registro de quem votou o quê.</li>
+      <li><strong>Projetos:</strong> contamos projetos de lei, de lei complementar, propostas de emenda à Constituição, medidas provisórias e decretos legislativos. Homenagens (nome de rua, data comemorativa) aparecem separadas. Requerimentos e emendas não entram na conta.</li>
+      <li><strong>Gastos:</strong> o valor efetivamente pago pela cota parlamentar desde 2023. Despesas com data inválida ficam fora do total.</li>
+    </ul>
+
+    <h2>O que a gente não faz</h2>
+    <ul>
+      <li>Não dá nota, não faz ranking e não diz quem é bom ou ruim.</li>
+      <li>Não mostra CPF, telefone, endereço nem qualquer dado pessoal. Só o que é público do mandato.</li>
+      <li>Não usa inteligência artificial para escrever os números: as frases seguem modelos fixos.</li>
+      <li>Não tem ligação com partido, candidato ou governo.</li>
+    </ul>
+
+    <h2>Palavras que aparecem no site</h2>
+    <dl>
+      {Object.entries(GLOSSARIO).map(([t, e]) => (
+        <><dt>{t.charAt(0).toUpperCase() + t.slice(1)}</dt><dd>{e}</dd></>
+      ))}
+    </dl>
+
+    <h2>Achou um erro?</h2>
+    <p>O código e os dados são abertos. <a href="https://github.com/charlessonmaxwell/meupoliticodeestimacao/issues/new">Avise a gente por aqui</a> com o link da página e o que está errado.</p>
+  </article>
+</Base>
+<style>
+  .texto { max-width: 46rem; padding-top: 2.5rem; }
+  h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.4rem, 6vw, 3.4rem); line-height: 1; margin: 0 0 1rem; color: var(--dado); }
+  .lead { font-size: 1.2rem; color: var(--tinta-suave); }
+  h2 { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.4rem; margin: 2.2rem 0 0.6rem; }
+  li { margin-bottom: 0.5rem; }
+  dl { display: grid; gap: 0.2rem; }
+  dt { font-weight: 600; margin-top: 0.8rem; }
+  dd { margin: 0; color: var(--tinta-suave); }
+</style>

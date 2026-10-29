@@ -1,6 +1,7 @@
 ---
 /** Bloco do perfil: ícone + pergunta → destaque → frase → gráfico → "ver os números" → fonte. */
 import Icone from "./Icone.astro";
+import Texto from "./Texto.astro";
 interface Props {
   titulo: string;
   icone: "calendario" | "dinheiro" | "documento" | "urna";
@@ -12,6 +13,7 @@ interface Props {
   atualizadoEm: string;
 }
 const { titulo, icone, destaque, principal, detalhes = [], vazio, fonte, atualizadoEm } = Astro.props;
+const usados = new Set<string>();
 const id = titulo.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\W+/g, "-");
 ---
 <section class="bloco" aria-labelledby={id}>
@@ -21,8 +23,8 @@ const id = titulo.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace
       {destaque && (
         <p class="destaque"><strong>{destaque.valor}</strong> <span>{destaque.rotulo}</span></p>
       )}
-      <p class="principal">{principal}</p>
-      {detalhes.length > 0 && <ul class="detalhes">{detalhes.map((d) => <li>{d}</li>)}</ul>}
+      <p class="principal"><Texto texto={principal} usados={usados} /></p>
+      {detalhes.length > 0 && <ul class="detalhes">{detalhes.map((d) => <li><Texto texto={d} usados={usados} /></li>)}</ul>}
       <div class="grafico"><slot name="grafico" /></div>
       {Astro.slots.has("numeros") && (
         <details>

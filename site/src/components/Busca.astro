@@ -1,0 +1,84 @@
+---
+/** Caixa de busca com resultado enquanto digita. O índice (~45 KB) vai junto na página. */
+import { dados } from "../lib/dados";
+import { UFS } from "../lib/formato";
+import type { ItemBusca } from "../lib/busca";
+interface Props {
+  grande?: boolean;
+}
+const { grande = false } = Astro.props;
+const indice: ItemBusca[] = dados().resumos.map(({ parlamentar: p }) => ({
+  id: p.id,
+  nome: p.nome,
+  partido: p.partido,
+  uf: p.uf,
+  estado: UFS[p.uf] ?? p.uf,
+  casa: p.casa,
+  foto: p.urlFoto,
+}));
+---
+<div class:list={["busca", { grande }]} data-busca>
+  <label for="campo-busca" class="rotulo">Quem você quer conferir?</label>
+  <div class="campo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.4-4.4" /></svg>
+    <input id="campo-busca" type="search" autocomplete="off" spellcheck="false" placeholder="Nome, estado ou partido" aria-describedby="dica-busca" aria-controls="resultados-busca" />
+  </div>
+  <p id="dica-busca" class="dica">Pode errar a grafia, a gente acha. Exemplo: "Danilo Fort" ou "Sergipe".</p>
+  <ul id="resultados-busca" class="resultados" role="list" aria-live="polite"></ul>
+  <script type="application/json" id="indice-busca" set:html={JSON.stringify(indice)} />
+</div>
+<script>
+  import { buscar, type ItemBusca } from "../lib/busca";
+  const raiz = document.querySelector<HTMLElement>("[data-busca]")!;
+  const campo = raiz.querySelector<HTMLInputElement>("input")!;
+  const lista = raiz.querySelector<HTMLUListElement>(".resultados")!;
+  const indice = JSON.parse(document.getElementById("indice-busca")!.textContent!) as ItemBusca[];
+  const cargo = (c: string) => (c === "camara" ? "Deputado(a)" : "Senador(a)");
+
+  function mostrar() {
+    const q = campo.value;
+    const achados = buscar(indice, q);
+    lista.replaceChildren();
+    if (q.trim() && !achados.length) {
+      const li = document.createElement("li");
+      li.className = "nada";
+      li.textContent = "Não achamos ninguém com esse nome. Tente só o sobrenome ou o estado.";
+      lista.append(li);
+      return;
+    }
+    for (const r of achados) {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = `/p/${r.id}/`;
+      const nome = document.createElement("strong");
+      nome.textContent = r.nome;
+      const meta = document.createElement("span");
+      meta.textContent = `${cargo(r.casa)}, ${r.partido}, ${r.estado}`;
+      a.append(nome, meta);
+      li.append(a);
+      lista.append(li);
+    }
+  }
+  campo.addEventListener("input", mostrar);
+  campo.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") lista.querySelector("a")?.click();
+  });
+  if (location.hash === "#busca") campo.focus();
+</script>
+<style>
+  .busca { display: grid; gap: 0.5rem; max-width: 40rem; }
+  .rotulo { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.25rem; }
+  .grande .rotulo { font-size: clamp(1.5rem, 3vw, 1.9rem); }
+  .campo { display: flex; align-items: center; gap: 0.6rem; background: var(--folha); border: 2px solid var(--linha); border-radius: 14px; padding: 0 1rem; }
+  .campo:focus-within { border-color: var(--dado); box-shadow: 0 0 0 4px var(--dado-fundo); }
+  .campo svg { width: 1.4rem; color: var(--grafite); flex: none; }
+  input { flex: 1; border: 0; background: none; font: inherit; font-size: 1.1rem; color: var(--tinta); padding: 0.95rem 0; outline: none; min-width: 0; }
+  .grande input { font-size: 1.25rem; padding: 1.15rem 0; }
+  input::placeholder { color: var(--grafite); }
+  .dica { margin: 0; color: var(--grafite); font-size: 0.9rem; }
+  .resultados { list-style: none; margin: 0.3rem 0 0; padding: 0; display: grid; gap: 0.4rem; }
+  .resultados :global(a) { display: grid; padding: 0.7rem 0.9rem; background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; text-decoration: none; color: var(--tinta); }
+  .resultados :global(a:hover), .resultados :global(a:focus-visible) { border-color: var(--dado); outline: none; box-shadow: 0 0 0 3px var(--dado-fundo); }
+  .resultados :global(span) { color: var(--grafite); font-size: 0.9rem; }
+  .resultados :global(.nada) { color: var(--grafite); padding: 0.5rem 0; }
+</style>

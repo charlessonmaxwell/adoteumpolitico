@@ -1,0 +1,48 @@
+---
+import Base from "../../layouts/Base.astro";
+import CartaoParlamentar from "../../components/CartaoParlamentar.astro";
+import { dados } from "../../lib/dados";
+import { UFS, plural } from "../../lib/formato";
+
+export function getStaticPaths() {
+  return Object.keys(UFS).map((uf) => ({ params: { uf: uf.toLowerCase() }, props: { uf } }));
+}
+const { uf } = Astro.props as { uf: string };
+const estado = UFS[uf]!;
+const daUf = dados().resumos.filter((r) => r.parlamentar.uf === uf).map((r) => r.parlamentar);
+const senadores = daUf.filter((p) => p.casa === "senado");
+const deputados = daUf.filter((p) => p.casa === "camara");
+---
+<Base titulo={`Deputados federais e senadores de ${estado}`} descricao={`Quem representa ${estado} no Congresso e o que cada um fez no mandato.`}>
+  <div class="conteiner">
+    <header class="topo-uf">
+      <p class="volta"><a href="/#busca">Voltar para a busca</a></p>
+      <h1><span class="sigla">{uf}</span> {estado}</h1>
+      <p class="resumo">{estado} tem {deputados.length} {plural(deputados.length, "deputado federal", "deputados federais")} e {senadores.length} {plural(senadores.length, "senador", "senadores")} no Congresso. Toque em um nome para ver o que a pessoa fez no mandato.</p>
+    </header>
+    {daUf.length === 0 && <p>Ainda não temos parlamentares deste estado nos dados.</p>}
+    {senadores.length > 0 && (
+      <section>
+        <h2>{plural(senadores.length, "Senador", "Senadores")}</h2>
+        <ul class="lista">{senadores.map((p) => <li><CartaoParlamentar p={p} /></li>)}</ul>
+      </section>
+    )}
+    {deputados.length > 0 && (
+      <section>
+        <h2>{plural(deputados.length, "Deputado federal", "Deputados federais")}</h2>
+        <ul class="lista">{deputados.map((p) => <li><CartaoParlamentar p={p} /></li>)}</ul>
+      </section>
+    )}
+    <p class="ordem">Em ordem alfabética. A gente não ordena por desempenho.</p>
+  </div>
+</Base>
+<style>
+  .topo-uf { padding: 2.5rem 0 1rem; }
+  .volta { margin: 0 0 1rem; font-size: 0.95rem; }
+  h1 { display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.4rem, 6vw, 3.6rem); line-height: 1; margin: 0 0 0.8rem; }
+  .sigla { color: var(--dado); }
+  .resumo { font-size: 1.15rem; max-width: 50ch; color: var(--tinta-suave); margin: 0; }
+  h2 { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.35rem; margin: 2rem 0 0.9rem; }
+  .lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
+  .ordem { margin-top: 2rem; color: var(--grafite); font-size: 0.9rem; }
+</style>

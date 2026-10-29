@@ -1,0 +1,27 @@
+---
+/** Texto com termos do glossário clicáveis (popover nativo, sem biblioteca). */
+import { GLOSSARIO, segmentar } from "../lib/glossario";
+interface Props {
+  texto: string;
+  usados?: Set<string>;
+}
+const { texto, usados = new Set() } = Astro.props;
+const partes = segmentar(texto, usados);
+const uid = () => "g" + Math.random().toString(36).slice(2, 9);
+---
+{partes.map((p) => {
+  if (!p.termo) return <Fragment set:text={p.texto} />;
+  const id = uid();
+  return (
+    <>
+      <button type="button" class="termo" popovertarget={id} aria-label={`${p.texto}: o que é?`}>{p.texto}</button><span popover id={id} class="explica" role="tooltip"><strong>{p.termo.charAt(0).toUpperCase() + p.termo.slice(1)}</strong> {GLOSSARIO[p.termo]}</span>
+    </>
+  );
+})}
+<style is:global>
+  .termo { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: help; text-decoration: underline dotted var(--dado) 2px; text-underline-offset: 0.2em; }
+  .termo:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; border-radius: 3px; }
+  .explica { max-width: min(22rem, 90vw); margin: auto; padding: 1rem 1.1rem; border: 1px solid var(--linha); border-radius: 10px; background: var(--folha); color: var(--tinta); font-size: 0.95rem; line-height: 1.5; box-shadow: 0 10px 30px rgb(0 0 0 / 0.18); }
+  .explica::backdrop { background: rgb(0 0 0 / 0.15); }
+  .explica strong { display: block; margin-bottom: 0.25rem; color: var(--dado); }
+</style>

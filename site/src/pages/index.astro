@@ -1,11 +1,79 @@
 ---
 import Base from "../layouts/Base.astro";
+import Busca from "../components/Busca.astro";
+import Icone from "../components/Icone.astro";
 import { dados } from "../lib/dados";
-const { resumos } = dados();
+import { UFS, dataBr } from "../lib/formato";
+const { resumos, meta } = dados();
+const deputados = resumos.filter((r) => r.parlamentar.casa === "camara").length;
+const senadores = resumos.length - deputados;
+const porUf = new Map<string, number>();
+for (const r of resumos) porUf.set(r.parlamentar.uf, (porUf.get(r.parlamentar.uf) ?? 0) + 1);
+const ufs = Object.entries(UFS).sort(([, a], [, b]) => a.localeCompare(b, "pt-BR"));
 ---
-<Base titulo="Meu Político de Estimação" descricao="Veja o que seu deputado e seu senador fazem no mandato: presença, gastos, projetos e votos, com a fonte oficial.">
-  <div class="conteiner">
-    <h1>Encontre seu parlamentar</h1>
-    <ul>{resumos.map((r) => <li><a href={`/p/${r.parlamentar.id}/`}>{r.parlamentar.nome}</a> ({r.parlamentar.partido}-{r.parlamentar.uf})</li>)}</ul>
-  </div>
+<Base titulo="Meu Político de Estimação: o que seu deputado e seu senador fazem" descricao="Veja em linguagem simples se seu deputado e seu senador vão às sessões, quanto gastam, o que propõem e como votam. Dados oficiais, sem nota nem ranking.">
+  <section class="abertura">
+    <div class="conteiner abertura-in">
+      <div class="chamada">
+        <h1>Você votou.<br />Agora confere.</h1>
+        <p class="sub">Veja, sem complicação, se seu deputado federal e seu senador vão às sessões, quanto gastam de dinheiro público, o que propõem e como votam.</p>
+      </div>
+      <div id="busca"><Busca grande /></div>
+    </div>
+  </section>
+
+  <section class="conteiner bloco-ufs" aria-labelledby="titulo-ufs">
+    <h2 id="titulo-ufs"><Icone nome="mapa" /> Ou escolha seu estado</h2>
+    <ul class="ufs">
+      {ufs.map(([uf, nome]) => (
+        <li><a href={`/uf/${uf.toLowerCase()}/`}><span class="sigla">{uf}</span><span class="nome-uf">{nome}</span></a></li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="conteiner como" aria-labelledby="titulo-como">
+    <h2 id="titulo-como" class="sr">Como funciona</h2>
+    <ul class="pilares">
+      <li>
+        <span class="selo"><Icone nome="documento" /></span>
+        <h3>Só dado oficial</h3>
+        <p>Tudo vem da Câmara dos Deputados e do Senado Federal. Cada número tem o link da fonte, pra você conferir.</p>
+      </li>
+      <li>
+        <span class="selo"><Icone nome="urna" /></span>
+        <h3>Sem nota, sem ranking</h3>
+        <p>A gente não diz quem é bom ou ruim. Mostra o que cada um fez e você tira suas conclusões.</p>
+      </li>
+      <li>
+        <span class="selo"><Icone nome="calendario" /></span>
+        <h3>Atualizado todo dia</h3>
+        <p>{deputados} deputados e {senadores} senadores, com dados conferidos em {dataBr(meta.atualizadoEm)}.</p>
+      </li>
+    </ul>
+    <p class="mais"><a href="/como-funciona/">Entenda de onde vêm os números</a></p>
+  </section>
 </Base>
+<style>
+  .abertura { background: var(--folha); border-bottom: 1px solid var(--linha); }
+  .abertura-in { display: grid; gap: 2rem; padding-block: 3rem 3.5rem; align-items: end; }
+  @media (min-width: 60rem) { .abertura-in { grid-template-columns: 1.05fr 1fr; padding-block: 5rem; gap: 4rem; } }
+  h1 { font-family: var(--numeros); font-stretch: 78%; font-weight: 800; font-size: clamp(3rem, 8vw, 5.6rem); line-height: 0.92; letter-spacing: -0.02em; margin: 0 0 1.2rem; color: var(--dado); }
+  .sub { font-size: 1.2rem; line-height: 1.5; margin: 0; max-width: 32ch; color: var(--tinta-suave); }
+  .bloco-ufs { padding-top: 3rem; }
+  h2 { display: flex; align-items: center; gap: 0.6rem; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.4rem; margin: 0 0 1.2rem; }
+  h2 :global(.icone) { color: var(--dado); }
+  .ufs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.6rem; }
+  .ufs a { display: grid; gap: 0.1rem; padding: 0.75rem 0.9rem; background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; color: var(--tinta); text-decoration: none; }
+  .ufs a:hover { border-color: var(--dado); }
+  .ufs a:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+  .sigla { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: 1.6rem; line-height: 1; color: var(--dado); }
+  .nome-uf { font-size: 0.88rem; color: var(--grafite); }
+  .como { padding-top: 3.5rem; }
+  .pilares { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.5rem; }
+  @media (min-width: 48rem) { .pilares { grid-template-columns: repeat(3, 1fr); } }
+  .pilares h3 { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.2rem; margin: 0.8rem 0 0.3rem; }
+  .pilares p { margin: 0; color: var(--tinta-suave); }
+  .selo { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: var(--dado-fundo); color: var(--dado); }
+  .mais { margin-top: 1.5rem; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>

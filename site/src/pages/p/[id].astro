@@ -4,6 +4,7 @@ import Bloco from "../../components/Bloco.astro";
 import BarraEmpilhada from "../../components/BarraEmpilhada.astro";
 import Colunas from "../../components/Colunas.astro";
 import Linhas from "../../components/Linhas.astro";
+import Compartilhar from "../../components/Compartilhar.astro";
 import { dados, cargo, paginaOficial } from "../../lib/dados";
 import { frasesGastos, frasesPresenca, frasesProjetos, frasesVotacoes, VOTO_ROTULO } from "../../lib/frases";
 import { dataBr, formatarMoeda, formatarMoedaCurta, humanizarCategoria, pelaUf } from "../../lib/formato";
@@ -66,10 +67,11 @@ const titulo = `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato`;
         {p.urlFoto && <img src={p.urlFoto} alt={`Foto de ${p.nome}`} width="160" height="200" loading="eager" />}
       </div>
       <div>
-        <p class="cargo">{cargo(p)} {pelaUf(p.uf)}</p>
+        <p class="cargo">{cargo(p)} <a href={`/uf/${p.uf.toLowerCase()}/`}>{pelaUf(p.uf)}</a></p>
         <h1>{p.nome}</h1>
         <p class="partido">Partido: {p.partido}</p>
         <p class="extrato">Tudo o que fez no mandato desde 2023, com dados oficiais atualizados em {atualizado}.</p>
+        <Compartilhar texto={`Veja o que ${p.nome} fez no mandato:`} url={new URL(`/p/${p.id}/`, Astro.site).toString()} />
       </div>
     </header>
 
@@ -132,7 +134,7 @@ const titulo = `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato`;
   .cargo { margin: 0; color: var(--grafite); }
   h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 6vw, 3.8rem); line-height: 0.98; margin: 0.15rem 0 0.4rem; letter-spacing: -0.01em; }
   .partido { margin: 0; font-weight: 700; }
-  .extrato { margin: 0.6rem 0 0; color: var(--grafite); font-size: 0.95rem; }
+  .extrato { margin: 0.6rem 0 1rem; color: var(--grafite); font-size: 0.95rem; }
   .grade { display: grid; gap: 1.25rem; }
   @media (min-width: 60rem) {
     /* Colunas (estilo "masonry"): blocos de alturas diferentes sem buracos */

@@ -1,0 +1,41 @@
+---
+interface Props {
+  texto: string;
+  url: string;
+}
+const { texto, url } = Astro.props;
+const whats = `https://wa.me/?text=${encodeURIComponent(`${texto} ${url}`)}`;
+---
+<div class="compartilhar">
+  <a class="botao zap" href={whats} target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 18.8z" /><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-2-2l.8-1-1-2z" /></svg>
+    Mandar no WhatsApp
+  </a>
+  <button type="button" class="botao" data-copiar={url}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></svg>
+    <span>Copiar link</span>
+  </button>
+</div>
+<script>
+  document.querySelectorAll<HTMLButtonElement>("[data-copiar]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      const rotulo = b.querySelector("span")!;
+      try {
+        await navigator.clipboard.writeText(b.dataset.copiar!);
+        rotulo.textContent = "Link copiado";
+      } catch {
+        rotulo.textContent = "Não deu para copiar";
+      }
+      setTimeout(() => (rotulo.textContent = "Copiar link"), 2500);
+    }),
+  );
+</script>
+<style>
+  .compartilhar { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .botao { display: inline-flex; align-items: center; gap: 0.5rem; font: inherit; font-weight: 600; font-size: 0.95rem; padding: 0.6rem 1rem; border-radius: 999px; border: 1px solid var(--linha); background: var(--folha); color: var(--tinta); text-decoration: none; cursor: pointer; }
+  .botao svg { width: 1.2rem; height: 1.2rem; }
+  .botao:hover { border-color: var(--dado); }
+  .botao:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+  .zap { background: var(--dado); border-color: var(--dado); color: var(--folha); }
+  .zap:hover { filter: brightness(1.1); }
+</style>

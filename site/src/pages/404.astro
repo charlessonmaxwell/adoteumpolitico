@@ -1,0 +1,16 @@
+---
+import Base from "../layouts/Base.astro";
+import Busca from "../components/Busca.astro";
+---
+<Base titulo="Página não encontrada" descricao="Essa página não existe. Busque um deputado ou senador.">
+  <div class="conteiner nao-achou">
+    <h1>Essa página não existe</h1>
+    <p>O link pode estar errado ou o parlamentar pode ter saído do cargo. Tente buscar pelo nome:</p>
+    <Busca />
+  </div>
+</Base>
+<style>
+  .nao-achou { padding-top: 3rem; display: grid; gap: 1rem; }
+  h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 5vw, 3rem); margin: 0; color: var(--dado); }
+  p { margin: 0; max-width: 50ch; }
+</style>

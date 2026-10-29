@@ -1,0 +1,28 @@
+---
+import type { Parlamentar } from "../../../pipeline/src/modelo/parlamentar";
+interface Props {
+  p: Parlamentar;
+}
+const { p } = Astro.props;
+const iniciais = p.nome.split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]).join("");
+---
+<a class="cartao" href={`/p/${p.id}/`}>
+  <span class="foto" data-iniciais={iniciais}>{p.urlFoto && <img src={p.urlFoto} alt="" width="64" height="80" loading="lazy" />}</span>
+  <span class="info">
+    <span class="nome">{p.nome}</span>
+    <span class="meta">{p.partido}, {p.uf}</span>
+  </span>
+  <svg class="seta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+</a>
+<style>
+  .cartao { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.9rem; padding: 0.7rem 0.9rem 0.7rem 0.7rem; background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; color: var(--tinta); text-decoration: none; min-height: 4.5rem; }
+  .cartao:hover { border-color: var(--dado); }
+  .cartao:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+  .foto { width: 3.2rem; aspect-ratio: 4 / 5; border-radius: 6px; overflow: hidden; background: var(--trilho); position: relative; }
+  .foto::before { content: attr(data-iniciais); position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--numeros); font-weight: 700; color: var(--grafite); }
+  .foto img { position: relative; width: 100%; height: 100%; object-fit: cover; color: transparent; font-size: 0; }
+  .info { display: grid; }
+  .nome { font-weight: 600; line-height: 1.25; }
+  .meta { color: var(--grafite); font-size: 0.9rem; }
+  .seta { width: 1.2rem; color: var(--grafite); }
+</style>
