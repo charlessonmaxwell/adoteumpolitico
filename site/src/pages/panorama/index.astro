@@ -4,7 +4,7 @@ import Colunas from "../../components/Colunas.astro";
 import Linhas from "../../components/Linhas.astro";
 import Icone from "../../components/Icone.astro";
 import { dados, panorama, projetos, resumoEmendas } from "../../lib/dados";
-import { area, pagoTotal, pctPago } from "../../lib/emendas";
+import { area, pagoTotal, pctPago, TIPO_FAVORECIDO } from "../../lib/emendas";
 import { dataBr, formatarMoeda, formatarMoedaCurta, formatarNumero, humanizarCategoria, plural, UFS } from "../../lib/formato";
 import type { PanoramaCasa } from "../../../../pipeline/src/rotina/panorama";
 
@@ -129,6 +129,15 @@ const casas = pan
                 <p class="nota">"Livre (emenda Pix)": o dinheiro cai no caixa da prefeitura ou do estado, que decide o uso e precisa prestar contas.</p>
               </article>
             </div>
+            {em.recebidos && (
+              <article class="cartao largo recebidos-pan">
+                <h3><span class="selo"><Icone nome="dinheiro" /></span>Quem recebeu o dinheiro</h3>
+                <p class="destaque"><strong>{formatarMoedaCurta(em.recebidos.total)}</strong> <span>pagos a quem executa as emendas</span></p>
+                <Linhas itens={Object.entries(em.recebidos.porTipo).filter(([t, v]) => t !== "banco" && (v ?? 0) > 0).sort(([, a], [, b]) => (b ?? 0) - (a ?? 0)).map(([t, v]) => ({ rotulo: TIPO_FAVORECIDO[t] ?? t, valor: v ?? 0, texto: formatarMoedaCurta(v ?? 0) }))} />
+                {(em.recebidos.porTipo.banco ?? 0) > 0 && <p class="nota">Outros {formatarMoedaCurta(em.recebidos.porTipo.banco!)} aparecem pagos a bancos (como o Banco do Brasil) que só intermediam o repasse, principalmente nas emendas Pix: o destino final é a prefeitura ou o estado.</p>}
+                <p class="nota">Veja cidade por cidade na página de cada estado.</p>
+              </article>
+            )}
             <details class="grupos">
               <summary>Por estado de destino (ordem alfabética)</summary>
               <div class="rolagem">
@@ -178,6 +187,7 @@ const casas = pan
   .pagina-panorama .apertadas a { font-weight: 700; }
   .pagina-panorama .placar { font-weight: 700; white-space: nowrap; }
   .pagina-panorama .apertadas .ementa { grid-column: 1 / -1; color: var(--tinta-suave); font-size: 0.9rem; }
+  .pagina-panorama .recebidos-pan { margin-top: 1rem; }
   .pagina-panorama .fonte { margin: 1rem 0 3rem; color: var(--grafite); font-size: 0.85rem; }
   .pagina-panorama .vazio { color: var(--grafite); }
 </style>

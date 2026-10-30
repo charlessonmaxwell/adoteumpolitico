@@ -1,8 +1,8 @@
 ---
 import Base from "../../layouts/Base.astro";
 import CartaoParlamentar from "../../components/CartaoParlamentar.astro";
-import { dados } from "../../lib/dados";
-import { UFS, plural } from "../../lib/formato";
+import { dados, cidadesEmendas } from "../../lib/dados";
+import { UFS, plural, formatarMoedaCurta } from "../../lib/formato";
 
 export function getStaticPaths() {
   return Object.keys(UFS).map((uf) => ({ params: { uf: uf.toLowerCase() }, props: { uf } }));
@@ -12,6 +12,7 @@ const estado = UFS[uf]!;
 const daUf = dados().resumos.filter((r) => r.parlamentar.uf === uf).map((r) => r.parlamentar);
 const senadores = daUf.filter((p) => p.casa === "senado");
 const deputados = daUf.filter((p) => p.casa === "camara");
+const cidades = cidadesEmendas().filter((c) => c.uf === uf);
 ---
 <Base titulo={`Deputados federais e senadores de ${estado}`} descricao={`Quem representa ${estado} no Congresso e o que cada um fez no mandato.`}>
   <div class="conteiner">
@@ -34,9 +35,34 @@ const deputados = daUf.filter((p) => p.casa === "camara");
       </section>
     )}
     <p class="ordem">Em ordem alfabética. A gente não ordena por desempenho.</p>
+    {cidades.length > 0 && (
+      <section class="cidades">
+        <h2>Emendas nas cidades de {estado}</h2>
+        <p class="ordem">Toque na cidade para ver quanto chegou de emenda, de quem e quem recebeu.</p>
+        <label class="filtro"><span>Procurar cidade</span><input type="search" placeholder="Nome da cidade" data-filtro-cidade /></label>
+        <ul class="lista-cidades" data-cidades>
+          {cidades.map((c) => <li><a href={`/cidade/${c.id}/`}>{c.nome}</a> <span>{formatarMoedaCurta(Math.max(c.empenhado, c.recebido))}</span></li>)}
+        </ul>
+      </section>
+    )}
   </div>
 </Base>
+<script>
+  const campo = document.querySelector<HTMLInputElement>("[data-filtro-cidade]");
+  const itens = [...document.querySelectorAll<HTMLElement>("[data-cidades] > li")];
+  const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  campo?.addEventListener("input", () => {
+    const q = norm(campo.value.trim());
+    for (const li of itens) li.hidden = !!q && !norm(li.textContent ?? "").includes(q);
+  });
+</script>
 <style>
+  .filtro { display: grid; gap: 0.3rem; max-width: 24rem; margin: 0.8rem 0 1rem; font-weight: 600; }
+  .filtro input { font: inherit; font-weight: 400; padding: 0.6rem 0.8rem; border: 2px solid var(--linha); border-radius: 10px; background: var(--folha); color: var(--tinta); }
+  .lista-cidades { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0.3rem 1rem; }
+  .lista-cidades li { display: flex; justify-content: space-between; gap: 0.5rem; border-bottom: 1px dashed var(--linha); padding: 0.3rem 0; }
+  .lista-cidades li[hidden] { display: none; }
+  .lista-cidades span { color: var(--grafite); font-size: 0.85rem; white-space: nowrap; }
   .topo-uf { padding: 2.5rem 0 1rem; }
   .volta { margin: 0 0 1rem; font-size: 0.95rem; }
   h1 { display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.4rem, 6vw, 3.6rem); line-height: 1; margin: 0 0 0.8rem; }

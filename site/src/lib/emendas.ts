@@ -37,3 +37,20 @@ export function frasesEmendas(e: EmendasDoParlamentar | null, anoInicial: number
     detalhes,
   };
 }
+
+export const TIPO_FAVORECIDO: Record<string, string> = {
+  prefeitura: "Prefeitura e fundos municipais",
+  estado: "Governo do estado e órgãos estaduais",
+  entidade: "Entidades (associações, fundações, cooperativas)",
+  empresa: "Empresas",
+  orgao_publico: "Órgãos e empresas públicas federais",
+  outro: "Outros",
+};
+export const TIPO_EMENDA: Record<string, string> = {
+  individual: "Individual",
+  bancada: "Bancada do estado",
+  comissao: "Comissão",
+  relator: "Relator",
+  outra: "Outra",
+};
+export { idCidade } from "../../../pipeline/src/emendas/cidades.js";

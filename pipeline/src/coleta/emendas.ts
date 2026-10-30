@@ -190,6 +190,7 @@ export function paraRecebimento(r: Record<string, string>, ids: Set<string>): Re
   const idEmenda = r["Código da Emenda"] ?? "";
   if (!ids.has(idEmenda)) return null;
   if (!/jur[ií]dica/i.test(r["Tipo Favorecido"] ?? "")) return null; // pessoa física: nunca guardar
+  if (/pessoa f[ií]sica/i.test(r["Natureza Jurídica"] ?? "")) return null; // ex.: produtor rural pessoa física
   const cnpj = (r["Código do Favorecido"] ?? "").replace(/\D/g, "");
   if (cnpj.length !== 14) return null;
   const natureza = r["Natureza Jurídica"] ?? "";

@@ -77,3 +77,23 @@ export function resumoEmendas(): ReturnType<
   const arq = join(DIR, "emendas", "resumo.json");
   return existsSync(arq) ? JSON.parse(readFileSync(arq, "utf8")) : null;
 }
+
+type Cidade = import("../../../pipeline/src/emendas/cidades.js").CidadeEmendas;
+export interface CidadeIndice {
+  id: string;
+  nome: string;
+  uf: string;
+  empenhado: number;
+  recebido: number;
+}
+/** Índice das cidades com emenda ou dinheiro recebido (só as que têm arquivo publicado). */
+export function cidadesEmendas(): CidadeIndice[] {
+  const arq = join(DIR, "emendas", "cidades.json");
+  if (!existsSync(arq)) return [];
+  return (JSON.parse(readFileSync(arq, "utf8")) as CidadeIndice[]).filter((c) =>
+    existsSync(join(DIR, "emendas", "cidade", `${c.id}.json`)),
+  );
+}
+export function cidadeEmendas(id: string): Cidade {
+  return JSON.parse(readFileSync(join(DIR, "emendas", "cidade", `${id}.json`), "utf8")) as Cidade;
+}

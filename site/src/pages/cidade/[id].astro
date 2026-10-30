@@ -1,0 +1,117 @@
+---
+import Base from "../../layouts/Base.astro";
+import Linhas from "../../components/Linhas.astro";
+import Icone from "../../components/Icone.astro";
+import Texto from "../../components/Texto.astro";
+import { cidadeEmendas, cidadesEmendas, dados, resumoEmendas } from "../../lib/dados";
+import { dataBr, formatarMoeda, formatarMoedaCurta, formatarNumero, plural, UFS } from "../../lib/formato";
+import { area, pagoTotal, pctPago, TIPO_EMENDA, TIPO_FAVORECIDO } from "../../lib/emendas";
+
+export function getStaticPaths() {
+  return cidadesEmendas().map((c) => ({ params: { id: c.id }, props: { id: c.id } }));
+}
+const { id } = Astro.props as { id: string };
+const c = cidadeEmendas(id);
+const res = resumoEmendas();
+const atuais = new Set(dados().resumos.map((r) => r.parlamentar.id));
+const d = c.destinadas;
+const r = c.recebidos;
+const capital = ["Rio Branco", "Maceió", "Macapá", "Manaus", "Salvador", "Fortaleza", "Brasília", "Vitória", "Goiânia", "São Luís", "Cuiabá", "Campo Grande", "Belo Horizonte", "Belém", "João Pessoa", "Curitiba", "Recife", "Teresina", "Rio de Janeiro", "Natal", "Porto Alegre", "Porto Velho", "Boa Vista", "Florianópolis", "São Paulo", "Aracaju", "Palmas"].includes(c.nome);
+const nome = `${c.nome} (${c.uf})`;
+---
+<Base titulo={`Emendas parlamentares em ${nome}`} descricao={`Quanto chegou de emenda parlamentar para ${nome}, de quem, para quê, e quem recebeu o dinheiro.`}>
+  <div class="conteiner pagina-cidade">
+    <p class="volta"><a href={`/uf/${c.uf.toLowerCase()}/`}>{UFS[c.uf] ?? c.uf}</a></p>
+    <h1>{c.nome} <span>{c.uf}</span></h1>
+    <p class="intro"><Texto texto={`Quanto de emendas o Congresso mandou para ${c.nome} desde ${res?.anoInicial ?? 2023}, quem indicou e quem recebeu o dinheiro.`} /></p>
+
+    <div class="grade">
+      <article class="cartao">
+        <h2><span class="selo"><Icone nome="mapa" /></span>Emendas com destino a {c.nome}</h2>
+        {d.emendas === 0 ? (
+          <p class="vazio">Nenhuma emenda tem {c.nome} como destino oficial. O dinheiro pode ter chegado por emendas com destino ao estado (veja "Quem recebeu").</p>
+        ) : (
+          <>
+            <p class="destaque"><strong>{formatarMoedaCurta(d.valores.empenhado)}</strong> <span>reservados em {formatarNumero(d.emendas)} {plural(d.emendas, "emenda", "emendas")}</span></p>
+            <p>{formatarMoedaCurta(pagoTotal(d.valores))} ({pctPago(d.valores)}%) já foram pagos.{d.pix.emendas > 0 && ` ${formatarNumero(d.pix.emendas)} ${plural(d.pix.emendas, "foi emenda Pix", "foram emendas Pix")}, com dinheiro direto no caixa da prefeitura.`}</p>
+            <h3>Para quê</h3>
+            <Linhas itens={d.porArea.slice(0, 5).map((a) => ({ rotulo: area(a.area), valor: a.valores.empenhado, texto: formatarMoedaCurta(a.valores.empenhado) }))} />
+          </>
+        )}
+      </article>
+
+      <article class="cartao">
+        <h2><span class="selo"><Icone nome="dinheiro" /></span>Quem recebeu com endereço aqui</h2>
+        {r.total === 0 ? (
+          <p class="vazio">Nenhum órgão ou entidade com endereço em {c.nome} aparece recebendo dinheiro de emenda.</p>
+        ) : (
+          <>
+            <p class="destaque"><strong>{formatarMoedaCurta(r.total)}</strong> <span>pagos a quem tem endereço em {c.nome}</span></p>
+            <Linhas itens={Object.entries(r.porTipo).filter(([, v]) => (v ?? 0) > 0).sort(([, a], [, b]) => (b ?? 0) - (a ?? 0)).map(([t, v]) => ({ rotulo: TIPO_FAVORECIDO[t] ?? t, valor: v ?? 0, texto: formatarMoedaCurta(v ?? 0) }))} />
+            {capital && <p class="nota">Como {c.nome} é capital, entra aqui o dinheiro recebido pelo governo do estado, que pode ter sido usado em outras cidades.</p>}
+          </>
+        )}
+      </article>
+    </div>
+
+    {d.autores.length > 0 && (
+      <section class="bloco-tabela">
+        <h2>Quem indicou emendas para {c.nome}</h2>
+        <p class="nota">Em ordem alfabética. Bancada e comissão são emendas decididas em grupo.</p>
+        <div class="rolagem">
+          <table>
+            <thead><tr><th>Quem indicou</th><th>Tipo</th><th>Emendas</th><th>Reservado</th><th>Já pago</th></tr></thead>
+            <tbody>
+              {d.autores.map((a) => (
+                <tr>
+                  <td>{a.idParlamentar && atuais.has(a.idParlamentar) ? <a href={`/p/${a.idParlamentar}/emendas/`}>{a.nome}</a> : <span title="Não está mais no cargo ou é emenda coletiva">{a.nome}</span>}</td>
+                  <td>{TIPO_EMENDA[a.tipo] ?? a.tipo}</td>
+                  <td class="num">{a.emendas}</td>
+                  <td class="num">{formatarMoeda(a.valores.empenhado)}</td>
+                  <td class="num">{formatarMoeda(pagoTotal(a.valores))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )}
+
+    {r.favorecidos.length > 0 && (
+      <section class="bloco-tabela">
+        <h2>Quem mais recebeu em {c.nome}</h2>
+        <div class="rolagem">
+          <table>
+            <thead><tr><th>Quem recebeu</th><th>Tipo</th><th>Recebeu</th></tr></thead>
+            <tbody>{r.favorecidos.map((f) => <tr><td>{f.nome}</td><td>{TIPO_FAVORECIDO[f.tipo] ?? f.tipo}</td><td class="num">{formatarMoeda(f.valor)}</td></tr>)}</tbody>
+          </table>
+        </div>
+        <p class="nota">Só pessoas jurídicas (CNPJ). Bancos que apenas intermediam o repasse não entram.</p>
+      </section>
+    )}
+    <p class="fonte">Fonte: <a href="https://portaldatransparencia.gov.br/emendas" rel="external noopener" target="_blank">Portal da Transparência (CGU)</a>. Atualizado a cada 15 dias; dados de {res ? dataBr(res.atualizadoEm) : "—"}.</p>
+  </div>
+</Base>
+<style is:global>
+  .pagina-cidade .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
+  .pagina-cidade h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.4rem, 6vw, 3.6rem); line-height: 1; margin: 0 0 0.6rem; color: var(--dado); }
+  .pagina-cidade h1 span { color: var(--grafite); font-size: 0.55em; }
+  .pagina-cidade .intro { max-width: 62ch; font-size: 1.1rem; color: var(--tinta-suave); }
+  .pagina-cidade .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .pagina-cidade .cartao { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 0.8rem; min-width: 0; }
+  .pagina-cidade .cartao p { margin: 0; }
+  .pagina-cidade h2 { display: flex; align-items: center; gap: 0.6rem; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.25rem; margin: 0; }
+  .pagina-cidade h3 { margin: 0.3rem 0 0; font-size: 1rem; }
+  .pagina-cidade .selo { display: inline-grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--dado); color: var(--folha); flex: none; }
+  .pagina-cidade .destaque { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.6rem; }
+  .pagina-cidade .destaque strong { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: 2.4rem; line-height: 1; color: var(--dado); }
+  .pagina-cidade .destaque span, .pagina-cidade .vazio { color: var(--tinta-suave); }
+  .pagina-cidade .nota { font-size: 0.85rem; color: var(--grafite); }
+  .pagina-cidade .bloco-tabela { margin: 2rem 0; }
+  .pagina-cidade .bloco-tabela h2 { margin-bottom: 0.4rem; }
+  .pagina-cidade .rolagem { overflow-x: auto; background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; margin: 0.6rem 0; }
+  .pagina-cidade table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .pagina-cidade th, .pagina-cidade td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--linha); }
+  .pagina-cidade td.num, .pagina-cidade th.num { text-align: right; white-space: nowrap; }
+  .pagina-cidade .fonte { margin: 1.5rem 0 3rem; color: var(--grafite); font-size: 0.85rem; }
+</style>

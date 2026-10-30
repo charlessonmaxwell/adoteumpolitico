@@ -6,7 +6,7 @@ import Colunas from "../../components/Colunas.astro";
 import Linhas from "../../components/Linhas.astro";
 import Compartilhar from "../../components/Compartilhar.astro";
 import { dados, cargo, paginaOficial, emendasDe, resumoEmendas } from "../../lib/dados";
-import { frasesEmendas, pagoTotal, area } from "../../lib/emendas";
+import { frasesEmendas, pagoTotal, idCidade } from "../../lib/emendas";
 import { frasesGastos, frasesPresenca, frasesProjetos, frasesVotacoes, VOTO_ROTULO } from "../../lib/frases";
 import { dataBr, formatarMoeda, formatarMoedaCurta, humanizarCategoria, iniciais, pelaUf } from "../../lib/formato";
 import type { ResumoParlamentar } from "../../../../pipeline/src/rotina/agregacao";
@@ -132,7 +132,7 @@ const titulo = `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato`;
         {em && (
           <table slot="numeros">
             <thead><tr><th>Destino</th><th>Reservado</th><th>Já pago</th></tr></thead>
-            <tbody>{em.destinos.slice(0, 15).map((d) => <tr><td>{d.nome}{d.nivel === "municipio" && d.uf ? ` (${d.uf})` : ""}</td><td class="num">{formatarMoeda(d.valores.empenhado)}</td><td class="num">{formatarMoeda(pagoTotal(d.valores))}</td></tr>)}</tbody>
+            <tbody>{em.destinos.slice(0, 15).map((d) => <tr><td>{d.nivel === "municipio" && d.uf ? <a href={`/cidade/${idCidade(d.uf, d.nome)}/`}>{d.nome} ({d.uf})</a> : d.nome}</td><td class="num">{formatarMoeda(d.valores.empenhado)}</td><td class="num">{formatarMoeda(pagoTotal(d.valores))}</td></tr>)}</tbody>
           </table>
         )}
       </Bloco>
