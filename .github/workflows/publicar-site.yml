@@ -88,10 +88,30 @@ jobs:
           echo "::notice::Endereço do site: https://$SUB"
           echo "Endereço: https://$SUB"
 
+      - name: Contagem de visitas (Cloudflare Web Analytics, sem cookie)
+        id: analytics
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || env.CLOUDFLARE_ACCOUNT_ID }}
+          URL_SITE: ${{ steps.endereco.outputs.url }}
+        run: |
+          HOST=${URL_SITE#https://}
+          API=https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/rum/site_info
+          L=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API/list?per_page=50")
+          T=$(echo "$L" | jq -r --arg h "$HOST" '[.result[]? | select(.ruleset.zone_name == $h or .host == $h)][0].site_token // empty')
+          if [ -z "$T" ]; then
+            C=$(curl -sS -X POST -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" "$API" -d "{\"host\":\"$HOST\",\"auto_install\":false}")
+            T=$(echo "$C" | jq -r '.result.site_token // empty')
+            [ -z "$T" ] && echo "::warning::Web Analytics não ativado pelo token (falta permissão 'Account Analytics: Edit'?): $(echo "$C" | jq -c '[.errors[]?.message]')"
+          fi
+          [ -n "$T" ] && echo "::notice::Web Analytics ativo para $HOST" && echo "beacon=$T" >> "$GITHUB_OUTPUT"
+
       - name: Gerar o site
         env:
           DADOS_DIR: dados
           SITE_URL: ${{ steps.endereco.outputs.url }}
+          PUBLIC_CF_BEACON: ${{ steps.analytics.outputs.beacon }}
         run: pnpm site:build
 
       - name: Conferir neutralidade dos textos
