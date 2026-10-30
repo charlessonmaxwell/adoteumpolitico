@@ -155,15 +155,15 @@ export async function imagemInicio(): Promise<Buffer> {
       color: COR.tinta,
     },
     linha("Adote um Político", { fontSize: 30, color: COR.suave, marginBottom: 150 }),
-    linha("Você votou.", {
+    linha("Votou,", {
       fontFamily: "Archivo",
-      fontSize: 112,
+      fontSize: 86,
       lineHeight: 1,
       letterSpacing: -3,
     }),
-    linha("Agora confere.", {
+    linha("agora fiscalize e cobre.", {
       fontFamily: "Archivo",
-      fontSize: 112,
+      fontSize: 86,
       lineHeight: 1,
       letterSpacing: -3,
       marginBottom: 28,
