@@ -40,9 +40,15 @@ jobs:
         env:
           IGNORAR_TRAVA: ${{ github.event.inputs.ignorar_trava == 'true' }}
         run: |
+          set -o pipefail
           NODE_OPTIONS=--max-old-space-size=6144 pnpm rotina:emendas publicado | tee emendas.log
           echo "::notice::$(tail -1 emendas.log)"
           node -e "const q=require('./publicado/emendas/qualidade.json'); for (const n of q.naoLigados.slice(0,25)) console.log('::notice::Autor desconhecido: '+n.nome+' (cód. '+n.codigoAutor+') '+n.emendas+' emendas')"
+
+      - name: Diagnóstico da ligação de autores
+        if: always()
+        run: |
+          [ -f emendas-diagnostico.json ] && node -e "const d=require('./emendas-diagnostico.json'); console.log('::notice::cobertura '+(d.cobertura*100).toFixed(2)+'%, membros '+d.membros); for (const p of d.parecidos.slice(0,30)) console.log('::notice::'+p.nome+' → '+(p.candidatos.join('; ')||'nenhum parecido'))" || true
 
       - name: Publicar na branch data
         env:

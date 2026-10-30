@@ -13,6 +13,7 @@ import { gravarMetricas } from "../monitoramento/metricas.js";
 import { ErroTrava, verificarQuedas } from "../rotina/trava.js";
 import {
   ligarAutores,
+  nomeComparavel,
   type DePara,
   type MembroConhecido,
   type ResultadoLigacao,
@@ -221,6 +222,26 @@ export async function executarEmendas(
   const cobertura = lig.qualidade.valorIndividual
     ? lig.qualidade.valorConhecido / lig.qualidade.valorIndividual
     : 1;
+  // Diagnóstico sempre gravado fora da publicação (para revisar quem ficou sem ligação)
+  await writeFile(
+    "emendas-diagnostico.json",
+    JSON.stringify({
+      cobertura,
+      naoLigados: lig.qualidade.naoLigados.slice(0, 40),
+      parecidos: lig.qualidade.naoLigados.slice(0, 40).map((n) => ({
+        nome: n.nome,
+        candidatos: membros
+          .filter((m) =>
+            nomeComparavel(m.nome)
+              .split(" ")
+              .some((p) => p.length > 3 && nomeComparavel(n.nome).includes(p)),
+          )
+          .slice(0, 5)
+          .map((m) => `${m.nome} (${m.id})`),
+      })),
+      membros: membros.length,
+    }),
+  );
   if (cobertura < COBERTURA_MINIMA && !o.ignorarTrava)
     throw new ErroCobertura(cobertura, lig.qualidade.naoLigados);
   const cid = montarCidades(lig.emendas, recebimentos, parlamentares);
