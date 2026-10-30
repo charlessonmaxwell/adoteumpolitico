@@ -63,3 +63,17 @@ export function panorama(): import("../../../pipeline/src/rotina/panorama.js").P
   const arq = join(DIR, "panorama.json");
   return existsSync(arq) ? JSON.parse(readFileSync(arq, "utf8")) : null;
 }
+
+type EmendasP = import("../../../pipeline/src/emendas/rotina.js").EmendasDoParlamentar;
+/** Emendas individuais ligadas ao parlamentar (rotina quinzenal). Null se não tiver nenhuma. */
+export function emendasDe(id: string): EmendasP | null {
+  const arq = join(DIR, "emendas", "parlamentar", `${id}.json`);
+  return existsSync(arq) ? (JSON.parse(readFileSync(arq, "utf8")) as EmendasP) : null;
+}
+/** Resumo geral das emendas (Panorama). Null antes da primeira rotina quinzenal. */
+export function resumoEmendas(): ReturnType<
+  typeof import("../../../pipeline/src/emendas/rotina.js").resumoGeral
+> | null {
+  const arq = join(DIR, "emendas", "resumo.json");
+  return existsSync(arq) ? JSON.parse(readFileSync(arq, "utf8")) : null;
+}

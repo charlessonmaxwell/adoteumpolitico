@@ -1,0 +1,84 @@
+---
+import Base from "../../../layouts/Base.astro";
+import Texto from "../../../components/Texto.astro";
+import { dados, emendasDe, resumoEmendas, cargo } from "../../../lib/dados";
+import { dataBr, formatarMoeda, formatarMoedaCurta, plural } from "../../../lib/formato";
+import { area, pagoTotal, pctPago } from "../../../lib/emendas";
+import type { Parlamentar } from "../../../../../pipeline/src/modelo/parlamentar";
+
+export function getStaticPaths() {
+  return dados()
+    .resumos.filter((r) => emendasDe(r.parlamentar.id))
+    .map((r) => ({ params: { id: r.parlamentar.id }, props: { p: r.parlamentar } }));
+}
+const { p } = Astro.props as { p: Parlamentar };
+const e = emendasDe(p.id)!;
+const res = resumoEmendas();
+---
+<Base titulo={`Emendas de ${p.nome}: para onde foi o dinheiro`} descricao={`As emendas que ${p.nome} (${p.partido}-${p.uf}) indicou ao orçamento: destino, área, quanto foi reservado e quanto já foi pago.`}>
+  <div class="conteiner pagina-emendas">
+    <p class="volta"><a href={`/p/${p.id}/`}>Voltar para o perfil de {p.nome}</a></p>
+    <h1>Para onde mandou dinheiro</h1>
+    <p class="quem">{p.nome}, {cargo(p).toLowerCase()}, {p.partido}-{p.uf}</p>
+    <p class="resumo">
+      <strong>{e.emendas}</strong> {plural(e.emendas, "emenda", "emendas")} desde {res?.anoInicial ?? 2023}: <strong>{formatarMoedaCurta(e.total.empenhado)}</strong> reservados e <strong>{formatarMoedaCurta(pagoTotal(e.total))}</strong> já pagos ({pctPago(e.total)}%).
+    </p>
+    <p class="explica"><Texto texto="Só entram as emendas individuais. Emendas de bancada e de comissão são decididas em grupo e não aparecem no nome de uma pessoa. Nas emendas Pix, o dinheiro vai direto para o caixa da prefeitura ou do estado." /></p>
+    <label class="filtro">
+      <span>Procurar cidade, estado ou área</span>
+      <input type="search" placeholder="Ex.: Aracaju, saúde, Pix" data-filtro />
+    </label>
+    <div class="rolagem">
+      <table>
+        <thead><tr><th>Ano</th><th>Destino</th><th>Área</th><th>Reservado</th><th>Já pago</th></tr></thead>
+        <tbody data-lista>
+          {e.lista.map((x) => (
+            <tr>
+              <td>{x.ano}</td>
+              <td>{x.destino}{x.pix && <span class="pix">Pix</span>}</td>
+              <td>{area(x.area)}{x.subarea && x.area !== "Encargos especiais" ? <span class="sub">{x.subarea}</span> : null}</td>
+              <td class="num">{formatarMoeda(x.valores.empenhado)}</td>
+              <td class="num">{formatarMoeda(pagoTotal(x.valores))}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="nada" data-nada hidden>Nenhuma emenda com esse termo.</p>
+    <p class="fonte">Fonte: <a href="https://portaldatransparencia.gov.br/emendas" rel="external noopener" target="_blank">Portal da Transparência (CGU)</a>. Atualizado a cada 15 dias; dados de {res ? dataBr(res.atualizadoEm) : "—"}. "Já pago" soma o pago no ano e os restos a pagar pagos depois.</p>
+  </div>
+</Base>
+<script>
+  const campo = document.querySelector<HTMLInputElement>("[data-filtro]");
+  const itens = [...document.querySelectorAll<HTMLElement>("[data-lista] > tr")];
+  const nada = document.querySelector<HTMLElement>("[data-nada]");
+  const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  campo?.addEventListener("input", () => {
+    const q = norm(campo.value.trim());
+    let n = 0;
+    for (const li of itens) {
+      const ok = !q || norm(li.textContent ?? "").includes(q);
+      li.hidden = !ok;
+      if (ok) n++;
+    }
+    if (nada) nada.hidden = n > 0;
+  });
+</script>
+<style is:global>
+  .pagina-emendas .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
+  .pagina-emendas h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 5vw, 3.2rem); line-height: 1; margin: 0; color: var(--dado); }
+  .pagina-emendas .quem { margin: 0.4rem 0 1.2rem; font-weight: 600; }
+  .pagina-emendas .resumo { font-size: 1.15rem; max-width: 65ch; }
+  .pagina-emendas .explica { color: var(--tinta-suave); max-width: 65ch; }
+  .pagina-emendas .filtro { display: grid; gap: 0.3rem; max-width: 28rem; margin: 1.2rem 0; font-weight: 600; }
+  .pagina-emendas .filtro input { font: inherit; font-weight: 400; padding: 0.7rem 0.9rem; border: 2px solid var(--linha); border-radius: 10px; background: var(--folha); color: var(--tinta); }
+  .pagina-emendas .rolagem { overflow-x: auto; background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; }
+  .pagina-emendas table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .pagina-emendas th, .pagina-emendas td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--linha); vertical-align: top; }
+  .pagina-emendas td.num, .pagina-emendas th:nth-child(n + 4) { text-align: right; white-space: nowrap; }
+  .pagina-emendas tr[hidden] { display: none; }
+  .pagina-emendas .pix { margin-left: 0.4rem; font-size: 0.75rem; font-weight: 700; padding: 0.05rem 0.4rem; border-radius: 999px; background: var(--dado); color: var(--folha); }
+  .pagina-emendas .sub { display: block; font-size: 0.82rem; color: var(--grafite); }
+  .pagina-emendas .nada, .pagina-emendas .fonte { color: var(--grafite); }
+  .pagina-emendas .fonte { margin: 1.5rem 0 3rem; font-size: 0.85rem; }
+</style>

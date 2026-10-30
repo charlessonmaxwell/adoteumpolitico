@@ -3,7 +3,8 @@ import Base from "../../layouts/Base.astro";
 import Colunas from "../../components/Colunas.astro";
 import Linhas from "../../components/Linhas.astro";
 import Icone from "../../components/Icone.astro";
-import { dados, panorama, projetos } from "../../lib/dados";
+import { dados, panorama, projetos, resumoEmendas } from "../../lib/dados";
+import { area, pagoTotal, pctPago } from "../../lib/emendas";
 import { dataBr, formatarMoeda, formatarMoedaCurta, formatarNumero, humanizarCategoria, plural, UFS } from "../../lib/formato";
 import type { PanoramaCasa } from "../../../../pipeline/src/rotina/panorama";
 
@@ -12,6 +13,8 @@ const { meta } = dados();
 const explicacoes = new Map(projetos().map((p) => [p.id, (p as { explicacao?: string }).explicacao]));
 const resumoProjeto = (id: string, ementa: string) => explicacoes.get(id) ?? ementa.split("NOVA EMENTA:").pop()!.trim();
 const media1 = (v: number | null) => (v === null ? "—" : formatarNumero(Math.round(v * 10) / 10));
+const em = resumoEmendas();
+const TIPOS: [string, string][] = [["individual", "Individuais (com destino definido)"], ["individual-pix", "Individuais Pix"], ["bancada", "De bancada (grupo do estado)"], ["comissao", "De comissão"]];
 const pct = (v: number | null) => (v === null ? "—" : `${Math.round(v * 100)}%`);
 const casas = pan
   ? ([
@@ -32,6 +35,7 @@ const casas = pan
       <>
         <nav class="abas" aria-label="Escolha a casa">
           {casas.map(([id, nome]) => <a href={`#${id}`}>{nome}</a>)}
+          {em && <a href="#emendas">Emendas</a>}
         </nav>
 
         {casas.map(([id, nome, quem, c]) => (
@@ -108,6 +112,35 @@ const casas = pan
             </details>
           </section>
         ))}
+        {em && (
+          <section id="emendas" class="casa">
+            <h2>Emendas parlamentares <span>Câmara e Senado juntos, desde {em.anoInicial}</span></h2>
+            <div class="grade">
+              <article class="cartao">
+                <h3><span class="selo"><Icone nome="mapa" /></span>Quanto foi indicado</h3>
+                <p class="destaque"><strong>{formatarMoedaCurta(em.total.empenhado)}</strong> <span>reservados no orçamento por emendas</span></p>
+                <p><strong>{formatarMoedaCurta(pagoTotal(em.total))}</strong> ({pctPago(em.total)}%) já foram pagos. O resto está reservado e ainda não saiu do caixa da União.</p>
+                <Linhas itens={TIPOS.filter(([k]) => em.porTipo[k]).map(([k, rot]) => ({ rotulo: rot, valor: em.porTipo[k]!.valores.empenhado, texto: formatarMoedaCurta(em.porTipo[k]!.valores.empenhado) }))} />
+                <p class="nota">Emendas de bancada e de comissão são decididas em grupo e não aparecem no perfil de ninguém.</p>
+              </article>
+              <article class="cartao">
+                <h3><span class="selo"><Icone nome="mapa" /></span>Para quê</h3>
+                <Linhas itens={em.porArea.slice(0, 7).map((a) => ({ rotulo: area(a.area), valor: a.valores.empenhado, texto: formatarMoedaCurta(a.valores.empenhado) }))} />
+                <p class="nota">"Livre (emenda Pix)": o dinheiro cai no caixa da prefeitura ou do estado, que decide o uso e precisa prestar contas.</p>
+              </article>
+            </div>
+            <details class="grupos">
+              <summary>Por estado de destino (ordem alfabética)</summary>
+              <div class="rolagem">
+                <table>
+                  <thead><tr><th>Estado</th><th>Emendas</th><th>Reservado</th><th>Já pago</th></tr></thead>
+                  <tbody>{em.porUf.map((u) => <tr><td>{UFS[u.uf] ?? u.uf}</td><td class="num">{formatarNumero(u.emendas)}</td><td class="num">{formatarMoedaCurta(u.valores.empenhado)}</td><td class="num">{formatarMoedaCurta(pagoTotal(u.valores))}</td></tr>)}</tbody>
+                </table>
+              </div>
+              <p class="nota">Fonte: Portal da Transparência (CGU). Atualizado a cada 15 dias; dados de {dataBr(em.atualizadoEm)}.</p>
+            </details>
+          </section>
+        )}
         <p class="fonte">Fonte: Câmara dos Deputados e Senado Federal (dados abertos). Só os parlamentares no cargo hoje, de 2023 até agora. Dados de {dataBr(meta.atualizadoEm)}. <a href="/como-funciona/">Como contamos</a>.</p>
       </>
     )}

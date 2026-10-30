@@ -7,9 +7,13 @@ const num = new Intl.NumberFormat("pt-BR");
 
 export const formatarNumero = (n: number) => num.format(n);
 
-/** R$ 1,77 milhão · R$ 358 mil · R$ 950 */
+/** R$ 167,6 bilhões · R$ 1,77 milhão · R$ 358 mil · R$ 950 */
 export function formatarMoedaCurta(v: number): string {
   const a = Math.abs(v);
+  if (a >= 1_000_000_000) {
+    const b = (v / 1_000_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+    return `R$ ${b} ${a >= 2_000_000_000 ? "bilhões" : "bilhão"}`;
+  }
   if (a >= 1_000_000) {
     const m = (v / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
     return `R$ ${m} ${a >= 2_000_000 ? "milhões" : "milhão"}`;

@@ -3,7 +3,12 @@ name: Publicar site
 on:
   # Depois de cada atualização de dados (diária e semanal)
   workflow_run:
-    workflows: ["Atualização diária de dados", "Presença da Câmara (semanal)", "Emendas parlamentares (quinzenal)"]
+    workflows:
+      [
+        "Atualização diária de dados",
+        "Presença da Câmara (semanal)",
+        "Emendas parlamentares (quinzenal)",
+      ]
     types: [completed]
   # Mudança no visual ou nos textos do site
   push:

@@ -79,7 +79,8 @@ interface PrestacaoContas {   // E3, só emenda Pix
 1. Código do autor da fonte, se bater com código conhecido (tabela de/para mantida em `config/autores-emendas.json`).
 2. Nome normalizado (sem acento, sem "Dep."/"Sen.") + casa, com a mesma busca fonética já usada no site.
 3. O que não ligar com certeza fica `idParlamentar: null`, entra num relatório de qualidade e é resolvido à mão uma única vez (o de/para fica salvo).
-- Meta: ≥ 99% do valor das emendas individuais ligado. Abaixo disso, a rotina não publica (trava).
+- ~~Meta de 99% do valor ligado~~ (revisada após a 1ª rodada real): ~15% do valor individual é de quem **já não está no cargo** (cassados, licenciados, quem foi para TCU/ministério), e esse valor deve mesmo ficar sem ligação. Regra adotada: trava se cair > 30% o número de emendas ou de emendas ligadas em relação à rodada anterior; a lista de não ligados (`emendas/qualidade.json`) é revisada a cada rodada.
+- 1ª rodada (29/10/2026): 25.178 emendas desde 2023; 20.136 de 23.901 individuais ligadas; 578 dos 594 parlamentares atuais com emenda (os 16 sem emenda são ex-ministros que voltaram ao mandato ou suplentes recentes).
 
 ## Arquivos publicados (branch `data`)
 | Arquivo | Uso | Tamanho estimado |

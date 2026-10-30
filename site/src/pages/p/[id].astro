@@ -5,7 +5,8 @@ import BarraEmpilhada from "../../components/BarraEmpilhada.astro";
 import Colunas from "../../components/Colunas.astro";
 import Linhas from "../../components/Linhas.astro";
 import Compartilhar from "../../components/Compartilhar.astro";
-import { dados, cargo, paginaOficial } from "../../lib/dados";
+import { dados, cargo, paginaOficial, emendasDe, resumoEmendas } from "../../lib/dados";
+import { frasesEmendas, pagoTotal, area } from "../../lib/emendas";
 import { frasesGastos, frasesPresenca, frasesProjetos, frasesVotacoes, VOTO_ROTULO } from "../../lib/frases";
 import { dataBr, formatarMoeda, formatarMoedaCurta, humanizarCategoria, iniciais, pelaUf } from "../../lib/formato";
 import type { ResumoParlamentar } from "../../../../pipeline/src/rotina/agregacao";
@@ -26,6 +27,9 @@ const pres = frasesPresenca(r);
 const gas = frasesGastos(r, m);
 const proj = frasesProjetos(r, m);
 const vot = frasesVotacoes(r);
+const em = emendasDe(p.id);
+const resEm = resumoEmendas();
+const emf = frasesEmendas(em, resEm?.anoInicial ?? 2023);
 
 // Presença: dias (Câmara) ou votações (Senado), somados no período
 let fatiasPresenca: { rotulo: string; valor: number; cor: string }[] = [];
@@ -104,6 +108,31 @@ const titulo = `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato`;
           <table slot="numeros">
             <thead><tr><th>Categoria</th><th>Total</th></tr></thead>
             <tbody>{r.gastos.porCategoria.map((c) => <tr><td>{humanizarCategoria(c.categoria)}</td><td class="num">{formatarMoeda(c.total)}</td></tr>)}</tbody>
+          </table>
+        )}
+      </Bloco>
+
+      <Bloco
+        titulo="Para onde mandou dinheiro?"
+        icone="mapa"
+        destaque={emf?.destaque}
+        principal={emf?.principal ?? null}
+        detalhes={emf?.detalhes}
+        vazio={resEm ? `Não encontramos emendas individuais de ${p.nome} desde ${resEm.anoInicial}. Quem assumiu o mandato há pouco ou estava como ministro costuma não ter.` : "As emendas aparecem depois da próxima atualização quinzenal."}
+        link={em ? { href: `/p/${p.id}/emendas/`, texto: "Ver todas as emendas" } : undefined}
+        fonte={{ nome: "Portal da Transparência (CGU), emendas parlamentares", url: "https://portaldatransparencia.gov.br/emendas" }}
+        atualizadoEm={resEm ? dataBr(resEm.atualizadoEm) : atualizado}
+      >
+        {em && (
+          <BarraEmpilhada slot="grafico" descricao={emf?.principal ?? ""} fatias={[
+            { rotulo: "Já pago", valor: Math.round(pagoTotal(em.total)), cor: "var(--dado)" },
+            { rotulo: "Reservado, ainda não pago", valor: Math.round(Math.max(em.total.empenhado - pagoTotal(em.total), 0)), cor: "var(--linha)" },
+          ]} />
+        )}
+        {em && (
+          <table slot="numeros">
+            <thead><tr><th>Destino</th><th>Reservado</th><th>Já pago</th></tr></thead>
+            <tbody>{em.destinos.slice(0, 15).map((d) => <tr><td>{d.nome}{d.nivel === "municipio" && d.uf ? ` (${d.uf})` : ""}</td><td class="num">{formatarMoeda(d.valores.empenhado)}</td><td class="num">{formatarMoeda(pagoTotal(d.valores))}</td></tr>)}</tbody>
           </table>
         )}
       </Bloco>

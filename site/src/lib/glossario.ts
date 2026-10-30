@@ -16,6 +16,12 @@ export const GLOSSARIO: Record<string, string> = {
     "Projeto que dá nome a rua, ponte ou prédio, cria data comemorativa ou dá título a cidade. Contamos separado para não inflar o número de projetos.",
   "voto secreto":
     "Em algumas votações (como escolha de autoridades), o voto é secreto: só aparece que a pessoa votou, não em quê.",
+  emendas:
+    "Pedaço do orçamento da União que cada deputado e senador pode indicar para uma cidade, um estado ou uma entidade. O governo é obrigado a pagar a maior parte delas.",
+  "emendas Pix":
+    "Tipo de emenda em que o dinheiro cai direto no caixa da prefeitura ou do estado, sem convênio. Desde 2024 o STF exige plano de ação e prestação de contas.",
+  "já foi pago":
+    "O governo reserva o dinheiro primeiro (empenho), confere a entrega e só depois paga. Aqui mostramos o que já saiu do caixa da União.",
   licença: "Afastamento autorizado do mandato, por saúde, interesse particular ou missão oficial.",
 };
 
