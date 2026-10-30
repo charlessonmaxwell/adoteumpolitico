@@ -242,3 +242,33 @@ describe("emendas — ex-parlamentares e regra dos 99%", () => {
     expect(r.emendas[0]!.idParlamentar).toBe("senado-1");
   });
 });
+
+import { autorReal } from "../pipeline/src/emendas/ligacao.js";
+describe("emendas — casos reais de ligação", () => {
+  it("emenda repassada ao sucessor é do ex-parlamentar", () => {
+    expect(
+      autorReal(
+        "RIBAMAR ANTONIO DA SILVA (EX-PARLAMENTAR RICARDO SILVA, NOS TERMOS ART. 78 LDO 2025)",
+      ),
+    ).toBe("RICARDO SILVA");
+    expect(autorReal("JOSE (OUTRA COISA)")).toBe("JOSE");
+  });
+  it("nome de urna antigo liga ao parlamentar atual; mesma pessoa nas duas casas não é ambígua", () => {
+    const e = consolidar(lerCsv(CSV).map(paraEmenda));
+    const r = ligarAutores(
+      [
+        { ...e[0]!, autorTexto: "YURY DO PAREDAO" },
+        { ...e[1]!, autorTexto: "ELMANO FERRER" },
+      ],
+      [parl("camara-220660", "Yury Bruno")],
+      {},
+      [
+        { id: "camara-220660", nome: "Yury do Paredão" },
+        { id: "camara-234406", nome: "Elmano Férrer" },
+        { id: "senado-5531", nome: "Elmano Férrer" },
+      ],
+    );
+    expect(r.emendas[0]!.idParlamentar).toBe("camara-220660");
+    expect(r.emendas[1]!.exParlamentar?.id).toBe("camara-234406");
+  });
+});

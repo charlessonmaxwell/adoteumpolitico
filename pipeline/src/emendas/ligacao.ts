@@ -12,6 +12,15 @@ export const nomeComparavel = (s: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+/**
+ * Nome de quem indicou. "FULANO (EX-PARLAMENTAR BELTRANO, NOS TERMOS ART. 78 LDO…)" é emenda de Beltrano
+ * repassada ao sucessor: o autor é Beltrano. Outros parênteses são descartados.
+ */
+export function autorReal(texto: string): string {
+  const ex = /\(\s*EX-PARLAMENTAR\s+([^,)]+)/i.exec(texto);
+  return (ex ? ex[1]! : texto.replace(/\(.*$/, "")).trim();
+}
+
 /** De/para revisado à mão: código do autor na CGU → id do parlamentar (null = não é parlamentar atual). */
 export type DePara = Record<string, string | null>;
 
@@ -59,10 +68,18 @@ export function ligarAutores(
     return m;
   };
   const atuais = new Set(parlamentares.map((p) => p.id));
-  const exLista = membros.filter((m) => !atuais.has(m.id));
-  const nomeEx = new Map(exLista.map((m) => [m.id, m.nome]));
-  const porNomeAtual = indexar(parlamentares);
-  const porNomeEx = indexar(exLista);
+  // Nome de qualquer época (inclui nome de urna antigo de quem ainda está no cargo, ex.: "Yury do Paredão" → "Yury Bruno")
+  const porNome = indexar([...parlamentares, ...membros]);
+  const nomeEx = new Map(membros.filter((m) => !atuais.has(m.id)).map((m) => [m.id, m.nome]));
+  /** Entre candidatos com o mesmo nome: um atual único vence; se só houver ex (mesma pessoa nas duas casas), qualquer um serve. */
+  const escolher = (ids: string[]): string | null => {
+    const a = ids.filter((id) => atuais.has(id));
+    if (a.length === 1) return a[0]!;
+    if (a.length > 1) return null;
+    const x = ids.filter((id) => nomeEx.has(id)).sort();
+    const nomes = new Set(x.map((id) => nomeComparavel(nomeEx.get(id)!)));
+    return x.length && nomes.size === 1 ? x[0]! : null;
+  };
   const naoLigados = new Map<string, ResultadoLigacao["qualidade"]["naoLigados"][number]>();
   const exVistos = new Set<string>();
   let individuais = 0,
@@ -77,13 +94,7 @@ export function ligarAutores(
     valorIndividual += e.valores.empenhado;
     let id: string | null = null;
     if (e.codigoAutor in depara) id = depara[e.codigoAutor] ?? null;
-    else {
-      const k = nomeComparavel(e.autorTexto);
-      const a = porNomeAtual.get(k) ?? [];
-      const x = porNomeEx.get(k) ?? [];
-      if (a.length === 1) id = a[0]!;
-      else if (a.length === 0 && x.length === 1) id = x[0]!;
-    }
+    else id = escolher(porNome.get(nomeComparavel(autorReal(e.autorTexto))) ?? []);
     if (id && atuais.has(id)) {
       ligadas++;
       valorLigado += e.valores.empenhado;
