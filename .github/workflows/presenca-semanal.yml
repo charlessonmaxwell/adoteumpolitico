@@ -2,7 +2,7 @@ name: Presença da Câmara (semanal)
 
 on:
   schedule:
-    - cron: "0 7 * * 0" # domingo, 04:00 em Brasília (antes da rotina diária)
+    - cron: "11 7 * * 0" # domingo, 04:11 em Brasília (antes da rotina diária; fora da hora cheia)
   workflow_dispatch:
     inputs:
       anos:

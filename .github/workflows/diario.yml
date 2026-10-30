@@ -2,7 +2,9 @@ name: Atualização diária de dados
 
 on:
   schedule:
-    - cron: "0 9 * * *" # 06:00 em Brasília
+    # Fora da hora cheia: o GitHub atrasa/descarta agendamentos em :00 sob carga.
+    - cron: "17 8 * * *" # 05:17 em Brasília
+    - cron: "47 10 * * *" # 07:47 em Brasília — repescagem: só roda se os dados de hoje ainda não saíram
   workflow_dispatch:
     inputs:
       ignorar_trava:
@@ -19,7 +21,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  checar:
+    runs-on: ubuntu-latest
+    outputs:
+      rodar: ${{ steps.c.outputs.rodar }}
+    steps:
+      - id: c
+        name: Já atualizou hoje? (só importa na repescagem das 07:47)
+        run: |
+          rodar=true
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ github.event.schedule }}" = "47 10 * * *" ]; then
+            hoje=$(TZ=America/Sao_Paulo date +%F)
+            ult=$(curl -sfL "https://raw.githubusercontent.com/${{ github.repository }}/data/meta.json" | python3 -c "import json,sys,datetime; d=json.load(sys.stdin)['atualizadoEm']; print((datetime.datetime.fromisoformat(d.replace('Z','+00:00'))-datetime.timedelta(hours=3)).date())" || echo nunca)
+            [ "$ult" = "$hoje" ] && rodar=false
+            echo "::notice::Última atualização: $ult; hoje: $hoje; rodar=$rodar"
+          fi
+          echo "rodar=$rodar" >> "$GITHUB_OUTPUT"
+
   atualizar:
+    needs: checar
+    if: needs.checar.outputs.rodar == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30 # CA1
     steps:
