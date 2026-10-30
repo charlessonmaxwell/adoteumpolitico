@@ -1,17 +1,31 @@
 import { unzipSync } from "fflate";
 import { getBytes, type OpcoesHttp } from "../util/http.js";
-import type { Emenda, TipoEmenda } from "../modelo/emenda.js";
+import type { Emenda, Recebimento, TipoEmenda, TipoFavorecido } from "../modelo/emenda.js";
+import { semCpf } from "../util/normalizacao.js";
 
 export const URL_EMENDAS =
   "https://portaldatransparencia.gov.br/download-de-dados/emendas-parlamentares/UNICO";
 export const ANO_INICIAL = 2023;
 
-/** CSV da CGU: separador ";", aspas duplas, latin1. Devolve linhas como objetos pelo cabeçalho. */
-export function lerCsv(texto: string): Record<string, string>[] {
-  const linhas: string[][] = [];
+/** Percorre o CSV da CGU (";", aspas duplas) chamando `cada` por linha, sem montar tudo na memória. */
+export function percorrerCsv(texto: string, cada: (r: Record<string, string>) => void) {
+  let cab: string[] | null = null;
   let campo = "";
   let linha: string[] = [];
   let aspas = false;
+  const fechar = () => {
+    linha.push(campo);
+    campo = "";
+    if (linha.length > 1 || linha[0] !== "") {
+      if (!cab) cab = linha.map((h) => h.trim());
+      else {
+        const r: Record<string, string> = {};
+        for (let k = 0; k < cab.length; k++) r[cab[k]!] = (linha[k] ?? "").trim();
+        cada(r);
+      }
+    }
+    linha = [];
+  };
   for (let i = 0; i < texto.length; i++) {
     const c = texto[i]!;
     if (aspas) {
@@ -27,18 +41,17 @@ export function lerCsv(texto: string): Record<string, string>[] {
       campo = "";
     } else if (c === "\n" || c === "\r") {
       if (c === "\r" && texto[i + 1] === "\n") i++;
-      linha.push(campo);
-      campo = "";
-      if (linha.length > 1 || linha[0] !== "") linhas.push(linha);
-      linha = [];
+      fechar();
     } else campo += c;
   }
-  if (campo !== "" || linha.length) {
-    linha.push(campo);
-    linhas.push(linha);
-  }
-  const [cab = [], ...resto] = linhas;
-  return resto.map((l) => Object.fromEntries(cab.map((h, i) => [h.trim(), (l[i] ?? "").trim()])));
+  if (campo !== "" || linha.length) fechar();
+}
+
+/** CSV inteiro como lista de objetos (arquivos pequenos e testes). */
+export function lerCsv(texto: string): Record<string, string>[] {
+  const r: Record<string, string>[] = [];
+  percorrerCsv(texto, (x) => r.push(x));
+  return r;
 }
 
 /** Código IBGE do estado (2 dígitos) → sigla. */
@@ -142,17 +155,66 @@ export function paraEmenda(r: Record<string, string>): Emenda | null {
   };
 }
 
-/** Baixa o zip da CGU e devolve as emendas desde ANO_INICIAL (todas as linhas da mesma emenda somadas). */
-export async function coletarEmendas(opcoes: OpcoesHttp = {}): Promise<Emenda[]> {
+/** Natureza jurídica da CGU → tipo de favorecido em linguagem simples. */
+export function tipoFavorecido(natureza: string, nome = ""): TipoFavorecido {
+  const n = `${natureza} ${nome}`
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (/municipi|prefeitura/.test(n)) return "prefeitura";
+  if (/estado ou distrito|estadual|distrito federal|governo do estado/.test(n)) return "estado";
+  if (/federal|autarquia|uniao|empresa publica|sociedade de economia mista/.test(n))
+    return "orgao_publico";
+  if (/associa|fundac|organizac|servico social|cooperativa|entidade|sindica|religios/.test(n))
+    return "entidade";
+  if (/empres|sociedade|ltda|eireli|individual|limitada|anonima/.test(n)) return "empresa";
+  return "outro";
+}
+
+/** Linha do CSV de favorecidos → recebimento (null = pessoa física ou emenda fora do escopo). */
+export function paraRecebimento(r: Record<string, string>, ids: Set<string>): Recebimento | null {
+  const idEmenda = r["Código da Emenda"] ?? "";
+  if (!ids.has(idEmenda)) return null;
+  if (!/jur[ií]dica/i.test(r["Tipo Favorecido"] ?? "")) return null; // pessoa física: nunca guardar
+  const cnpj = (r["Código do Favorecido"] ?? "").replace(/\D/g, "");
+  if (cnpj.length !== 14) return null;
+  const natureza = r["Natureza Jurídica"] ?? "";
+  const nome = semCpf(r["Favorecido"] ?? "");
+  return {
+    idEmenda,
+    cnpj,
+    nome,
+    natureza,
+    tipo: tipoFavorecido(natureza, nome),
+    uf: /^[A-Z]{2}$/.test(r["UF Favorecido"] ?? "") ? r["UF Favorecido"]! : null,
+    municipio: titulo(r["Município Favorecido"] ?? ""),
+    anoMes: r["Ano/Mês"] ?? "",
+    valor: valorBr(r["Valor Recebido"]),
+  };
+}
+
+/** Baixa o zip da CGU: emendas desde ANO_INICIAL e quem recebeu o dinheiro delas. */
+export async function coletarEmendas(
+  opcoes: OpcoesHttp = {},
+): Promise<{ emendas: Emenda[]; recebimentos: Recebimento[] }> {
+  const NOMES = ["EmendasParlamentares.csv", "EmendasParlamentares_PorFavorecido.csv"];
   const zip = unzipSync(
     await getBytes(URL_EMENDAS, { tentativas: 4, esperaInicialMs: 5000, ...opcoes }),
-    {
-      filter: (f) => f.name === "EmendasParlamentares.csv",
-    },
+    { filter: (f) => NOMES.includes(f.name) },
   );
-  const bruto = zip["EmendasParlamentares.csv"];
-  if (!bruto) throw new Error("EmendasParlamentares.csv não encontrado no zip da CGU");
-  return consolidar(lerCsv(new TextDecoder("latin1").decode(bruto)).map(paraEmenda));
+  const [principal, fav] = NOMES.map((n) => zip[n]);
+  if (!principal || !fav) throw new Error("Arquivos esperados não encontrados no zip da CGU");
+  const dec = new TextDecoder("latin1");
+  const linhas: (Emenda | null)[] = [];
+  percorrerCsv(dec.decode(principal), (r) => linhas.push(paraEmenda(r)));
+  const emendas = consolidar(linhas);
+  const ids = new Set(emendas.map((e) => e.id));
+  const recebimentos: Recebimento[] = [];
+  percorrerCsv(dec.decode(fav), (r) => {
+    const x = paraRecebimento(r, ids);
+    if (x) recebimentos.push(x);
+  });
+  return { emendas, recebimentos };
 }
 
 /** A mesma emenda aparece em várias linhas (uma por ação/plano orçamentário): soma os valores. */

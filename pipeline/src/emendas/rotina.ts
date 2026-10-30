@@ -12,6 +12,13 @@ import type { Parlamentar } from "../modelo/parlamentar.js";
 import { gravarMetricas } from "../monitoramento/metricas.js";
 import { ErroTrava, verificarQuedas } from "../rotina/trava.js";
 import { ligarAutores, type DePara, type ResultadoLigacao } from "./ligacao.js";
+import {
+  favorecidosPorParlamentar,
+  montarCidades,
+  resumoRecebimentos,
+  type Favorecido,
+} from "./cidades.js";
+import type { Recebimento, TipoFavorecido } from "../modelo/emenda.js";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 type Valores = Emenda["valores"];
@@ -35,6 +42,12 @@ const porEmpenho = (a: { valores: Valores }, b: { valores: Valores }) =>
   b.valores.empenhado - a.valores.empenhado;
 
 export interface EmendasDoParlamentar {
+  /** Quem recebeu o dinheiro das emendas deste parlamentar (E2). */
+  recebidos?: {
+    total: number;
+    porTipo: Partial<Record<TipoFavorecido, number>>;
+    favorecidos: Favorecido[];
+  };
   total: Valores;
   emendas: number;
   pix: { emendas: number; valores: Valores };
@@ -62,7 +75,11 @@ export interface EmendasDoParlamentar {
 export function porParlamentar(emendas: Emenda[]): Map<string, EmendasDoParlamentar> {
   const grupos = new Map<string, Emenda[]>();
   for (const e of emendas)
-    if (e.idParlamentar) grupos.set(e.idParlamentar, [...(grupos.get(e.idParlamentar) ?? []), e]);
+    if (e.idParlamentar) {
+      const l = grupos.get(e.idParlamentar);
+      if (l) l.push(e);
+      else grupos.set(e.idParlamentar, [e]);
+    }
   const saida = new Map<string, EmendasDoParlamentar>();
   for (const [id, l] of grupos) {
     const porAno: Record<string, Valores> = {};
@@ -165,14 +182,26 @@ const lerJson = async <T>(arq: string): Promise<T | null> => {
 
 export async function executarEmendas(
   dir: string,
-  o: { emendas?: Emenda[]; agora?: Date; ignorarTrava?: boolean } = {},
+  o: {
+    dados?: { emendas: Emenda[]; recebimentos: Recebimento[] };
+    agora?: Date;
+    ignorarTrava?: boolean;
+  } = {},
 ) {
   const parlamentares = await lerJson<Parlamentar[]>(join(dir, "parlamentares.json"));
   if (!parlamentares?.length) throw new Error(`parlamentares.json ausente em ${dir}`);
   const depara = (await lerJson<DePara>("config/autores-emendas.json")) ?? {};
-  const brutas = o.emendas ?? (await coletarEmendas());
+  const { emendas: brutas, recebimentos } = o.dados ?? (await coletarEmendas());
   const lig = ligarAutores(brutas, parlamentares, depara);
-  const resumo = resumoGeral(lig.emendas, lig.qualidade, (o.agora ?? new Date()).toISOString());
+  const cid = montarCidades(lig.emendas, recebimentos, parlamentares);
+  const rec = resumoRecebimentos(recebimentos);
+  const base = resumoGeral(lig.emendas, lig.qualidade, (o.agora ?? new Date()).toISOString());
+  const resumo = {
+    ...base,
+    recebidos: { total: rec.total, porTipo: rec.porTipo },
+    cidades: cid.indice.length,
+    contagens: { ...base.contagens, recebimentos: recebimentos.length, cidades: cid.indice.length },
+  };
 
   const anterior = await lerJson<{ contagens: Record<string, number> }>(
     join(dir, "emendas", "resumo.json"),
@@ -183,10 +212,25 @@ export async function executarEmendas(
   const pasta = join(dir, "emendas");
   await rm(pasta, { recursive: true, force: true });
   await mkdir(join(pasta, "parlamentar"), { recursive: true });
+  await mkdir(join(pasta, "cidade"), { recursive: true });
+  const favP = favorecidosPorParlamentar(lig.emendas, recebimentos);
   for (const [id, d] of porParlamentar(lig.emendas))
-    await writeFile(join(pasta, "parlamentar", `${id}.json`), JSON.stringify(d));
+    await writeFile(
+      join(pasta, "parlamentar", `${id}.json`),
+      JSON.stringify({ ...d, recebidos: favP.get(id) }),
+    );
+  for (const [ibge, c] of cid.cidades)
+    await writeFile(join(pasta, "cidade", `${ibge}.json`), JSON.stringify(c));
+  await writeFile(join(pasta, "cidades.json"), JSON.stringify(cid.indice));
   await writeFile(join(pasta, "resumo.json"), JSON.stringify(resumo));
-  await writeFile(join(pasta, "qualidade.json"), JSON.stringify(lig.qualidade, null, 1));
+  await writeFile(
+    join(pasta, "qualidade.json"),
+    JSON.stringify(
+      { ...lig.qualidade, recebimentosSemCidade: cid.semCidade, naturezas: rec.naturezas },
+      null,
+      1,
+    ),
+  );
   return { resumo, qualidade: lig.qualidade };
 }
 
@@ -201,7 +245,7 @@ async function main() {
       ? Math.round((qualidade.valorLigado / qualidade.valorIndividual) * 1000) / 10
       : 0;
     console.log(
-      `Emendas: ${resumo.contagens.emendas} desde ${resumo.anoInicial}; individuais ligadas ${qualidade.individuaisLigadas}/${qualidade.individuais} (${pct}% do valor); ${qualidade.parlamentaresComEmenda} parlamentares atuais com emenda; ${qualidade.naoLigados.length} autores não ligados (ex-parlamentares ou a revisar).`,
+      `Emendas: ${resumo.contagens.emendas} desde ${resumo.anoInicial}; individuais ligadas ${qualidade.individuaisLigadas}/${qualidade.individuais} (${pct}% do valor); ${qualidade.parlamentaresComEmenda} parlamentares atuais com emenda; ${qualidade.naoLigados.length} autores não ligados (ex-parlamentares ou a revisar); ${resumo.contagens.recebimentos} recebimentos, ${resumo.cidades} cidades.`,
     );
     await gravarMetricas({
       workflow: "emendas",

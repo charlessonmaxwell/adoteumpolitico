@@ -23,3 +23,18 @@ export interface Emenda {
   subarea: string;
   valores: { empenhado: number; liquidado: number; pago: number; restosPagos: number };
 }
+
+/** Quem recebeu dinheiro de uma emenda (CSV "PorFavorecido" da CGU). Só pessoa jurídica. */
+export type TipoFavorecido =
+  "prefeitura" | "estado" | "entidade" | "empresa" | "orgao_publico" | "outro";
+export interface Recebimento {
+  idEmenda: string;
+  cnpj: string;
+  nome: string;
+  natureza: string;
+  tipo: TipoFavorecido;
+  uf: string | null;
+  municipio: string;
+  anoMes: string;
+  valor: number;
+}

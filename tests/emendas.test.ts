@@ -169,3 +169,47 @@ describe("emendas — agregação por parlamentar", () => {
     expect(d.lista[0]!.destino).toBe("Aracaju (SE)");
   });
 });
+
+import { paraRecebimento, tipoFavorecido } from "../pipeline/src/coleta/emendas.js";
+import { favorecidosPorParlamentar, montarCidades } from "../pipeline/src/emendas/cidades.js";
+
+const FAV = [
+  '"Código da Emenda";"Código do Autor da Emenda";"Nome do Autor da Emenda";"Número da emenda";"Tipo de Emenda";"Ano/Mês";"Código do Favorecido";"Favorecido";"Natureza Jurídica";"Tipo Favorecido";"UF Favorecido";"Município Favorecido";"Valor Recebido"',
+  '"202641440013";"4144";"ALESSANDRO VIEIRA";"0013";"x";"202605";"13128780000100";"MUNICIPIO DE ARACAJU";"Município";"Pessoa Jurídica";"SE";"ARACAJU";"600.000,00"',
+  '"202641440013";"4144";"ALESSANDRO VIEIRA";"0013";"x";"202606";"13128780000100";"MUNICIPIO DE ARACAJU";"Município";"Pessoa Jurídica";"SE";"ARACAJU";"400.000,00"',
+  '"202641440013";"4144";"ALESSANDRO VIEIRA";"0013";"x";"202606";"12345678000199";"HOSPITAL X";"Associação Privada";"Pessoa Jurídica";"SE";"ARACAJU";"50,00"',
+  '"202641440013";"4144";"ALESSANDRO VIEIRA";"0013";"x";"202606";"***.123.456-**";"FULANO";"";"Pessoa Física";"SE";"ARACAJU";"10,00"',
+  '"999";"1";"X";"1";"x";"202606";"12345678000199";"HOSPITAL X";"Associação Privada";"Pessoa Jurídica";"SE";"ARACAJU";"99,00"',
+].join("\n");
+
+describe("emendas — quem recebeu (E2)", () => {
+  const emendas = ligarAutores(consolidar(lerCsv(CSV).map(paraEmenda)), [
+    parl("senado-1", "Alessandro Vieira"),
+  ]).emendas;
+  const ids = new Set(emendas.map((e) => e.id));
+  const rec = lerCsv(FAV)
+    .map((r) => paraRecebimento(r, ids))
+    .filter((x) => x !== null);
+  it("descarta pessoa física e emenda fora do escopo; classifica o favorecido", () => {
+    expect(rec).toHaveLength(3);
+    expect(rec.map((r) => r.tipo)).toEqual(["prefeitura", "prefeitura", "entidade"]);
+    expect(tipoFavorecido("Sociedade Empresária Limitada")).toBe("empresa");
+    expect(tipoFavorecido("Estado ou Distrito Federal")).toBe("estado");
+  });
+  it("monta a cidade com destino, autores em ordem alfabética e favorecidos somados", () => {
+    const { cidades, indice, semCidade } = montarCidades(emendas, rec, [
+      parl("senado-1", "Alessandro Vieira"),
+    ]);
+    expect(indice).toEqual([{ ibge: "2800308", nome: "Aracaju", uf: "SE", empenhado: 1500501 }]);
+    const c = cidades.get("2800308")!;
+    expect(c.destinadas.pix.emendas).toBe(1);
+    expect(c.destinadas.autores.map((a) => a.nome)).toEqual(["Alessandro Vieira"]);
+    expect(c.recebidos.favorecidos[0]).toMatchObject({
+      nome: "MUNICIPIO DE ARACAJU",
+      valor: 1000000,
+    });
+    expect(c.recebidos.porTipo).toEqual({ prefeitura: 1000000, entidade: 50 });
+    expect(semCidade).toBe(0);
+    expect(favorecidosPorParlamentar(emendas, rec).get("senado-1")!.total).toBe(1000050);
+  });
+});
