@@ -145,3 +145,9 @@ Rodado pelo GitHub Actions (workflow `spike-emendas.yml`; resumo completo na bra
 - A chave de ligação plano de ação ↔ código da emenda será confirmada no início do E3.
 
 **Decisão:** seguir para E1 como desenhado. Download completo cabe na rotina quinzenal (zip de 32 MB).
+
+## Regra de cobertura (decisão de 29/10/2026)
+- **≥ 99% do valor das emendas individuais precisa ter autor conhecido**: parlamentar atual **ou** ex-parlamentar das legislaturas 56 e 57 (lista completa das APIs da Câmara e do Senado). Abaixo disso a rotina não publica (`ErroCobertura`) e o diagnóstico lista os desconhecidos com nomes parecidos.
+- Ex-parlamentares aparecem com a **tarja "ex-parlamentar"** (sem perfil), por exemplo na lista de quem indicou emendas para uma cidade.
+- Casos reais tratados: nome de urna antigo de quem segue no cargo ("Yury do Paredão" → "Yury Bruno"); mesma pessoa nas duas casas; emendas repassadas ao sucessor ("FULANO (EX-PARLAMENTAR BELTRANO, NOS TERMOS ART. 78 LDO…)" → autor Beltrano); variações de nome resolvidas no de/para `config/autores-emendas.json`.
+- Rodada de 29/10/2026: 99,6% do valor com autor conhecido; 579 atuais e 284 ex com emenda.
