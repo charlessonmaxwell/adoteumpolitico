@@ -105,7 +105,7 @@ jobs:
             T=$(echo "$C" | jq -r '.result.site_token // empty')
             [ -z "$T" ] && echo "::warning::Web Analytics não ativado pelo token (falta permissão 'Account Analytics: Edit'?): $(echo "$C" | jq -c '[.errors[]?.message]')"
           fi
-          [ -n "$T" ] && echo "::notice::Web Analytics ativo para $HOST" && echo "beacon=$T" >> "$GITHUB_OUTPUT"
+          if [ -n "$T" ]; then echo "::notice::Web Analytics ativo para $HOST"; echo "beacon=$T" >> "$GITHUB_OUTPUT"; fi
 
       - name: Gerar o site
         env:
