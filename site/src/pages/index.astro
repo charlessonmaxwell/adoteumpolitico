@@ -15,7 +15,7 @@ const ufs = Object.entries(UFS).sort(([, a], [, b]) => a.localeCompare(b, "pt-BR
   <section class="abertura">
     <div class="conteiner abertura-in">
       <div class="chamada">
-        <h1>Votou,<br />agora fiscalize e cobre.</h1>
+        <h1>Votou,<br />agora fiscalize<span class="so-tela-grande"> e cobre</span>.</h1>
         <p class="lema">Político não é time de futebol: <strong>não é pra torcer, é pra cobrar.</strong> Acompanhe em quem você votou.</p>
         <p class="sub">Veja, sem complicação, se seu deputado federal e seu senador vão às sessões, quanto gastam de dinheiro público, o que propõem e como votam.</p>
       </div>
@@ -58,6 +58,7 @@ const ufs = Object.entries(UFS).sort(([, a], [, b]) => a.localeCompare(b, "pt-BR
   .abertura { background: var(--folha); border-bottom: 1px solid var(--linha); }
   .abertura-in { display: grid; gap: 2rem; padding-block: 3rem 3.5rem; align-items: end; }
   @media (min-width: 60rem) { .abertura-in { grid-template-columns: 1.05fr 1fr; padding-block: 5rem; gap: 4rem; } }
+  @media (max-width: 600px) { .so-tela-grande { display: none; } }
   h1 { font-family: var(--numeros); font-stretch: 78%; font-weight: 800; font-size: clamp(3rem, 8vw, 5.6rem); line-height: 0.92; letter-spacing: -0.02em; margin: 0 0 1.2rem; color: var(--dado); }
   .lema { font-size: 1.3rem; line-height: 1.4; margin: 0 0 1rem; max-width: 30ch; padding-left: 1rem; border-left: 4px solid var(--dado); color: var(--tinta); }
   .lema strong { font-weight: 650; }
