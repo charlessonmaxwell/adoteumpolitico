@@ -42,7 +42,7 @@ jobs:
         run: |
           NODE_OPTIONS=--max-old-space-size=6144 pnpm rotina:emendas publicado | tee emendas.log
           echo "::notice::$(tail -1 emendas.log)"
-          node -e "const q=require('./publicado/emendas/qualidade.json'); for (const n of q.naoLigados.slice(0,25)) console.log('::notice::Não ligado: '+n.nome+' (cód. '+n.codigoAutor+') '+n.emendas+' emendas')"
+          node -e "const q=require('./publicado/emendas/qualidade.json'); for (const n of q.naoLigados.slice(0,25)) console.log('::notice::Autor desconhecido: '+n.nome+' (cód. '+n.codigoAutor+') '+n.emendas+' emendas')"
 
       - name: Publicar na branch data
         env:

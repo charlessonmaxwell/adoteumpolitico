@@ -65,6 +65,8 @@ export interface CidadeEmendas {
     /** Em ordem alfabética (sem ranking de parlamentares). */
     autores: {
       idParlamentar: string | null;
+      /** Ex-parlamentar: exibido com a tarja "ex-parlamentar", sem link de perfil. */
+      ex: boolean;
       nome: string;
       tipo: string;
       valores: V;
@@ -121,11 +123,14 @@ export function montarCidades(
     d.porTipo[t] ??= { valores: zero(), emendas: 0 };
     somar(d.porTipo[t]!.valores, e.valores);
     d.porTipo[t]!.emendas++;
-    const nome = e.idParlamentar ? (nomes.get(e.idParlamentar) ?? e.autorTexto) : e.autorTexto;
-    const ka = `${e.idParlamentar ?? e.codigoAutor}`;
+    const nome = e.idParlamentar
+      ? (nomes.get(e.idParlamentar) ?? e.autorTexto)
+      : (e.exParlamentar?.nome ?? e.autorTexto);
+    const ka = `${e.idParlamentar ?? e.exParlamentar?.id ?? e.codigoAutor}`;
     const mA = autores.get(c.id) ?? new Map();
     const a = mA.get(ka) ?? {
       idParlamentar: e.idParlamentar,
+      ex: !!e.exParlamentar,
       nome,
       tipo: e.tipo,
       valores: zero(),

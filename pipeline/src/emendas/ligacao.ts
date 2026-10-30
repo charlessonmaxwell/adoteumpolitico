@@ -22,50 +22,80 @@ export interface ResultadoLigacao {
     individuaisLigadas: number;
     valorIndividual: number;
     valorLigado: number;
+    /** Valor com autor conhecido: parlamentar atual OU ex-parlamentar das legislaturas recentes. */
+    valorConhecido: number;
+    exParlamentares: number;
     parlamentaresComEmenda: number;
+    /** Autores que não são nem atuais nem ex conhecidos: estes contam contra a regra dos 99%. */
     naoLigados: { codigoAutor: string; nome: string; emendas: number; empenhado: number }[];
   };
 }
 
+/** Ex-parlamentar conhecido (legislaturas recentes) — aparece com a tarja "ex-parlamentar". */
+export interface MembroConhecido {
+  id: string;
+  nome: string;
+}
+
 /**
  * Liga só emendas individuais (bancada/comissão são coletivas e nunca entram no total de uma pessoa).
- * Ordem: de/para manual → nome idêntico e único entre os parlamentares atuais. Na dúvida, não liga.
+ * Ordem: de/para manual → nome único entre os atuais → nome único entre os ex. Na dúvida, não liga.
+ * Atual → idParlamentar; ex → exParlamentar (sem perfil, mas com nome e tarja no site).
  */
 export function ligarAutores(
   emendas: Emenda[],
   parlamentares: Parlamentar[],
   depara: DePara = {},
+  membros: MembroConhecido[] = [],
 ): ResultadoLigacao {
-  const porNome = new Map<string, string[]>();
-  for (const p of parlamentares) {
-    const k = nomeComparavel(p.nome);
-    porNome.set(k, [...(porNome.get(k) ?? []), p.id]);
-  }
+  const indexar = (l: MembroConhecido[]) => {
+    const m = new Map<string, string[]>();
+    for (const p of l) {
+      const k = nomeComparavel(p.nome);
+      const ids = m.get(k) ?? [];
+      if (!ids.includes(p.id)) ids.push(p.id);
+      m.set(k, ids);
+    }
+    return m;
+  };
   const atuais = new Set(parlamentares.map((p) => p.id));
-  const naoLigados = new Map<
-    string,
-    { codigoAutor: string; nome: string; emendas: number; empenhado: number }
-  >();
+  const exLista = membros.filter((m) => !atuais.has(m.id));
+  const nomeEx = new Map(exLista.map((m) => [m.id, m.nome]));
+  const porNomeAtual = indexar(parlamentares);
+  const porNomeEx = indexar(exLista);
+  const naoLigados = new Map<string, ResultadoLigacao["qualidade"]["naoLigados"][number]>();
+  const exVistos = new Set<string>();
   let individuais = 0,
     ligadas = 0,
     valorIndividual = 0,
-    valorLigado = 0;
+    valorLigado = 0,
+    valorConhecido = 0;
 
-  const saida = emendas.map((e) => {
+  const saida = emendas.map((e): Emenda => {
     if (e.tipo !== "individual") return { ...e, idParlamentar: null };
     individuais++;
     valorIndividual += e.valores.empenhado;
     let id: string | null = null;
     if (e.codigoAutor in depara) id = depara[e.codigoAutor] ?? null;
     else {
-      const c = porNome.get(nomeComparavel(e.autorTexto)) ?? [];
-      if (c.length === 1) id = c[0]!;
+      const k = nomeComparavel(e.autorTexto);
+      const a = porNomeAtual.get(k) ?? [];
+      const x = porNomeEx.get(k) ?? [];
+      if (a.length === 1) id = a[0]!;
+      else if (a.length === 0 && x.length === 1) id = x[0]!;
     }
-    if (id && !atuais.has(id)) id = null;
-    if (id) {
+    if (id && atuais.has(id)) {
       ligadas++;
       valorLigado += e.valores.empenhado;
-    } else if (!(e.codigoAutor in depara)) {
+      valorConhecido += e.valores.empenhado;
+      return { ...e, idParlamentar: id };
+    }
+    if (id && nomeEx.has(id)) {
+      valorConhecido += e.valores.empenhado;
+      exVistos.add(id);
+      return { ...e, idParlamentar: null, exParlamentar: { id, nome: nomeEx.get(id)! } };
+    }
+    if (!(e.codigoAutor in depara)) {
       const n = naoLigados.get(e.codigoAutor) ?? {
         codigoAutor: e.codigoAutor,
         nome: e.autorTexto,
@@ -75,8 +105,8 @@ export function ligarAutores(
       n.emendas++;
       n.empenhado = Math.round((n.empenhado + e.valores.empenhado) * 100) / 100;
       naoLigados.set(e.codigoAutor, n);
-    }
-    return { ...e, idParlamentar: id };
+    } else valorConhecido += e.valores.empenhado; // marcado à mão como não-parlamentar: revisado
+    return { ...e, idParlamentar: null };
   });
 
   return {
@@ -86,6 +116,8 @@ export function ligarAutores(
       individuaisLigadas: ligadas,
       valorIndividual: Math.round(valorIndividual * 100) / 100,
       valorLigado: Math.round(valorLigado * 100) / 100,
+      valorConhecido: Math.round(valorConhecido * 100) / 100,
+      exParlamentares: exVistos.size,
       parlamentaresComEmenda: new Set(saida.map((e) => e.idParlamentar).filter(Boolean)).size,
       naoLigados: [...naoLigados.values()].sort((a, b) => b.empenhado - a.empenhado),
     },

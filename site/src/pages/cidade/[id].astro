@@ -57,14 +57,14 @@ const nome = `${c.nome} (${c.uf})`;
     {d.autores.length > 0 && (
       <section class="bloco-tabela">
         <h2>Quem indicou emendas para {c.nome}</h2>
-        <p class="nota">Em ordem alfabética. Bancada e comissão são emendas decididas em grupo.</p>
+        <p class="nota">Em ordem alfabética. Bancada e comissão são emendas decididas em grupo. "Ex-parlamentar" é quem indicou a emenda e já não está no cargo.</p>
         <div class="rolagem">
           <table>
             <thead><tr><th>Quem indicou</th><th>Tipo</th><th>Emendas</th><th>Reservado</th><th>Já pago</th></tr></thead>
             <tbody>
               {d.autores.map((a) => (
                 <tr>
-                  <td>{a.idParlamentar && atuais.has(a.idParlamentar) ? <a href={`/p/${a.idParlamentar}/emendas/`}>{a.nome}</a> : <span data-oficial>{a.nome}</span>}</td>
+                  <td>{a.idParlamentar && atuais.has(a.idParlamentar) ? <a href={`/p/${a.idParlamentar}/emendas/`}>{a.nome}</a> : <span data-oficial>{a.nome}</span>}{a.ex && <span class="tarja-ex" title="Não está mais no cargo">ex-parlamentar</span>}</td>
                   <td>{TIPO_EMENDA[a.tipo] ?? a.tipo}</td>
                   <td class="num">{a.emendas}</td>
                   <td class="num">{formatarMoeda(a.valores.empenhado)}</td>
@@ -113,5 +113,6 @@ const nome = `${c.nome} (${c.uf})`;
   .pagina-cidade table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
   .pagina-cidade th, .pagina-cidade td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--linha); }
   .pagina-cidade td.num, .pagina-cidade th.num { text-align: right; white-space: nowrap; }
+  .pagina-cidade .tarja-ex { display: inline-block; margin-left: 0.5rem; padding: 0.05rem 0.5rem; border-radius: 999px; border: 1px solid var(--grafite); color: var(--grafite); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; vertical-align: middle; }
   .pagina-cidade .fonte { margin: 1.5rem 0 3rem; color: var(--grafite); font-size: 0.85rem; }
 </style>

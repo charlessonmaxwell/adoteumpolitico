@@ -11,7 +11,30 @@ import type { Emenda } from "../modelo/emenda.js";
 import type { Parlamentar } from "../modelo/parlamentar.js";
 import { gravarMetricas } from "../monitoramento/metricas.js";
 import { ErroTrava, verificarQuedas } from "../rotina/trava.js";
-import { ligarAutores, type DePara, type ResultadoLigacao } from "./ligacao.js";
+import {
+  ligarAutores,
+  type DePara,
+  type MembroConhecido,
+  type ResultadoLigacao,
+} from "./ligacao.js";
+import { coletarMembros } from "../coleta/legislaturas.js";
+
+/** Regra: pelo menos 99% do valor das emendas individuais precisa ter autor conhecido (atual ou ex). */
+export const COBERTURA_MINIMA = 0.99;
+export class ErroCobertura extends Error {
+  constructor(
+    public readonly cobertura: number,
+    public readonly naoLigados: { nome: string; empenhado: number }[],
+  ) {
+    super(
+      `Só ${(cobertura * 100).toFixed(1)}% do valor das emendas individuais tem autor conhecido (mínimo ${COBERTURA_MINIMA * 100}%). ` +
+        `Maiores autores desconhecidos: ${naoLigados
+          .slice(0, 10)
+          .map((n) => n.nome)
+          .join(", ")}. Revise config/autores-emendas.json.`,
+    );
+  }
+}
 import {
   favorecidosPorParlamentar,
   montarCidades,
@@ -184,6 +207,7 @@ export async function executarEmendas(
   dir: string,
   o: {
     dados?: { emendas: Emenda[]; recebimentos: Recebimento[] };
+    membros?: MembroConhecido[];
     agora?: Date;
     ignorarTrava?: boolean;
   } = {},
@@ -192,7 +216,13 @@ export async function executarEmendas(
   if (!parlamentares?.length) throw new Error(`parlamentares.json ausente em ${dir}`);
   const depara = (await lerJson<DePara>("config/autores-emendas.json")) ?? {};
   const { emendas: brutas, recebimentos } = o.dados ?? (await coletarEmendas());
-  const lig = ligarAutores(brutas, parlamentares, depara);
+  const membros = o.membros ?? (await coletarMembros());
+  const lig = ligarAutores(brutas, parlamentares, depara, membros);
+  const cobertura = lig.qualidade.valorIndividual
+    ? lig.qualidade.valorConhecido / lig.qualidade.valorIndividual
+    : 1;
+  if (cobertura < COBERTURA_MINIMA && !o.ignorarTrava)
+    throw new ErroCobertura(cobertura, lig.qualidade.naoLigados);
   const cid = montarCidades(lig.emendas, recebimentos, parlamentares);
   const rec = resumoRecebimentos(recebimentos);
   const base = resumoGeral(lig.emendas, lig.qualidade, (o.agora ?? new Date()).toISOString());
@@ -242,10 +272,10 @@ async function main() {
       ignorarTrava: process.env.IGNORAR_TRAVA === "true",
     });
     const pct = qualidade.valorIndividual
-      ? Math.round((qualidade.valorLigado / qualidade.valorIndividual) * 1000) / 10
+      ? Math.round((qualidade.valorConhecido / qualidade.valorIndividual) * 1000) / 10
       : 0;
     console.log(
-      `Emendas: ${resumo.contagens.emendas} desde ${resumo.anoInicial}; individuais ligadas ${qualidade.individuaisLigadas}/${qualidade.individuais} (${pct}% do valor); ${qualidade.parlamentaresComEmenda} parlamentares atuais com emenda; ${qualidade.naoLigados.length} autores não ligados (ex-parlamentares ou a revisar); ${resumo.contagens.recebimentos} recebimentos, ${resumo.cidades} cidades.`,
+      `Emendas: ${resumo.contagens.emendas} desde ${resumo.anoInicial}; individuais ligadas ${qualidade.individuaisLigadas}/${qualidade.individuais} ; ${pct}% do valor com autor conhecido; ${qualidade.parlamentaresComEmenda} parlamentares atuais e ${qualidade.exParlamentares} ex-parlamentares com emenda; ${qualidade.naoLigados.length} autores desconhecidos; ${resumo.contagens.recebimentos} recebimentos, ${resumo.cidades} cidades.`,
     );
     await gravarMetricas({
       workflow: "emendas",
@@ -255,10 +285,10 @@ async function main() {
       contagens: resumo.contagens,
       travaDisparou: false,
       mudou: null,
-      extras: { valor_ligado_pct: pct },
+      extras: { valor_conhecido_pct: pct },
     });
   } catch (e) {
-    console.error(e instanceof Error ? e.message : e);
+    console.error(`::error::${e instanceof Error ? e.message : String(e)}`);
     await gravarMetricas({
       workflow: "emendas",
       resultado: "falha",
@@ -266,7 +296,7 @@ async function main() {
       duracaoTotalS: Math.round((Date.now() - inicio) / 1000),
       etapasS: {},
       contagens: {},
-      travaDisparou: e instanceof ErroTrava,
+      travaDisparou: e instanceof ErroTrava || e instanceof ErroCobertura,
       mudou: null,
     });
     process.exit(1);

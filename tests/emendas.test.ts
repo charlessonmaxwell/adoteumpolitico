@@ -217,3 +217,28 @@ describe("emendas — quem recebeu (E2)", () => {
     expect(favorecidosPorParlamentar(emendas, rec).get("senado-1")!.total).toBe(1000050);
   });
 });
+
+describe("emendas — ex-parlamentares e regra dos 99%", () => {
+  it("liga ex-parlamentar pelo nome, sem perfil, e conta como autor conhecido", () => {
+    const e = consolidar(lerCsv(CSV).map(paraEmenda));
+    const r = ligarAutores(e, [parl("senado-1", "Alessandro Vieira")], {}, [
+      { id: "camara-2", nome: "Jandira Feghali" },
+      { id: "senado-1", nome: "Alessandro Vieira" },
+    ]);
+    expect(r.emendas[1]).toMatchObject({
+      idParlamentar: null,
+      exParlamentar: { id: "camara-2", nome: "Jandira Feghali" },
+    });
+    expect(r.qualidade).toMatchObject({ exParlamentares: 1, naoLigados: [] });
+    expect(r.qualidade.valorConhecido).toBe(r.qualidade.valorIndividual);
+    const { cidades } = montarCidades(r.emendas, [], [parl("senado-1", "Alessandro Vieira")]);
+    expect(cidades.get("se-aracaju")!.destinadas.autores[0]).toMatchObject({ ex: false });
+  });
+  it("atual tem prioridade sobre ex com o mesmo nome", () => {
+    const e = consolidar(lerCsv(CSV).map(paraEmenda));
+    const r = ligarAutores(e, [parl("senado-1", "Alessandro Vieira")], {}, [
+      { id: "senado-9", nome: "Alessandro Vieira" },
+    ]);
+    expect(r.emendas[0]!.idParlamentar).toBe("senado-1");
+  });
+});

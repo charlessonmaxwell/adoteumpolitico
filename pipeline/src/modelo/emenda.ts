@@ -13,6 +13,8 @@ export interface Emenda {
   autorTexto: string;
   /** Preenchido só quando a ligação com um parlamentar atual é segura. */
   idParlamentar: string | null;
+  /** Autor que já não está no cargo (legislaturas recentes): exibido com a tarja "ex-parlamentar". */
+  exParlamentar?: { id: string; nome: string };
   destino: {
     nivel: "municipio" | "estado" | "nacional";
     ibge: string | null;
