@@ -34,7 +34,7 @@ const casas = pan
     ) : (
       <>
         <nav class="abas" aria-label="Escolha a casa">
-          {casas.map(([id, nome]) => <a href={`#${id}`}>{nome}</a>)}
+          {casas.map(([id, nome]) => <a href={`#${id}`}>{nome.split(" ")[0]}<span class="aba-longa"> {nome.split(" ").slice(1).join(" ")}</span></a>)}
           {em && <a href="#emendas">Emendas</a>}
         </nav>
 
@@ -159,8 +159,10 @@ const casas = pan
   .pagina-panorama .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
   .pagina-panorama h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.4rem, 6vw, 3.8rem); line-height: 1; margin: 0 0 0.6rem; color: var(--dado); }
   .pagina-panorama .intro { max-width: 62ch; font-size: 1.1rem; color: var(--tinta-suave); }
-  .pagina-panorama .abas { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 1.5rem 0; position: sticky; top: 0; z-index: 2; background: var(--fundo); padding: 0.6rem 0; }
-  .pagina-panorama .abas a { padding: 0.5rem 1rem; border: 2px solid var(--dado); border-radius: 999px; font-weight: 700; text-decoration: none; color: var(--dado); }
+  .pagina-panorama .abas { display: flex; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 1.5rem 0; position: sticky; top: 0; z-index: 5; background: var(--papel); padding: 0.6rem 0; box-shadow: 0 1px 0 var(--linha), -50vw 0 0 var(--papel), 50vw 0 0 var(--papel); }
+  @media (max-width: 520px) { .pagina-panorama .aba-longa { display: none; } }
+  .pagina-panorama .abas::-webkit-scrollbar { display: none; }
+  .pagina-panorama .abas a { flex: none; white-space: nowrap; background: var(--folha); padding: 0.5rem 1rem; border: 2px solid var(--dado); border-radius: 999px; font-weight: 700; text-decoration: none; color: var(--dado); }
   .pagina-panorama .casa { margin: 2rem 0 3rem; scroll-margin-top: 4rem; }
   .pagina-panorama h2 { font-family: var(--numeros); font-stretch: 85%; font-weight: 800; font-size: 1.9rem; margin: 0 0 1rem; }
   .pagina-panorama h2 span { display: block; font-family: inherit; font-size: 1rem; font-weight: 600; color: var(--grafite); font-stretch: 100%; }
