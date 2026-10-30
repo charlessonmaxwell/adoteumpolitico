@@ -58,7 +58,7 @@ const casas = pan
                   <summary>Empresas que mais receberam</summary>
                   <table>
                     <thead><tr><th>Empresa</th><th>Recebeu</th></tr></thead>
-                    <tbody>{c.gastos.empresas.map((e) => <tr><td>{e.nome}</td><td class="num">{formatarMoeda(e.total)}</td></tr>)}</tbody>
+                    <tbody>{c.gastos.empresas.map((e) => <tr><td><span data-oficial>{e.nome}</span></td><td class="num">{formatarMoeda(e.total)}</td></tr>)}</tbody>
                   </table>
                   <p class="nota">Só empresas (com CNPJ). Somando os pagamentos de todos os {quem}.</p>
                 </details>

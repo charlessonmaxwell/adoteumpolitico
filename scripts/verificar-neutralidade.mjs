@@ -39,6 +39,8 @@ for (const sub of ["p", "uf", "projeto", "panorama", "cidade"]) andar(join(raiz,
 const erros = [];
 for (const a of arquivos) {
   let texto = readFileSync(a, "utf8")
+    // Nomes oficiais de terceiros (empresas, entidades, cidades) marcados com data-oficial não são texto nosso
+    .replace(/<span data-oficial[^>]*>[^<]*<\/span>/g, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(PERMITIDO, "");
   for (const n of nomes) texto = texto.split(n).join(" ");

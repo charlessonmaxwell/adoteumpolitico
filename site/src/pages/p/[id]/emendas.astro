@@ -31,7 +31,7 @@ const res = resumoEmendas();
         <div class="rolagem">
           <table>
             <thead><tr><th>Quem recebeu</th><th>Tipo</th><th>Cidade</th><th>Recebeu</th></tr></thead>
-            <tbody>{e.recebidos.favorecidos.map((f) => <tr><td>{f.nome}</td><td>{TIPO_FAVORECIDO[f.tipo] ?? f.tipo}</td><td>{f.municipio}{f.uf ? ` (${f.uf})` : ""}</td><td class="num">{formatarMoeda(f.valor)}</td></tr>)}</tbody>
+            <tbody>{e.recebidos.favorecidos.map((f) => <tr><td><span data-oficial>{f.nome}</span></td><td>{TIPO_FAVORECIDO[f.tipo] ?? f.tipo}</td><td>{f.municipio}{f.uf ? ` (${f.uf})` : ""}</td><td class="num">{formatarMoeda(f.valor)}</td></tr>)}</tbody>
           </table>
         </div>
         <p class="explica">Bancos que só intermediam o repasse (como o Banco do Brasil nas emendas Pix) não aparecem aqui.</p>

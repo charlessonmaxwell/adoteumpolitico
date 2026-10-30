@@ -64,7 +64,7 @@ const nome = `${c.nome} (${c.uf})`;
             <tbody>
               {d.autores.map((a) => (
                 <tr>
-                  <td>{a.idParlamentar && atuais.has(a.idParlamentar) ? <a href={`/p/${a.idParlamentar}/emendas/`}>{a.nome}</a> : <span title="Não está mais no cargo ou é emenda coletiva">{a.nome}</span>}</td>
+                  <td>{a.idParlamentar && atuais.has(a.idParlamentar) ? <a href={`/p/${a.idParlamentar}/emendas/`}>{a.nome}</a> : <span data-oficial>{a.nome}</span>}</td>
                   <td>{TIPO_EMENDA[a.tipo] ?? a.tipo}</td>
                   <td class="num">{a.emendas}</td>
                   <td class="num">{formatarMoeda(a.valores.empenhado)}</td>
@@ -83,7 +83,7 @@ const nome = `${c.nome} (${c.uf})`;
         <div class="rolagem">
           <table>
             <thead><tr><th>Quem recebeu</th><th>Tipo</th><th>Recebeu</th></tr></thead>
-            <tbody>{r.favorecidos.map((f) => <tr><td>{f.nome}</td><td>{TIPO_FAVORECIDO[f.tipo] ?? f.tipo}</td><td class="num">{formatarMoeda(f.valor)}</td></tr>)}</tbody>
+            <tbody>{r.favorecidos.map((f) => <tr><td><span data-oficial>{f.nome}</span></td><td>{TIPO_FAVORECIDO[f.tipo] ?? f.tipo}</td><td class="num">{formatarMoeda(f.valor)}</td></tr>)}</tbody>
           </table>
         </div>
         <p class="nota">Só pessoas jurídicas (CNPJ). Bancos que apenas intermediam o repasse não entram.</p>
