@@ -1,3 +1,4 @@
+/* global fetch, Response */
 /**
  * Recebe o formulário "Achou um erro?" e abre uma issue no GitHub (Cloudflare Pages Function, plano grátis).
  * Não guarda IP, e-mail nem nada pessoal. Segredo: ERROS_GITHUB_TOKEN (fine-grained, só "Issues: write" no repositório).
@@ -10,6 +11,7 @@ const json = (status, corpo) =>
   });
 const limpar = (s, max) =>
   String(s ?? "")
+    // eslint-disable-next-line no-control-regex -- remove caracteres de controle
     .replace(/[\u0000-\u0008\u000b-\u001f]/g, "")
     .replace(/@/g, "@​") // não notifica ninguém por menção
     .trim()
