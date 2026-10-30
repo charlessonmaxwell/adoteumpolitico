@@ -195,13 +195,17 @@ describe("emendas — quem recebeu (E2)", () => {
     expect(rec.map((r) => r.tipo)).toEqual(["prefeitura", "prefeitura", "entidade"]);
     expect(tipoFavorecido("Sociedade Empresária Limitada")).toBe("empresa");
     expect(tipoFavorecido("Estado ou Distrito Federal")).toBe("estado");
+    expect(tipoFavorecido("Fundo Público da Administração Direta Municipal")).toBe("prefeitura");
+    expect(tipoFavorecido("Sociedade de Economia Mista", "BANCO DO BRASIL SA")).toBe("banco");
   });
   it("monta a cidade com destino, autores em ordem alfabética e favorecidos somados", () => {
     const { cidades, indice, semCidade } = montarCidades(emendas, rec, [
       parl("senado-1", "Alessandro Vieira"),
     ]);
-    expect(indice).toEqual([{ ibge: "2800308", nome: "Aracaju", uf: "SE", empenhado: 1500501 }]);
-    const c = cidades.get("2800308")!;
+    expect(indice).toEqual([
+      { id: "se-aracaju", nome: "Aracaju", uf: "SE", empenhado: 1500501, recebido: 1000050 },
+    ]);
+    const c = cidades.get("se-aracaju")!;
     expect(c.destinadas.pix.emendas).toBe(1);
     expect(c.destinadas.autores.map((a) => a.nome)).toEqual(["Alessandro Vieira"]);
     expect(c.recebidos.favorecidos[0]).toMatchObject({

@@ -219,8 +219,8 @@ export async function executarEmendas(
       join(pasta, "parlamentar", `${id}.json`),
       JSON.stringify({ ...d, recebidos: favP.get(id) }),
     );
-  for (const [ibge, c] of cid.cidades)
-    await writeFile(join(pasta, "cidade", `${ibge}.json`), JSON.stringify(c));
+  for (const [id, c] of cid.cidades)
+    await writeFile(join(pasta, "cidade", `${id}.json`), JSON.stringify(c));
   await writeFile(join(pasta, "cidades.json"), JSON.stringify(cid.indice));
   await writeFile(join(pasta, "resumo.json"), JSON.stringify(resumo));
   await writeFile(

@@ -25,8 +25,9 @@ export interface Emenda {
 }
 
 /** Quem recebeu dinheiro de uma emenda (CSV "PorFavorecido" da CGU). Só pessoa jurídica. */
+/** "banco": só intermedeia o repasse (conta da transferência), não é o destino final. */
 export type TipoFavorecido =
-  "prefeitura" | "estado" | "entidade" | "empresa" | "orgao_publico" | "outro";
+  "prefeitura" | "estado" | "entidade" | "empresa" | "orgao_publico" | "banco" | "outro";
 export interface Recebimento {
   idEmenda: string;
   cnpj: string;

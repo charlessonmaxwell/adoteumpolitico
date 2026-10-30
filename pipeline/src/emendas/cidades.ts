@@ -8,12 +8,14 @@ const somar = (a: V, b: V) => {
   for (const k of Object.keys(a) as (keyof V)[]) a[k] = r2(a[k] + b[k]);
   return a;
 };
-const chaveNome = (uf: string | null, nome: string) =>
-  `${uf ?? ""}|${nome
+/** Identificador da cidade na URL: "se-aracaju", "sp-sao-paulo". */
+export const idCidade = (uf: string, nome: string) =>
+  `${uf}-${nome}`
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, "")}`;
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 
 export interface Favorecido {
   cnpj: string;
@@ -28,6 +30,7 @@ export interface Favorecido {
 function favorecidosDe(lista: Recebimento[], limite: number): Favorecido[] {
   const m = new Map<string, Favorecido>();
   for (const x of lista) {
+    if (x.tipo === "banco") continue;
     const f = m.get(x.cnpj) ?? {
       cnpj: x.cnpj,
       nome: x.nome,
@@ -49,7 +52,8 @@ const porTipo = (lista: Recebimento[]) => {
 };
 
 export interface CidadeEmendas {
-  ibge: string;
+  id: string;
+  ibge: string | null;
   nome: string;
   uf: string;
   /** Emendas cujo destino oficial é a cidade. */
@@ -83,8 +87,8 @@ export function montarCidades(
 ) {
   const nomes = new Map(parlamentares.map((p) => [p.id, p.nome]));
   const cidades = new Map<string, CidadeEmendas>();
-  const porNome = new Map<string, string>();
-  const nova = (ibge: string, nome: string, uf: string): CidadeEmendas => ({
+  const nova = (ibge: string | null, nome: string, uf: string): CidadeEmendas => ({
+    id: idCidade(uf, nome),
     ibge,
     nome,
     uf,
@@ -103,9 +107,9 @@ export function montarCidades(
   const areas = new Map<string, Map<string, V>>();
   for (const e of emendas) {
     if (e.destino.nivel !== "municipio" || !e.destino.ibge || !e.destino.uf) continue;
-    const c = cidades.get(e.destino.ibge) ?? nova(e.destino.ibge, e.destino.nome, e.destino.uf);
-    cidades.set(c.ibge, c);
-    porNome.set(chaveNome(c.uf, c.nome), c.ibge);
+    const k = idCidade(e.destino.uf, e.destino.nome);
+    const c = cidades.get(k) ?? nova(e.destino.ibge, e.destino.nome, e.destino.uf);
+    cidades.set(k, c);
     const d = c.destinadas;
     somar(d.valores, e.valores);
     d.emendas++;
@@ -119,7 +123,7 @@ export function montarCidades(
     d.porTipo[t]!.emendas++;
     const nome = e.idParlamentar ? (nomes.get(e.idParlamentar) ?? e.autorTexto) : e.autorTexto;
     const ka = `${e.idParlamentar ?? e.codigoAutor}`;
-    const mA = autores.get(c.ibge) ?? new Map();
+    const mA = autores.get(c.id) ?? new Map();
     const a = mA.get(ka) ?? {
       idParlamentar: e.idParlamentar,
       nome,
@@ -130,35 +134,37 @@ export function montarCidades(
     somar(a.valores, e.valores);
     a.emendas++;
     mA.set(ka, a);
-    autores.set(c.ibge, mA);
-    const mArea = areas.get(c.ibge) ?? new Map<string, V>();
+    autores.set(c.id, mA);
+    const mArea = areas.get(c.id) ?? new Map<string, V>();
     mArea.set(e.area, somar(mArea.get(e.area) ?? zero(), e.valores));
-    areas.set(c.ibge, mArea);
+    areas.set(c.id, mArea);
   }
   for (const c of cidades.values()) {
-    c.destinadas.autores = [...(autores.get(c.ibge)?.values() ?? [])].sort((a, b) =>
+    c.destinadas.autores = [...(autores.get(c.id)?.values() ?? [])].sort((a, b) =>
       a.nome.localeCompare(b.nome, "pt-BR"),
     );
-    c.destinadas.porArea = [...(areas.get(c.ibge) ?? [])]
+    c.destinadas.porArea = [...(areas.get(c.id) ?? [])]
       .map(([area, valores]) => ({ area, valores }))
       .sort((a, b) => b.valores.empenhado - a.valores.empenhado);
   }
 
-  // Recebimentos: ligados à cidade pelo endereço do favorecido (nome + UF → IBGE)
+  // Recebimentos: pela cidade do endereço do favorecido. Banco intermediário fica fora (endereço é a sede).
   const recPorCidade = new Map<string, Recebimento[]>();
   let semCidade = 0;
   for (const x of recebimentos) {
-    const ibge = porNome.get(chaveNome(x.uf, x.municipio));
-    if (!ibge) {
+    if (x.tipo === "banco") continue;
+    if (!x.uf || !x.municipio) {
       semCidade++;
       continue;
     }
-    const l = recPorCidade.get(ibge);
+    const k = idCidade(x.uf, x.municipio);
+    if (!cidades.has(k)) cidades.set(k, nova(null, x.municipio, x.uf));
+    const l = recPorCidade.get(k);
     if (l) l.push(x);
-    else recPorCidade.set(ibge, [x]);
+    else recPorCidade.set(k, [x]);
   }
-  for (const [ibge, l] of recPorCidade) {
-    const c = cidades.get(ibge)!;
+  for (const [k, l] of recPorCidade) {
+    const c = cidades.get(k)!;
     c.recebidos = {
       total: r2(l.reduce((a, x) => a + x.valor, 0)),
       porTipo: porTipo(l),
@@ -168,10 +174,11 @@ export function montarCidades(
 
   const indice = [...cidades.values()]
     .map((c) => ({
-      ibge: c.ibge,
+      id: c.id,
       nome: c.nome,
       uf: c.uf,
       empenhado: c.destinadas.valores.empenhado,
+      recebido: c.recebidos.total,
     }))
     .sort((a, b) => a.uf.localeCompare(b.uf) || a.nome.localeCompare(b.nome, "pt-BR"));
   return { cidades, indice, semCidade };

@@ -157,17 +157,31 @@ export function paraEmenda(r: Record<string, string>): Emenda | null {
 
 /** Natureza jurídica da CGU → tipo de favorecido em linguagem simples. */
 export function tipoFavorecido(natureza: string, nome = ""): TipoFavorecido {
-  const n = `${natureza} ${nome}`
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-  if (/municipi|prefeitura/.test(n)) return "prefeitura";
-  if (/estado ou distrito|estadual|distrito federal|governo do estado/.test(n)) return "estado";
-  if (/federal|autarquia|uniao|empresa publica|sociedade de economia mista/.test(n))
-    return "orgao_publico";
-  if (/associa|fundac|organizac|servico social|cooperativa|entidade|sindica|religios/.test(n))
+  const sem = (t: string) =>
+    t
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  const n = sem(natureza);
+  const nm = sem(nome);
+  if (/^(banco do brasil|caixa economica federal|banco do nordeste|banco da amazonia)/.test(nm))
+    return "banco";
+  if (/municip|prefeitura/.test(n) || /^(prefeitura|municipio|fundo municipal)/.test(nm))
+    return "prefeitura";
+  if (
+    /estadual|estado ou distrito|distrito federal/.test(n) ||
+    /^(governo do estado|estado d|fundo estadual)/.test(nm)
+  )
+    return "estado";
+  if (/federal|autarquia|empresa publica|economia mista/.test(n)) return "orgao_publico";
+  if (
+    /associa|fundac|organizac|servico social|cooperativa|entidade|sindica|religios|consorcio publico/.test(
+      n,
+    )
+  )
     return "entidade";
-  if (/empres|sociedade|ltda|eireli|individual|limitada|anonima/.test(n)) return "empresa";
+  if (/empres|sociedade|ltda|eireli|individual|limitada|anonima|consorcio/.test(n))
+    return "empresa";
   return "outro";
 }
 
