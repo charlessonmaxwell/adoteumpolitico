@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { coletarParlamentares } from "../coleta/parlamentares.js";
@@ -88,6 +88,21 @@ export class ErroEtapa extends Error {
     public readonly duracoes: Record<string, number> = {},
   ) {
     super(`Etapa "${etapa}" falhou: ${causa instanceof Error ? causa.message : String(causa)}`);
+  }
+}
+
+async function listarJson(dir: string, base = ""): Promise<string[]> {
+  try {
+    const itens = await readdir(join(dir, base), { withFileTypes: true });
+    const r: string[] = [];
+    for (const i of itens) {
+      const rel = base ? `${base}/${i.name}` : i.name;
+      if (i.isDirectory()) r.push(...(await listarJson(dir, rel)));
+      else if (i.name.endsWith(".json")) r.push(rel);
+    }
+    return r;
+  } catch {
+    return [];
   }
 }
 
@@ -260,6 +275,11 @@ export async function executarRotina(
     }),
   );
   arquivos.set("panorama.json", panorama);
+  // Emendas vêm da rotina quinzenal: carrega a última versão publicada sem alterar
+  for (const arq of await listarJson(join(o.anterior, "emendas"))) {
+    const v = await lerJson<unknown>(join(o.anterior, "emendas", arq));
+    if (v !== null) arquivos.set(`emendas/${arq}`, v);
+  }
 
   // Impressão digital do conteúdo (sem horário de coleta): igual à anterior = nada mudou (CA3)
   const hash = createHash("sha256");

@@ -1,0 +1,66 @@
+name: Emendas parlamentares (quinzenal)
+
+on:
+  schedule:
+    - cron: "23 13 1,15 * *" # dias 1 e 15, 10:23 em Brasília (depois da rotina diária)
+  workflow_dispatch:
+    inputs:
+      ignorar_trava:
+        description: "Ignorar a trava de queda (só após mudança intencional, revisada)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: dados # mesmo grupo das outras rotinas: nunca publicam ao mesmo tempo
+  cancel-in-progress: false
+
+jobs:
+  emendas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Baixar a última publicação (branch data)
+        run: |
+          git clone -q --depth 1 --branch data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" publicado
+          rm -rf publicado/.git
+
+      - name: Coletar, ligar autores e agregar emendas
+        env:
+          IGNORAR_TRAVA: ${{ github.event.inputs.ignorar_trava == 'true' }}
+        run: |
+          NODE_OPTIONS=--max-old-space-size=6144 pnpm rotina:emendas publicado | tee emendas.log
+          echo "::notice::$(tail -1 emendas.log)"
+          node -e "const q=require('./publicado/emendas/qualidade.json'); for (const n of q.naoLigados.slice(0,25)) console.log('::notice::Não ligado: '+n.nome+' (cód. '+n.codigoAutor+') '+n.emendas+' emendas')"
+
+      - name: Publicar na branch data
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: scripts/publicar-dados.sh publicado "Emendas de $(date -u +%F)"
+
+      - name: Enviar métricas ao Grafana
+        if: always()
+        continue-on-error: true
+        env:
+          GRAFANA_INFLUX_URL: ${{ secrets.GRAFANA_INFLUX_URL }}
+          GRAFANA_USUARIO: ${{ secrets.GRAFANA_USUARIO }}
+          GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
+        run: node scripts/enviar-metricas.mjs metricas.json
+
+      - name: Abrir issue de falha
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: scripts/abrir-issue-falha.sh "Falha na rotina quinzenal de emendas"

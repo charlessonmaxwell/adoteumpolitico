@@ -21,6 +21,7 @@
     "coleta:presenca-camara": "tsx pipeline/src/coleta/presenca-camara.ts",
     "rotina": "tsx pipeline/src/rotina/index.ts",
     "explicacoes": "tsx pipeline/src/explicacao/manual.ts",
+    "rotina:emendas": "tsx pipeline/src/emendas/rotina.ts",
     "site:dev": "astro dev",
     "site:build": "astro build",
     "site:check": "astro check"
