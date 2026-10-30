@@ -92,7 +92,7 @@ const casas = pan
 
             <details class="grupos">
               <summary>Médias por partido (ordem alfabética)</summary>
-              <div class="rolagem">
+              <div class="rolagem" tabindex="0" role="region" aria-label="Tabela (role para o lado para ver tudo)">
                 <table>
                   <thead><tr><th>Partido</th><th>{quem[0]!.toUpperCase() + quem.slice(1)}</th><th>Gasto médio</th><th>Presença média</th><th>Projetos de lei criados (média)</th></tr></thead>
                   <tbody>{c.porPartido.map((g) => <tr><td>{g.nome}</td><td class="num">{g.parlamentares}</td><td class="num">{formatarMoedaCurta(g.gastoMedio ?? 0)}</td><td class="num">{pct(g.presencaMedia)}</td><td class="num">{media1(g.projetosMedio)}</td></tr>)}</tbody>
@@ -102,7 +102,7 @@ const casas = pan
             </details>
             <details class="grupos">
               <summary>Médias por estado (ordem alfabética)</summary>
-              <div class="rolagem">
+              <div class="rolagem" tabindex="0" role="region" aria-label="Tabela (role para o lado para ver tudo)">
                 <table>
                   <thead><tr><th>Estado</th><th>{quem[0]!.toUpperCase() + quem.slice(1)}</th><th>Gasto médio</th><th>Presença média</th><th>Projetos de lei criados (média)</th></tr></thead>
                   <tbody>{c.porEstado.map((g) => <tr><td><a href={`/uf/${g.nome.toLowerCase()}/`}>{UFS[g.nome] ?? g.nome}</a></td><td class="num">{g.parlamentares}</td><td class="num">{formatarMoedaCurta(g.gastoMedio ?? 0)}</td><td class="num">{pct(g.presencaMedia)}</td><td class="num">{media1(g.projetosMedio)}</td></tr>)}</tbody>
@@ -140,7 +140,7 @@ const casas = pan
             )}
             <details class="grupos">
               <summary>Por estado de destino (ordem alfabética)</summary>
-              <div class="rolagem">
+              <div class="rolagem" tabindex="0" role="region" aria-label="Tabela (role para o lado para ver tudo)">
                 <table>
                   <thead><tr><th>Estado</th><th>Emendas</th><th>Reservado</th><th>Já pago</th></tr></thead>
                   <tbody>{em.porUf.map((u) => <tr><td>{UFS[u.uf] ?? u.uf}</td><td class="num">{formatarNumero(u.emendas)}</td><td class="num">{formatarMoedaCurta(u.valores.empenhado)}</td><td class="num">{formatarMoedaCurta(pagoTotal(u.valores))}</td></tr>)}</tbody>

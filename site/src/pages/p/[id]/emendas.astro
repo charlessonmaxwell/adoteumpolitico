@@ -28,7 +28,7 @@ const res = resumoEmendas();
       <section class="recebidos">
         <h2>Quem recebeu o dinheiro</h2>
         <p class="explica">{formatarMoedaCurta(e.recebidos.total)} já chegaram a prefeituras, governos e entidades por meio das emendas de {p.nome}. Os que mais receberam:</p>
-        <div class="rolagem">
+        <div class="rolagem" tabindex="0" role="region" aria-label="Tabela (role para o lado para ver tudo)">
           <table>
             <thead><tr><th>Quem recebeu</th><th>Tipo</th><th>Cidade</th><th>Recebeu</th></tr></thead>
             <tbody>{e.recebidos.favorecidos.map((f) => <tr><td><span data-oficial>{f.nome}</span></td><td>{TIPO_FAVORECIDO[f.tipo] ?? f.tipo}</td><td>{f.municipio}{f.uf ? ` (${f.uf})` : ""}</td><td class="num">{formatarMoeda(f.valor)}</td></tr>)}</tbody>
@@ -42,7 +42,7 @@ const res = resumoEmendas();
       <span>Procurar cidade, estado ou área</span>
       <input type="search" placeholder="Ex.: Aracaju, saúde, Pix" data-filtro />
     </label>
-    <div class="rolagem">
+    <div class="rolagem" tabindex="0" role="region" aria-label="Tabela (role para o lado para ver tudo)">
       <table>
         <thead><tr><th>Ano</th><th>Destino</th><th>Área</th><th>Reservado</th><th>Já pago</th></tr></thead>
         <tbody data-lista>

@@ -58,7 +58,7 @@ const nome = `${c.nome} (${c.uf})`;
       <section class="bloco-tabela">
         <h2>Quem indicou emendas para {c.nome}</h2>
         <p class="nota">Em ordem alfabética. Bancada e comissão são emendas decididas em grupo. "Ex-parlamentar" é quem indicou a emenda e já não está no cargo.</p>
-        <div class="rolagem">
+        <div class="rolagem" tabindex="0" role="region" aria-label="Tabela (role para o lado para ver tudo)">
           <table>
             <thead><tr><th>Quem indicou</th><th>Tipo</th><th>Emendas</th><th>Reservado</th><th>Já pago</th></tr></thead>
             <tbody>
@@ -80,7 +80,7 @@ const nome = `${c.nome} (${c.uf})`;
     {r.favorecidos.length > 0 && (
       <section class="bloco-tabela">
         <h2>Quem mais recebeu em {c.nome}</h2>
-        <div class="rolagem">
+        <div class="rolagem" tabindex="0" role="region" aria-label="Tabela (role para o lado para ver tudo)">
           <table>
             <thead><tr><th>Quem recebeu</th><th>Tipo</th><th>Recebeu</th></tr></thead>
             <tbody>{r.favorecidos.map((f) => <tr><td><span data-oficial>{f.nome}</span></td><td>{TIPO_FAVORECIDO[f.tipo] ?? f.tipo}</td><td class="num">{formatarMoeda(f.valor)}</td></tr>)}</tbody>
