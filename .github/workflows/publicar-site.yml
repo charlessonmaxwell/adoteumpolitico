@@ -112,6 +112,9 @@ jobs:
           DADOS_DIR: dados
           SITE_URL: ${{ steps.endereco.outputs.url }}
           PUBLIC_CF_BEACON: ${{ steps.analytics.outputs.beacon }}
+          PUBLIC_PIX_CHAVE: ${{ vars.PIX_CHAVE }}
+          PUBLIC_PIX_NOME: ${{ vars.PIX_NOME }}
+          PUBLIC_PIX_CIDADE: ${{ vars.PIX_CIDADE }}
         run: pnpm site:build
 
       - name: Conferir neutralidade dos textos
