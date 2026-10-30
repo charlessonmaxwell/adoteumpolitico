@@ -1,0 +1,80 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base titulo="Achou um erro?" descricao="Avise se algum número, nome ou texto do site estiver errado. Não precisa se identificar.">
+  <div class="conteiner pagina-erro">
+    <h1>Achou um erro?</h1>
+    <p class="intro">Os números vêm das fontes oficiais, mas a gente pode errar ao juntar tudo. Conta o que viu: não precisa se identificar e não guardamos nenhum dado seu.</p>
+    <form data-form novalidate>
+      <label>
+        <span>O que está errado?</span>
+        <select name="tipo">
+          <option>Número errado</option>
+          <option>Nome, partido ou foto errados</option>
+          <option>Texto confuso ou parcial</option>
+          <option>Página quebrada</option>
+          <option>Outro</option>
+        </select>
+      </label>
+      <label>
+        <span>Em qual página? <small>(já vem preenchido)</small></span>
+        <input name="pagina" type="text" data-pagina />
+      </label>
+      <label>
+        <span>Conte o que você viu</span>
+        <textarea name="mensagem" rows="6" required minlength="10" maxlength="3000" placeholder="Ex.: o gasto de 2025 aparece maior do que no site da Câmara."></textarea>
+      </label>
+      <label class="escondido" aria-hidden="true">Deixe em branco <input name="site" tabindex="-1" autocomplete="off" /></label>
+      <button type="submit">Enviar aviso</button>
+      <p class="retorno" role="status" aria-live="polite" data-retorno></p>
+    </form>
+    <p class="alternativa">Prefere acompanhar a correção? Abra um aviso direto no <a href="https://github.com/charlessonmaxwell/adoteumpolitico/issues/new" rel="external noopener" target="_blank">GitHub</a> (precisa de conta).</p>
+  </div>
+</Base>
+<script>
+  const form = document.querySelector<HTMLFormElement>("[data-form]")!;
+  const retorno = document.querySelector<HTMLElement>("[data-retorno]")!;
+  const pagina = document.querySelector<HTMLInputElement>("[data-pagina]")!;
+  const inicio = Date.now();
+  pagina.value = new URLSearchParams(location.search).get("de") ?? document.referrer ?? "";
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const dados = Object.fromEntries(new FormData(form));
+    if (String(dados.mensagem ?? "").trim().length < 10) {
+      retorno.textContent = "Conte um pouco mais (pelo menos 10 letras).";
+      return;
+    }
+    const botao = form.querySelector("button")!;
+    botao.disabled = true;
+    retorno.textContent = "Enviando…";
+    try {
+      const r = await fetch("/api/erro", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...dados, inicio }) });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.ok) {
+        form.reset();
+        retorno.textContent = "Recebido! Obrigado por ajudar a deixar os dados certos.";
+      } else if (j.erro === "indisponivel" || r.status === 404) {
+        retorno.innerHTML = 'O envio pelo site ainda não está ativo. Use o link do GitHub abaixo, por favor.';
+      } else retorno.textContent = j.erro ?? "Não deu certo. Tente de novo em alguns minutos.";
+    } catch {
+      retorno.textContent = "Sem conexão. Tente de novo em alguns minutos.";
+    } finally {
+      botao.disabled = false;
+    }
+  });
+</script>
+<style>
+  .pagina-erro { max-width: 40rem; padding-bottom: 3rem; }
+  h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 6vw, 3.2rem); color: var(--dado); margin: 2rem 0 0.6rem; }
+  .intro { color: var(--tinta-suave); font-size: 1.1rem; }
+  form { display: grid; gap: 1rem; margin-top: 1.5rem; }
+  label { display: grid; gap: 0.3rem; font-weight: 600; }
+  small { font-weight: 400; color: var(--grafite); }
+  input, select, textarea { font: inherit; font-weight: 400; padding: 0.7rem 0.9rem; border: 2px solid var(--linha); border-radius: 10px; background: var(--folha); color: var(--tinta); }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--dado); }
+  button { justify-self: start; font: inherit; font-weight: 700; padding: 0.75rem 1.4rem; border-radius: 999px; border: 0; background: var(--dado); color: var(--folha); cursor: pointer; }
+  button:disabled { opacity: 0.6; }
+  .escondido { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .retorno { min-height: 1.5rem; margin: 0; font-weight: 600; }
+  .alternativa { margin-top: 2rem; color: var(--grafite); font-size: 0.9rem; }
+</style>
