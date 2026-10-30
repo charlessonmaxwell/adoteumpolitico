@@ -3,6 +3,7 @@ import Base from "../../layouts/Base.astro";
 import BarraEmpilhada from "../../components/BarraEmpilhada.astro";
 import SeloVoto from "../../components/SeloVoto.astro";
 import Texto from "../../components/Texto.astro";
+import Compartilhar from "../../components/Compartilhar.astro";
 import { dados, projetos } from "../../lib/dados";
 import { dataBr, plural, UFS } from "../../lib/formato";
 import { RESULTADO, SELO, semPlacar } from "../../lib/votos";
@@ -47,6 +48,7 @@ const titulo = `${proj.titulo}: como votaram os ${quem}`;
     <p class="volta"><a href="/#busca">Buscar parlamentar</a></p>
     <p class="casa">{casa}</p>
     <h1>{proj.titulo}</h1>
+    <div class="compartilhar-proj"><Compartilhar texto={`${proj.titulo.replace(/\s*\(.*\)$/, "")}: veja como votou cada ${proj.casa === "camara" ? "deputado" : "senador"} do seu estado e fiscalize:`} url={new URL(`/projeto/${proj.id}/`, Astro.site).toString()} /></div>
     {proj.ementa && (
       <div class="oficial">
         <p class="rotulo-oficial">Texto oficial (como está no Congresso)</p>
@@ -146,6 +148,7 @@ const titulo = `${proj.titulo}: como votaram os ${quem}`;
 </script>
 <style>
   .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
+  .compartilhar-proj { margin: 0 0 1.2rem; }
   .casa { margin: 0; color: var(--grafite); font-weight: 600; }
   h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1; margin: 0.2rem 0 0.8rem; color: var(--dado); }
   .explicacao { background: var(--folha); border-left: 5px solid var(--dado); border-radius: 10px; padding: 1rem 1.3rem; margin: 0 0 1.2rem; max-width: 70ch; }

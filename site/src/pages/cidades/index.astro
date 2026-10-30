@@ -1,0 +1,63 @@
+---
+import Base from "../../layouts/Base.astro";
+import { UFS } from "../../lib/formato";
+import { cidadesEmendas } from "../../lib/dados";
+const total = cidadesEmendas().length;
+---
+<Base titulo="Emendas na sua cidade" descricao="Digite o nome da sua cidade e veja quanto de emenda parlamentar chegou, de quem veio e quem recebeu o dinheiro.">
+  <div class="conteiner pagina-cidades">
+    <p class="volta"><a href="/">Início</a></p>
+    <h1>Quanto de emenda chegou na sua cidade?</h1>
+    <p class="intro">Digite o nome da cidade. Você vê quanto dinheiro de emenda parlamentar chegou, quem mandou e quem recebeu. São {total.toLocaleString("pt-BR")} cidades.</p>
+    <label class="campo">
+      <span>Sua cidade</span>
+      <input type="search" placeholder="Ex.: Simão Dias, Aracaju" autocomplete="off" data-busca-cidade />
+    </label>
+    <ul class="resultados" data-resultados aria-live="polite"></ul>
+    <p class="nada" data-nada hidden>Não achamos essa cidade. Confira se está escrita certinho ou escolha o estado abaixo.</p>
+    <h2>Ou escolha o estado</h2>
+    <ul class="ufs">{Object.entries(UFS).map(([uf, nome]) => <li><a href={`/uf/${uf.toLowerCase()}/#cidades`}>{nome}</a></li>)}</ul>
+  </div>
+</Base>
+<script>
+  const campo = document.querySelector<HTMLInputElement>("[data-busca-cidade]")!;
+  const lista = document.querySelector<HTMLUListElement>("[data-resultados]")!;
+  const nada = document.querySelector<HTMLElement>("[data-nada]")!;
+  const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim();
+  let cidades: [string, string, string][] | null = null;
+  const carregar = async () => (cidades ??= await (await fetch("/cidades.json")).json());
+  campo.addEventListener("focus", carregar, { once: true });
+  campo.addEventListener("input", async () => {
+    const q = norm(campo.value);
+    const todas = await carregar();
+    lista.innerHTML = "";
+    if (q.length < 2) return void (nada.hidden = true);
+    const achadas = todas
+      .map((c) => ({ c, n: norm(c[1]) }))
+      .filter((x) => x.n.includes(q))
+      .sort((a, b) => Number(!a.n.startsWith(q)) - Number(!b.n.startsWith(q)) || a.n.length - b.n.length)
+      .slice(0, 20);
+    nada.hidden = achadas.length > 0;
+    for (const { c } of achadas) {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = `/cidade/${c[0]}/`;
+      a.textContent = `${c[1]} (${c[2]})`;
+      li.append(a);
+      lista.append(li);
+    }
+  });
+</script>
+<style is:global>
+  .pagina-cidades .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
+  .pagina-cidades h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 1; margin: 0 0 0.6rem; color: var(--dado); }
+  .pagina-cidades .intro { max-width: 60ch; font-size: 1.1rem; color: var(--tinta-suave); }
+  .pagina-cidades .campo { display: grid; gap: 0.3rem; max-width: 32rem; margin: 1.2rem 0 0.6rem; font-weight: 700; }
+  .pagina-cidades .campo input { font: inherit; font-size: 1.15rem; font-weight: 400; padding: 0.85rem 1rem; border: 2px solid var(--linha); border-radius: 12px; background: var(--folha); color: var(--tinta); }
+  .pagina-cidades .campo input:focus { outline: none; border-color: var(--dado); }
+  .pagina-cidades .resultados { list-style: none; padding: 0; margin: 0 0 1rem; max-width: 32rem; }
+  .pagina-cidades .resultados li a { display: block; padding: 0.7rem 0.4rem; border-bottom: 1px solid var(--linha); font-weight: 600; }
+  .pagina-cidades .nada { color: var(--grafite); }
+  .pagina-cidades h2 { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.3rem; margin: 2rem 0 0.8rem; }
+  .pagina-cidades .ufs { list-style: none; padding: 0; margin: 0 0 3rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.4rem 1rem; }
+</style>

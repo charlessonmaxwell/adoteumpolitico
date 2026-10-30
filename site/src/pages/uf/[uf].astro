@@ -36,7 +36,7 @@ const cidades = cidadesEmendas().filter((c) => c.uf === uf);
     )}
     <p class="ordem">Em ordem alfabética. A gente não ordena por desempenho.</p>
     {cidades.length > 0 && (
-      <section class="cidades">
+      <section class="cidades" id="cidades">
         <h2>Emendas nas cidades de {estado}</h2>
         <p class="ordem">Toque na cidade para ver quanto chegou de emenda, de quem e quem recebeu.</p>
         <label class="filtro"><span>Procurar cidade</span><input type="search" placeholder="Nome da cidade" data-filtro-cidade /></label>

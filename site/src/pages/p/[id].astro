@@ -6,6 +6,7 @@ import Colunas from "../../components/Colunas.astro";
 import Linhas from "../../components/Linhas.astro";
 import Compartilhar from "../../components/Compartilhar.astro";
 import { dados, cargo, paginaOficial, emendasDe, resumoEmendas } from "../../lib/dados";
+import { mensagemPerfil } from "../../lib/compartilhar";
 import { frasesEmendas, pagoTotal, idCidade } from "../../lib/emendas";
 import { frasesGastos, frasesPresenca, frasesProjetos, frasesVotacoes, VOTO_ROTULO } from "../../lib/frases";
 import { dataBr, formatarMoeda, formatarMoedaCurta, humanizarCategoria, iniciais, pelaUf } from "../../lib/formato";
@@ -75,13 +76,13 @@ const titulo = `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato`;
         <h1>{p.nome}</h1>
         <p class="partido">Partido: {p.partido}</p>
         <p class="extrato">Tudo o que fez no mandato desde 2023, com dados oficiais atualizados em {atualizado}.</p>
-        <Compartilhar texto={`Veja o que ${p.nome} fez no mandato:`} url={new URL(`/p/${p.id}/`, Astro.site).toString()} />
+        <Compartilhar texto={mensagemPerfil(r, em?.total.empenhado ?? null, resEm?.anoInicial ?? 2023)} url={new URL(`/p/${p.id}/`, Astro.site).toString()} />
       </div>
     </header>
 
     <div class="grade">
       <Bloco
-        titulo={camara ? "Foi às sessões?" : "Apareceu nas votações?"}
+        titulo={camara ? "Foi trabalhar?" : "Apareceu nas votações?"}
         icone="calendario"
         destaque={pres?.destaque}
         principal={pres?.principal ?? null}

@@ -3,6 +3,7 @@ import Base from "../../layouts/Base.astro";
 import Linhas from "../../components/Linhas.astro";
 import Icone from "../../components/Icone.astro";
 import Texto from "../../components/Texto.astro";
+import Compartilhar from "../../components/Compartilhar.astro";
 import { cidadeEmendas, cidadesEmendas, dados, resumoEmendas } from "../../lib/dados";
 import { dataBr, formatarMoeda, formatarMoedaCurta, formatarNumero, plural, UFS } from "../../lib/formato";
 import { area, pagoTotal, pctPago, TIPO_EMENDA, TIPO_FAVORECIDO } from "../../lib/emendas";
@@ -23,6 +24,7 @@ const nome = `${c.nome} (${c.uf})`;
   <div class="conteiner pagina-cidade">
     <p class="volta"><a href={`/uf/${c.uf.toLowerCase()}/`}>{UFS[c.uf] ?? c.uf}</a></p>
     <h1>{c.nome} <span>{c.uf}</span></h1>
+    <div class="compartilhar-cidade"><Compartilhar texto={d.emendas > 0 || r.total > 0 ? `${c.nome} (${c.uf}) recebeu ${formatarMoedaCurta(Math.max(d.valores.empenhado, r.total))} de emendas parlamentares desde ${res?.anoInicial ?? 2023}. Veja de quem veio e quem recebeu o dinheiro:` : `Veja as emendas parlamentares de ${c.nome} (${c.uf}):`} url={new URL(`/cidade/${c.id}/`, Astro.site).toString()} /></div>
     <p class="intro"><Texto texto={`Quanto de emendas o Congresso mandou para ${c.nome} desde ${res?.anoInicial ?? 2023}, quem indicou e quem recebeu o dinheiro.`} /></p>
 
     <div class="grade">
@@ -114,5 +116,6 @@ const nome = `${c.nome} (${c.uf})`;
   .pagina-cidade th, .pagina-cidade td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--linha); }
   .pagina-cidade td.num, .pagina-cidade th.num { text-align: right; white-space: nowrap; }
   .pagina-cidade .tarja-ex { display: inline-block; margin-left: 0.5rem; padding: 0.05rem 0.5rem; border-radius: 999px; border: 1px solid var(--grafite); color: var(--grafite); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; vertical-align: middle; }
+  .pagina-cidade .compartilhar-cidade { margin: 0.4rem 0 1rem; }
   .pagina-cidade .fonte { margin: 1.5rem 0 3rem; color: var(--grafite); font-size: 0.85rem; }
 </style>

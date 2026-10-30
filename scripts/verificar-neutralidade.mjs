@@ -34,7 +34,7 @@ const raiz = process.argv[2] ?? "site/dist";
 // Nomes de parlamentares saem do texto antes da checagem (ex.: um deputado chamado "Gastão")
 const arqNomes = process.argv[3];
 const nomes = arqNomes ? JSON.parse(readFileSync(arqNomes, "utf8")).map((p) => p.nome) : [];
-for (const sub of ["p", "uf", "projeto", "panorama", "cidade"]) andar(join(raiz, sub));
+for (const sub of ["p", "uf", "projeto", "panorama", "cidade", "cidades"]) andar(join(raiz, sub));
 
 const erros = [];
 for (const a of arquivos) {

@@ -2,6 +2,7 @@
 import Base from "../../../layouts/Base.astro";
 import SeloVoto from "../../../components/SeloVoto.astro";
 import Texto from "../../../components/Texto.astro";
+import Compartilhar from "../../../components/Compartilhar.astro";
 import { dados, votosDe, cargo } from "../../../lib/dados";
 import { dataBr, plural } from "../../../lib/formato";
 import { RESULTADO } from "../../../lib/votos";
@@ -24,6 +25,7 @@ const titulo = `Como ${p.nome} votou em cada projeto`;
     <p class="volta"><a href={`/p/${p.id}/`}>Voltar para o perfil de {p.nome}</a></p>
     <h1>Como votou em cada projeto</h1>
     <p class="quem">{p.nome}, {cargo(p).toLowerCase()}, {p.partido}-{p.uf}</p>
+    <div class="compartilhar-votos"><Compartilhar texto={`Veja como ${p.nome} (${p.partido}-${p.uf}) votou em cada projeto e fiscalize:`} url={new URL(`/p/${p.id}/votos/`, Astro.site).toString()} /></div>
 
     <div class="explica-lista">
       <p>Aqui estão os projetos em que {p.nome} teve voto registrado desde 2023. Para cada um, mostramos o voto na votação do projeto em si. Urgência, emendas e destaques aparecem resumidos; toque no projeto para ver tudo.</p>
@@ -96,6 +98,7 @@ const titulo = `Como ${p.nome} votou em cada projeto`;
   .pagina-votos .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
   .pagina-votos h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 5vw, 3.2rem); line-height: 1; margin: 0; color: var(--dado); }
   .pagina-votos .quem { margin: 0.4rem 0 1.2rem; font-weight: 600; }
+  .pagina-votos .compartilhar-votos { margin: 0 0 1.2rem; }
   .pagina-votos .explica-lista { max-width: 62ch; color: var(--tinta-suave); }
   .pagina-votos .explica-lista p { margin: 0 0 0.5rem; }
   .pagina-votos .resumo { font-size: 1.15rem; margin: 1.5rem 0 1rem; }

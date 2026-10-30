@@ -18,7 +18,7 @@ const indice: ItemBusca[] = dados().resumos.map(({ parlamentar: p }) => ({
 }));
 ---
 <div class:list={["busca", { grande }]} data-busca>
-  <label for="campo-busca" class="rotulo">Quem você quer conferir?</label>
+  <label for="campo-busca" class="rotulo">Quem você quer fiscalizar?</label>
   <div class="campo">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.4-4.4" /></svg>
     <input id="campo-busca" type="search" autocomplete="off" spellcheck="false" placeholder="Nome, estado ou partido" aria-describedby="dica-busca" aria-controls="resultados-busca" />

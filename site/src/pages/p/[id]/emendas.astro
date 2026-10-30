@@ -1,6 +1,7 @@
 ---
 import Base from "../../../layouts/Base.astro";
 import Texto from "../../../components/Texto.astro";
+import Compartilhar from "../../../components/Compartilhar.astro";
 import { dados, emendasDe, resumoEmendas, cargo } from "../../../lib/dados";
 import { dataBr, formatarMoeda, formatarMoedaCurta, plural } from "../../../lib/formato";
 import { area, pagoTotal, pctPago, TIPO_FAVORECIDO } from "../../../lib/emendas";
@@ -20,6 +21,7 @@ const res = resumoEmendas();
     <p class="volta"><a href={`/p/${p.id}/`}>Voltar para o perfil de {p.nome}</a></p>
     <h1>Para onde mandou dinheiro</h1>
     <p class="quem">{p.nome}, {cargo(p).toLowerCase()}, {p.partido}-{p.uf}</p>
+    <div class="compartilhar-em"><Compartilhar texto={`${p.nome} (${p.partido}-${p.uf}) indicou ${formatarMoedaCurta(e.total.empenhado)} em emendas desde ${res?.anoInicial ?? 2023}. Veja para quais cidades foi o dinheiro e fiscalize:`} url={new URL(`/p/${p.id}/emendas/`, Astro.site).toString()} /></div>
     <p class="resumo">
       <strong>{e.emendas}</strong> {plural(e.emendas, "emenda", "emendas")} desde {res?.anoInicial ?? 2023}: <strong>{formatarMoedaCurta(e.total.empenhado)}</strong> reservados e <strong>{formatarMoedaCurta(pagoTotal(e.total))}</strong> já pagos ({pctPago(e.total)}%).
     </p>
@@ -82,6 +84,7 @@ const res = resumoEmendas();
   .pagina-emendas .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
   .pagina-emendas h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 5vw, 3.2rem); line-height: 1; margin: 0; color: var(--dado); }
   .pagina-emendas .quem { margin: 0.4rem 0 1.2rem; font-weight: 600; }
+  .pagina-emendas .compartilhar-em { margin: 0 0 1rem; }
   .pagina-emendas .resumo { font-size: 1.15rem; max-width: 65ch; }
   .pagina-emendas .explica { color: var(--tinta-suave); max-width: 65ch; }
   .pagina-emendas .filtro { display: grid; gap: 0.3rem; max-width: 28rem; margin: 1.2rem 0; font-weight: 600; }
