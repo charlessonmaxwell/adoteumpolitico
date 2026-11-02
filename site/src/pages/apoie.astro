@@ -10,7 +10,7 @@ import pixConfig from "../../../config/pix.json";
 const chave = import.meta.env.PUBLIC_PIX_CHAVE || pixConfig.chave;
 const nome = import.meta.env.PUBLIC_PIX_NOME || pixConfig.nome;
 const cidade = import.meta.env.PUBLIC_PIX_CIDADE || pixConfig.cidade;
-const pix = chave ? codigoPix({ chave, nome, cidade, mensagem: "Apoio Adote um Politico" }) : "";
+const pix = (pixConfig as { copiaECola?: string }).copiaECola || (chave ? codigoPix({ chave, nome, cidade, mensagem: "Apoio Adote um Politico" }) : "");
 const qr = pix ? await QRCode.toString(pix, { type: "svg", margin: 1, errorCorrectionLevel: "M" }) : "";
 ---
 <Base titulo="Apoie o Adote um Político" descricao="O Adote um Político é independente e não tem lado. Se ele te ajuda a fiscalizar, apoie com um Pix de qualquer valor.">
