@@ -22,6 +22,7 @@
     "rotina": "tsx pipeline/src/rotina/index.ts",
     "explicacoes": "tsx pipeline/src/explicacao/manual.ts",
     "rotina:emendas": "tsx pipeline/src/emendas/rotina.ts",
+    "rotina:palacio": "tsx pipeline/src/palacio/rotina.ts",
     "site:dev": "astro dev",
     "site:build": "astro build",
     "site:check": "astro check"
