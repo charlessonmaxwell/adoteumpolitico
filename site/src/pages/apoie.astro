@@ -3,11 +3,13 @@ import QRCode from "qrcode";
 import Base from "../layouts/Base.astro";
 import Icone from "../components/Icone.astro";
 import { codigoPix } from "../lib/pix";
+import pixConfig from "../../../config/pix.json";
 
 // Chave aleatória do Pix (não expõe CPF nem telefone). Configurada no GitHub (variáveis PIX_*).
-const chave = import.meta.env.PUBLIC_PIX_CHAVE ?? "";
-const nome = import.meta.env.PUBLIC_PIX_NOME ?? "Adote um Politico";
-const cidade = import.meta.env.PUBLIC_PIX_CIDADE ?? "Aracaju";
+// Chave aleatória pública (aparece na página de qualquer forma). Variáveis PIX_* no GitHub têm prioridade.
+const chave = import.meta.env.PUBLIC_PIX_CHAVE || pixConfig.chave;
+const nome = import.meta.env.PUBLIC_PIX_NOME || pixConfig.nome;
+const cidade = import.meta.env.PUBLIC_PIX_CIDADE || pixConfig.cidade;
 const pix = chave ? codigoPix({ chave, nome, cidade, mensagem: "Apoio Adote um Politico" }) : "";
 const qr = pix ? await QRCode.toString(pix, { type: "svg", margin: 1, errorCorrectionLevel: "M" }) : "";
 ---
