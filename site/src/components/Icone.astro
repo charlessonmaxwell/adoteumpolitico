@@ -1,7 +1,7 @@
 ---
 /** Ícones de traço próprios (sem biblioteca), herdam a cor do texto. */
 interface Props {
-  nome: "calendario" | "dinheiro" | "documento" | "urna" | "lupa" | "mapa";
+  nome: "calendario" | "dinheiro" | "documento" | "urna" | "lupa" | "mapa" | "cadeado";
 }
 const { nome } = Astro.props;
 ---
@@ -12,6 +12,7 @@ const { nome } = Astro.props;
   {nome === "urna" && (<><path d="M4 11h16v9H4z" /><path d="M9 11V5.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V11M8 15h8" /><path d="m10.5 8 1.2 1.2L14 7" /></>)}
   {nome === "lupa" && (<><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.4-4.4" /></>)}
   {nome === "mapa" && (<><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z" /><circle cx="12" cy="10" r="2.3" /></>)}
+  {nome === "cadeado" && (<><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3M12 14.5v2.5" /></>)}
 </svg>
 <style>
   .icone { width: 1.5em; height: 1.5em; flex: none; }
