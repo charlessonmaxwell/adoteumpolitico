@@ -1,0 +1,32 @@
+name: Diagnóstico CPGF Presidência (amostra)
+# Teste único: o GitHub consegue baixar o cartão corporativo do Portal da Transparência?
+# Só imprime agregados no log. Não publica nada.
+
+on:
+  push:
+    branches: [diagnostico-cpgf]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  amostra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        mes: ["202509", "202209"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testar acesso e baixar ${{ matrix.mes }}
+        run: |
+          mkdir -p dl && cd dl
+          code=$(curl -sSL -m 120 -A "Mozilla/5.0 (adoteumpolitico)" -o cpgf.zip -w "%{http_code}" \
+            "https://portaldatransparencia.gov.br/download-de-dados/cpgf/${{ matrix.mes }}" || echo ERRO)
+          echo "::notice::HTTP $code — $(stat -c %s cpgf.zip 2>/dev/null || echo 0) bytes"
+          file cpgf.zip
+          unzip -o cpgf.zip && ls -la
+      - name: Analisar Presidência
+        run: python3 scripts/diagnostico/cpgf_amostra.py dl/*.csv
