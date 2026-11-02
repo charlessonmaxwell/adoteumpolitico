@@ -49,3 +49,15 @@ Notas técnicas em PDF, sem API. Não verificado em volume. Hipótese mantida: c
 - Épico 4 (gastos): **viável** — Câmara via arquivo em lote anual (endpoint vazio), Senado via API CEAPS; dois formatos a unificar + regra de validação de datas
 - Épico 5 (projetos): viável; precisa regra de filtro de tipos
 - Épico 6 (impacto): depende de votações nominais (poucas) + fonte em PDF — o mais frágil
+
+## Portal da Transparência — Cartão corporativo (CPGF) — teste real em 02/11/2026
+Download mensal em lote: `portaldatransparencia.gov.br/download-de-dados/cpgf/AAAAMM` (.zip com CSV `;`, latin-1, ~300 KB). Histórico desde 2013. Acesso a partir do GitHub Actions: ✅ HTTP 200, <10 s por mês.
+
+| Item | Resultado | Status |
+|---|---|---|
+| Colunas | órgão superior, órgão, código/nome da unidade gestora (UG), ano/mês, portador (CPF/nome), favorecido, transação, data, valor | ✅ OK — **CPF e nome do portador nunca persistir** |
+| Presidente e família | UG 110001 (Secretaria de Administração) até 2022; **110809 "SA – Peculiaridades" em 2025** (110001 residual) | ⚠️ UG muda entre governos: tabela por ano + trava |
+| Vice | UG 110101 (2022) → 110766 (2025) | ⚠️ Idem |
+| Fora do escopo | Abin (110538, 110120), GSI (110322), EBC, Imprensa Nacional — aparecem sob "Presidência" | ❌ Excluir |
+| Sigilo | 99–100% do valor como "Informações protegidas por sigilo", **inclusive em mandato encerrado (2022)** | ⚠️ Só total; sem detalhe por item |
+| Correção monetária | IPCA via IBGE (SIDRA) | ⏳ Validar acesso no Actions |
