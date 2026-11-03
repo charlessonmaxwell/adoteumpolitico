@@ -14,6 +14,8 @@ import { ErroHttp, getBytes, getJson, type OpcoesHttp } from "../util/http.js";
 import { gravarMetricas } from "../monitoramento/metricas.js";
 import { ErroTrava, verificarQuedas } from "../rotina/trava.js";
 
+const dormir = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 export const URL_CPGF = (mes: string) =>
   `https://portaldatransparencia.gov.br/download-de-dados/cpgf/${mes}`;
 /** IPCA número-índice (dez/1993 = 100), IBGE/SIDRA tabela 1737, variável 2266. */
@@ -196,15 +198,24 @@ export async function lerIpca(opcoes: OpcoesHttp = {}): Promise<Record<string, n
   return out;
 }
 
+/** Status de bloqueio temporário do Portal (excesso de downloads). */
+export const BLOQUEIO = new Set([403, 405]);
+export const ESPERA_BLOQUEIO_MS = 60_000;
+
 /** CSV do mês, ou null se o Portal ainda não publicou (404 ou arquivo que não é zip). */
 export async function baixarMes(mes: string, opcoes: OpcoesHttp = {}): Promise<string | null> {
-  let bytes: Uint8Array;
-  try {
-    bytes = await getBytes(URL_CPGF(mes), { tentativas: 3, esperaInicialMs: 3000, ...opcoes });
-  } catch (e) {
-    if (e instanceof ErroHttp && e.status === 404) return null;
-    throw e;
+  let bytes: Uint8Array | null = null;
+  // O Portal responde 403/405 quando recebe muitos downloads seguidos: espera e tenta de novo.
+  for (let i = 0; i < 4 && !bytes; i++) {
+    try {
+      bytes = await getBytes(URL_CPGF(mes), { tentativas: 3, esperaInicialMs: 3000, ...opcoes });
+    } catch (e) {
+      if (e instanceof ErroHttp && e.status === 404) return null;
+      if (!(e instanceof ErroHttp && BLOQUEIO.has(e.status)) || i === 3) throw e;
+      await (opcoes.dormir ?? dormir)(ESPERA_BLOQUEIO_MS * (i + 1));
+    }
   }
+  if (!bytes) return null;
   if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) return null; // não é zip
   const arq = Object.values(unzipSync(bytes, { filter: (f) => f.name.endsWith(".csv") }))[0];
   return arq ? new TextDecoder("latin1").decode(arq) : null;
@@ -217,7 +228,6 @@ const lerJson = async <T>(arq: string): Promise<T | null> => {
     return null;
   }
 };
-const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function executarPalacio(
   dir: string,
@@ -255,7 +265,7 @@ export async function executarPalacio(
     novas.push(...r.novas.map((n) => ({ mes: m, ...n })));
     meses[m] = r.mes;
     baixados++;
-    if (o.pausaMs ?? 1000) await dormir(o.pausaMs ?? 1000);
+    if (o.pausaMs ?? 3000) await dormir(o.pausaMs ?? 3000);
   }
   if (novas.length && !o.ignorarTrava) throw new ErroUnidadeNova(novas);
 

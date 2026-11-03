@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  baixarMes,
   ErroUnidadeNova,
   executarPalacio,
   fatorIpca,
@@ -168,5 +169,25 @@ describe("executarPalacio", () => {
       executarPalacio(dir, { cfg: CFG, baixar: async () => comNova, ipca, agora, pausaMs: 0 }),
     ).rejects.toBeInstanceOf(ErroUnidadeNova);
     await expect(readFile(join(dir, "palacio", "resumo.json"))).rejects.toThrow();
+  });
+});
+
+describe("baixarMes", () => {
+  const resp = (status: number) =>
+    new Response(status === 200 ? new Uint8Array([1, 2]) : "x", { status });
+  it("espera e tenta de novo quando o Portal bloqueia (405)", async () => {
+    const st = [405, 405, 200];
+    const esperas: number[] = [];
+    const r = await baixarMes("201506", {
+      fetcher: async () => resp(st.shift()!),
+      dormir: async (ms) => void esperas.push(ms),
+    });
+    expect(r).toBeNull(); // 200 mas não é zip
+    expect(esperas).toEqual([60000, 120000]);
+  });
+  it("404 é mês ainda não publicado", async () => {
+    expect(
+      await baixarMes("209901", { fetcher: async () => resp(404), dormir: async () => {} }),
+    ).toBeNull();
   });
 });
