@@ -1,0 +1,141 @@
+---
+// Story 7.1 — Cartão corporativo do Palácio. Frases por modelo fixo; série por governo em ordem
+// cronológica, corrigida pelo IPCA, sem destaque de "quem mais" ou "quem menos".
+import Base from "../../layouts/Base.astro";
+import Colunas from "../../components/Colunas.astro";
+import Icone from "../../components/Icone.astro";
+import { palacio } from "../../lib/dados";
+import { dataBr, formatarMoeda, formatarMoedaCurta } from "../../lib/formato";
+
+const p = palacio();
+const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const mesExtenso = (m: string) => `${MESES[Number(m.slice(4)) - 1]} de ${m.slice(0, 4)}`;
+const deCada100 = (s: { total: number; sigiloso: number }) => (s.total ? Math.round((s.sigiloso / s.total) * 100) : 0);
+const CURTO: Record<string, string> = { "Dilma Rousseff": "Dilma", "Michel Temer": "Temer", "Jair Bolsonaro": "Bolsonaro", "Luiz Inácio Lula da Silva": "Lula" };
+const curto = (n: string) => CURTO[n] ?? n.split(" ")[0]!;
+const fichas = p
+  ? ([
+      ["presidente", "o cartão do Palácio", "Inclui presidente, família e equipe próxima. Não inclui segurança (GSI) nem viagens pagas por outras vias.", p.presidente],
+      ["vice", "o cartão da Vice-Presidência", "Inclui o gabinete da Vice-Presidência. Não inclui segurança (GSI) nem viagens pagas por outras vias.", p.vice],
+    ] as const)
+  : [];
+const escala = (vs: number[]) => (Math.max(...vs) >= 1_000_000 ? { d: 1_000_000, u: "milhões" } : { d: 1_000, u: "mil" });
+const curta = (v: number, e: { d: number }) => (v / e.d).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+const anoFechado = p ? String(Number(p.ultimoMes!.slice(0, 4)) - (p.ultimoMes!.endsWith("12") ? 0 : 1)) : "";
+---
+<Base titulo="Cartão do Palácio" descricao="Quanto o cartão corporativo da Presidência e da Vice-Presidência gastou por ano e por governo, e quanto disso é segredo.">
+  <div class="conteiner pagina-panorama pagina-palacio">
+    <p class="volta"><a href="/">Início</a></p>
+    <h1>Cartão do Palácio</h1>
+    <p class="intro">O cartão corporativo paga despesas do dia a dia do Palácio do Planalto e da residência oficial. Aqui estão os totais desde 2013, direto do Portal da Transparência. Quase tudo é segredo: o governo publica quanto gastou, mas não em quê.</p>
+
+    {!p ? (
+      <p class="vazio">Os números aparecem depois da próxima atualização mensal.</p>
+    ) : (
+      <>
+        <nav class="abas" aria-label="Escolha a ficha">
+          <a href="#presidente">Presidente e família</a>
+          <a href="#vice">Vice</a>
+        </nav>
+
+        {fichas.map(([id, quem, rotulo, f]) => {
+          const ano = f.porAno[anoFechado];
+          const eAno = escala(Object.values(f.porAno).map((s) => s.total));
+          const eGov = escala(f.porGoverno.map((g) => g.mediaMensalCorrigida));
+          return (
+            <section id={id} class="casa">
+              <h2>{f.nome} <span>De {mesExtenso(p.primeiroMes!)} a {mesExtenso(p.ultimoMes!)}</span></h2>
+              <div class="grade">
+                <article class="cartao">
+                  <h3><span class="selo"><Icone nome="dinheiro" /></span>Quanto gastou</h3>
+                  {ano && <p class="destaque"><strong>{formatarMoedaCurta(ano.total)}</strong> <span>Em {anoFechado}, {quem} gastou {formatarMoeda(ano.total)}.</span></p>}
+                  <Colunas
+                    itens={Object.entries(f.porAno).slice(-8).map(([a, s]) => ({ rotulo: `'${a.slice(2)}`, valor: s.total, texto: curta(s.total, eAno) }))}
+                    descricao={`Gasto por ano, sem correção: ${Object.entries(f.porAno).map(([a, s]) => `${a}, ${formatarMoedaCurta(s.total)}`).join("; ")}`}
+                  />
+                  <p class="nota">Em R$ {eAno.u}, valores da época, sem correção. O ano atual ainda não terminou.</p>
+                  <details>
+                    <summary>Todos os anos desde 2013</summary>
+                    <table>
+                      <thead><tr><th>Ano</th><th>Gastou</th><th>Em segredo</th></tr></thead>
+                      <tbody>{Object.entries(f.porAno).map(([a, s]) => <tr><td>{a}</td><td class="num">{formatarMoeda(s.total)}</td><td class="num">{deCada100(s)}%</td></tr>)}</tbody>
+                    </table>
+                  </details>
+                </article>
+
+                <article class="cartao">
+                  <h3><span class="selo"><Icone nome="cadeado" /></span>Quanto é segredo</h3>
+                  <p class="destaque"><strong>R$ {deCada100(f.total)}</strong> <span>De cada R$ 100, R$ {deCada100(f.total)} são segredo.</span></p>
+                  <p>O governo classifica essas compras como sigilosas: o valor aparece, mas não o que foi comprado nem de quem. Pela lei, o detalhe pode ser liberado depois que o mandato acaba, mas não entra no Portal da Transparência.</p>
+                </article>
+
+                <article class="cartao largo">
+                  <h3><span class="selo"><Icone nome="calendario" /></span>Por governo, em dinheiro de hoje</h3>
+                  <p>Média gasta por mês em cada governo, corrigida pela inflação (IPCA) até {mesExtenso(p.ipcaBase)}. Em R$ {eGov.u}, em ordem de data.</p>
+                  <Colunas
+                    itens={f.porGoverno.map((g) => ({ rotulo: curto(g.nome), valor: g.mediaMensalCorrigida, texto: curta(g.mediaMensalCorrigida, eGov) }))}
+                    descricao={`Média mensal corrigida por governo: ${f.porGoverno.map((g) => `${g.nome}, ${formatarMoedaCurta(g.mediaMensalCorrigida)}`).join("; ")}`}
+                  />
+                  <div class="rolagem">
+                    <table>
+                      <thead><tr><th>Governo</th><th>Meses na conta</th><th>Total da época</th><th>Total em dinheiro de hoje</th></tr></thead>
+                      <tbody>{f.porGoverno.map((g) => <tr><td>{g.nome}</td><td class="num">{g.meses}</td><td class="num">{formatarMoeda(g.total)}</td><td class="num">{formatarMoeda(g.corrigido)}</td></tr>)}</tbody>
+                    </table>
+                  </div>
+                  <p class="nota">Os dados começam em 2013, então o governo Dilma aparece só a partir daí. A média por mês deixa comparar governos de tamanhos diferentes.</p>
+                </article>
+              </div>
+              <p class="nota">{rotulo}</p>
+            </section>
+          );
+        })}
+
+        <section class="grupos">
+          <h2>Por que não aparece tudo da Presidência</h2>
+          <p>Algumas unidades usam o mesmo cartão, mas não são despesa do presidente nem do vice. Elas ficam de fora: {Object.values(p.excluidas).filter((v, i, a) => a.indexOf(v) === i).join(", ")}.</p>
+          <p class="nota">Fonte: <a href="https://portaldatransparencia.gov.br/cartoes">Portal da Transparência (CGU)</a> e IBGE (IPCA). Atualizado em {dataBr(p.atualizadoEm)}.</p>
+        </section>
+      </>
+    )}
+  </div>
+</Base>
+<style is:global>
+  .pagina-palacio .colunas { gap: 0.35rem; grid-auto-columns: minmax(0, 1fr); }
+  .pagina-palacio .colunas .valor, .pagina-palacio .colunas .eixo { font-size: 0.68rem; }
+  .pagina-panorama .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
+  .pagina-panorama h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.4rem, 6vw, 3.8rem); line-height: 1; margin: 0 0 0.6rem; color: var(--dado); }
+  .pagina-panorama .intro { max-width: 62ch; font-size: 1.1rem; color: var(--tinta-suave); }
+  .pagina-panorama .abas { display: flex; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 1.5rem 0; position: sticky; top: 0; z-index: 5; background: var(--papel); padding: 0.6rem 0; box-shadow: 0 1px 0 var(--linha), -50vw 0 0 var(--papel), 50vw 0 0 var(--papel); }
+  @media (max-width: 520px) { .pagina-panorama .aba-longa { display: none; } }
+  .pagina-panorama .abas::-webkit-scrollbar { display: none; }
+  .pagina-panorama .abas a { flex: none; white-space: nowrap; background: var(--folha); padding: 0.5rem 1rem; border: 2px solid var(--dado); border-radius: 999px; font-weight: 700; text-decoration: none; color: var(--dado); }
+  .pagina-panorama .casa { margin: 2rem 0 3rem; scroll-margin-top: 4rem; }
+  .pagina-panorama h2 { font-family: var(--numeros); font-stretch: 85%; font-weight: 800; font-size: 1.9rem; margin: 0 0 1rem; }
+  .pagina-panorama h2 span { display: block; font-family: inherit; font-size: 1rem; font-weight: 600; color: var(--grafite); font-stretch: 100%; }
+  .pagina-panorama .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; }
+  .pagina-panorama .cartao { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 0.8rem; min-width: 0; }
+  .pagina-panorama .cartao.largo { grid-column: 1 / -1; }
+  .pagina-panorama .cartao p { margin: 0; }
+  .pagina-panorama h3 { display: flex; align-items: center; gap: 0.6rem; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.25rem; margin: 0; }
+  .pagina-panorama h4 { margin: 0.4rem 0 0; font-size: 1rem; }
+  .pagina-panorama .selo { display: inline-grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--dado); color: var(--folha); flex: none; }
+  .pagina-panorama .selo :global(svg), .pagina-panorama .selo svg { width: 1.2rem; height: 1.2rem; }
+  .pagina-panorama .destaque { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.6rem; }
+  .pagina-panorama .destaque strong { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: 2.4rem; line-height: 1; color: var(--dado); }
+  .pagina-panorama .destaque span { color: var(--tinta-suave); }
+  .pagina-panorama .nota { font-size: 0.85rem; color: var(--grafite); }
+  .pagina-panorama table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .pagina-panorama th, .pagina-panorama td { text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--linha); }
+  .pagina-panorama td.num, .pagina-panorama th:not(:first-child) { text-align: right; white-space: nowrap; }
+  .pagina-panorama details summary { cursor: pointer; font-weight: 700; color: var(--dado); padding: 0.3rem 0; }
+  .pagina-panorama .grupos { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 0.9rem 1.2rem; margin-top: 1rem; }
+  .pagina-panorama .rolagem { overflow-x: auto; }
+  .pagina-panorama .apertadas { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.7rem; }
+  .pagina-panorama .apertadas li { display: grid; grid-template-columns: 1fr auto; gap: 0.15rem 1rem; border-bottom: 1px dashed var(--linha); padding-bottom: 0.6rem; }
+  .pagina-panorama .apertadas a { font-weight: 700; }
+  .pagina-panorama .placar { font-weight: 700; white-space: nowrap; }
+  .pagina-panorama .apertadas .ementa { grid-column: 1 / -1; color: var(--tinta-suave); font-size: 0.9rem; }
+  .pagina-panorama .recebidos-pan { margin-top: 1rem; }
+  .pagina-panorama .fonte { margin: 1rem 0 3rem; color: var(--grafite); font-size: 0.85rem; }
+  .pagina-panorama .vazio { color: var(--grafite); }
+</style>

@@ -5,7 +5,7 @@
 import { writeFile } from "node:fs/promises";
 
 export interface MetricasExecucao {
-  workflow: "diario" | "presenca" | "publicar" | "emendas";
+  workflow: "diario" | "presenca" | "publicar" | "emendas" | "palacio";
   resultado: "sucesso" | "falha";
   /** Etapa em que falhou, se falhou. */
   etapaFalha?: string;

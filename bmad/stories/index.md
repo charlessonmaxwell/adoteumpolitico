@@ -17,6 +17,6 @@
 | 2.5 | Medição de visitas | 2 | 2.6 | Pronta |
 | 2.6 | Publicação | 2 | 2.1–2.4 | Pronta |
 
-| 7.1 | Cartão corporativo do Palácio (Presidente e Vice) | 7 | 1.5, 2.6 | Pronta |
+| 7.1 | Cartão corporativo do Palácio (Presidente e Vice) | 7 | 1.5, 2.6 | Concluída |
 
 1.2, 1.3 e 1.4 podem ser feitas em paralelo após 1.1.

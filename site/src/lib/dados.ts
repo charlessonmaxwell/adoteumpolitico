@@ -97,3 +97,10 @@ export function cidadesEmendas(): CidadeIndice[] {
 export function cidadeEmendas(id: string): Cidade {
   return JSON.parse(readFileSync(join(DIR, "emendas", "cidade", `${id}.json`), "utf8")) as Cidade;
 }
+
+type Palacio = import("../../../pipeline/src/palacio/rotina.js").ResumoPalacio;
+/** Cartão corporativo do Palácio (story 7.1). Null antes da primeira rotina mensal. */
+export function palacio(): Palacio | null {
+  const arq = join(DIR, "palacio", "resumo.json");
+  return existsSync(arq) ? (JSON.parse(readFileSync(arq, "utf8")) as Palacio) : null;
+}
