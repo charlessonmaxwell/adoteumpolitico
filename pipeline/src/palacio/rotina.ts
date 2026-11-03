@@ -22,6 +22,8 @@ export const URL_CPGF = (mes: string) =>
 export const URL_IPCA = "https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/2266/p/all";
 /** Unidade fora da lista sob a Presidência com valor acima disto no mês trava a publicação. */
 export const LIMITE_UG_NOVA = 10_000;
+/** Tempo máximo de downloads por rodada; o resto fica para a próxima. */
+export const LIMITE_RODADA_MS = 20 * 60_000;
 /** Meses mais recentes refeitos a cada rodada (o Portal revisa lançamentos). */
 export const MESES_REVISAO = 3;
 
@@ -238,6 +240,7 @@ export async function executarPalacio(
     agora?: Date;
     ignorarTrava?: boolean;
     pausaMs?: number;
+    limiteMs?: number;
   } = {},
 ) {
   const cfg = o.cfg ?? ((await lerJson<Config>("config/palacio.json")) as Config);
@@ -252,27 +255,42 @@ export async function executarPalacio(
   const meses: Record<string, Mes> = { ...anterior };
   const novas: ErroUnidadeNova["unidades"] = [];
   const baixar = o.baixar ?? ((m: string) => baixarMes(m));
+  const limite = Date.now() + (o.limiteMs ?? LIMITE_RODADA_MS);
   let baixados = 0;
+  let pendentes = 0;
   for (const m of todos) {
     if (meses[m] && !revisar.has(m)) continue;
-    const csv = await baixar(m);
+    if (Date.now() > limite) {
+      pendentes++;
+      continue;
+    }
+    let csv: string | null;
+    try {
+      csv = await baixar(m);
+    } catch (e) {
+      // Carga longa: guarda o que já veio e continua na próxima rodada
+      if (!baixados) throw e;
+      console.log(
+        `::warning::Parou em ${m} (${e instanceof Error ? e.message : e}); continua na próxima rodada.`,
+      );
+      pendentes++;
+      continue;
+    }
     if (csv === null) {
       // Só os meses mais recentes podem ainda não ter saído
       if (revisar.has(m)) continue;
       throw new Error(`Portal sem arquivo do cartão corporativo para ${m}`);
     }
     const r = somarMes(csv, cfg);
-    novas.push(...r.novas.map((n) => ({ mes: m, ...n })));
-    meses[m] = r.mes;
     baixados++;
+    if (r.novas.length) {
+      // Mês com unidade não classificada não é guardado: volta a ser checado depois do config
+      novas.push(...r.novas.map((n) => ({ mes: m, ...n })));
+      pendentes++;
+    } else meses[m] = r.mes;
+    if (baixados % 12 === 0) console.log(`… ${baixados} meses baixados (até ${m})`);
     if (o.pausaMs ?? 3000) await dormir(o.pausaMs ?? 3000);
   }
-  if (novas.length && !o.ignorarTrava) throw new ErroUnidadeNova(novas);
-
-  const ipca = o.ipca ?? (await lerIpca());
-  const resumo = montarResumo(meses, ipca, cfg, agora.toISOString());
-  const quedas = verificarQuedas(resumoAnt?.contagens ?? null, resumo.contagens);
-  if (quedas.length && !o.ignorarTrava) throw new ErroTrava(quedas);
 
   await mkdir(pasta, { recursive: true });
   const ordenado = Object.fromEntries(
@@ -280,18 +298,32 @@ export async function executarPalacio(
       .sort()
       .map((k) => [k, meses[k]]),
   );
+  // O progresso fica sempre guardado; o resumo (que o site lê) só sai com a série completa
   await writeFile(join(pasta, "meses.json"), JSON.stringify(ordenado));
+  if (novas.length && !o.ignorarTrava) throw new ErroUnidadeNova(novas);
+  if (pendentes) return { resumo: null, baixados, novas, pendentes };
+
+  const ipca = o.ipca ?? (await lerIpca());
+  const resumo = montarResumo(meses, ipca, cfg, agora.toISOString());
+  const quedas = verificarQuedas(resumoAnt?.contagens ?? null, resumo.contagens);
+  if (quedas.length && !o.ignorarTrava) throw new ErroTrava(quedas);
   await writeFile(join(pasta, "resumo.json"), JSON.stringify(resumo));
-  return { resumo, baixados, novas };
+  return { resumo, baixados, novas, pendentes: 0 };
 }
 
 async function main() {
   const dir = process.argv[2] ?? "publicado";
   const inicio = Date.now();
   try {
-    const { resumo, baixados } = await executarPalacio(dir, {
+    const { resumo, baixados, pendentes } = await executarPalacio(dir, {
       ignorarTrava: process.env.IGNORAR_TRAVA === "true",
     });
+    if (!resumo) {
+      console.log(
+        `Palácio: carga parcial, ${baixados} meses baixados, ${pendentes} pendentes. Rode de novo.`,
+      );
+      return;
+    }
     const p = resumo.presidente.total;
     console.log(
       `Palácio: ${resumo.contagens.meses} meses (${resumo.primeiroMes}–${resumo.ultimoMes}), ${baixados} baixados; ` +

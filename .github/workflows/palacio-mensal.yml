@@ -1,6 +1,7 @@
 name: Cartão do Palácio (mensal)
 # Story 7.1. O Portal publica o cartão corporativo uma vez por mês; a rotina baixa só os meses
-# que faltam e revisa os 3 últimos. A primeira execução faz a carga desde 2013 (~5 min).
+# que faltam e revisa os 3 últimos. A carga desde 2013 pode levar várias rodadas (20 min de
+# downloads cada, por causa do bloqueio do Portal); o site só mostra quando a série está completa.
 
 on:
   schedule:
@@ -23,7 +24,7 @@ concurrency:
 jobs:
   palacio:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -46,7 +47,8 @@ jobs:
           pnpm rotina:palacio publicado | tee palacio.log
           echo "::notice::$(tail -1 palacio.log)"
 
-      - name: Publicar na branch data
+      - name: Publicar na branch data (guarda o progresso mesmo se a rotina parar na trava)
+        if: ${{ !cancelled() }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: scripts/publicar-dados.sh publicado "Cartão do Palácio de $(date -u +%F)"
