@@ -115,12 +115,12 @@ describe("executarPalacio", () => {
       agora,
       pausaMs: 0,
     });
-    expect(resumo.contagens.meses).toBe(4);
-    const [a, b] = resumo.presidente.porGoverno;
+    expect(resumo!.contagens.meses).toBe(4);
+    const [a, b] = resumo!.presidente.porGoverno;
     expect(a).toMatchObject({ nome: "Governo A", meses: 2, total: 2101 });
     expect(a!.corrigido).toBeCloseTo(2101 * 1.1, 1);
     expect(b).toMatchObject({ nome: "Governo B", meses: 2, total: 2101 });
-    expect(resumo.ipcaBase).toBe("202302");
+    expect(resumo!.ipcaBase).toBe("202302");
     const gravado = JSON.parse(await readFile(join(dir, "palacio", "resumo.json"), "utf8"));
     expect(gravado.vice.total.total).toBe(800);
     expect(await readFile(join(dir, "palacio", "meses.json"), "utf8")).not.toMatch(/FULANO/);
@@ -149,7 +149,7 @@ describe("executarPalacio", () => {
       agora,
       pausaMs: 0,
     });
-    expect(r.resumo.ultimoMes).toBe("202301");
+    expect(r.resumo!.ultimoMes).toBe("202301");
     const dir2 = await mkdtemp(join(tmpdir(), "palacio-"));
     await expect(
       executarPalacio(dir2, {
@@ -162,7 +162,35 @@ describe("executarPalacio", () => {
     ).rejects.toThrow(/202211/);
   });
 
-  it("CA7: trava com unidade nova e não grava nada", async () => {
+  it("carga parcial guarda o progresso e só publica o resumo completo", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "palacio-"));
+    let n = 0;
+    const r = await executarPalacio(dir, {
+      cfg: CFG,
+      baixar: async () => {
+        if (++n === 3) throw new Error("HTTP 405");
+        return BASE;
+      },
+      ipca,
+      agora,
+      pausaMs: 0,
+    });
+    expect(r.resumo).toBeNull();
+    expect(
+      Object.keys(JSON.parse(await readFile(join(dir, "palacio", "meses.json"), "utf8"))),
+    ).toHaveLength(3);
+    await expect(readFile(join(dir, "palacio", "resumo.json"))).rejects.toThrow();
+    const r2 = await executarPalacio(dir, {
+      cfg: CFG,
+      baixar: async () => BASE,
+      ipca,
+      agora,
+      pausaMs: 0,
+    });
+    expect(r2.resumo?.contagens.meses).toBe(4);
+  });
+
+  it("CA7: trava com unidade nova e não publica o resumo", async () => {
     const dir = await mkdtemp(join(tmpdir(), "palacio-"));
     const comNova = csv(l("110999", "SECRETARIA NOVA", "Sigiloso", "sigilo", "20.000,00"));
     await expect(
