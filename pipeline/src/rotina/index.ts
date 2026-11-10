@@ -372,6 +372,8 @@ async function main() {
       travaDisparou: e instanceof ErroEtapa && e.causa instanceof ErroTrava,
       mudou: null,
     });
+    // Anotação do GitHub: a página "Quando os dados foram atualizados" lê daqui o motivo
+    console.error(`::error::${e instanceof Error ? e.message : String(e)}`);
     console.error(e);
     process.exit(1);
   }
