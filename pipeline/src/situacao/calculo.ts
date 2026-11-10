@@ -30,6 +30,13 @@ export interface Fonte {
   proxima: (agoraBr: Date, okHoje: boolean) => { dia: Date; hora?: string };
   /** Mostra os últimos 14 dias. */
   historico?: boolean;
+  /** Mostra quantos itens já estão prontos em vez da data (fonte sem registro de execução). */
+  porCobertura?: boolean;
+}
+
+export interface Cobertura {
+  com: number;
+  total: number;
 }
 
 export interface SituacaoFonte {
@@ -43,6 +50,7 @@ export interface SituacaoFonte {
   aviso: string | null;
   proximaTentativa: string;
   dias?: Dia[];
+  cobertura?: Cobertura;
 }
 
 export interface Situacao {
@@ -119,10 +127,12 @@ export const FONTES: Fonte[] = [
   {
     id: "explicacoes",
     nome: "Explicação simples dos projetos",
-    inclui: "O texto em linguagem do dia a dia de cada projeto votado.",
+    inclui:
+      "O texto em linguagem do dia a dia de cada projeto votado. Quando o texto oficial não diz o que muda, o projeto fica sem explicação para não inventar.",
     frequencia: "Uma vez por semana (segunda), quando há projeto novo votado",
-    // Sem projeto novo (recesso), não há o que explicar: a falta de atualização não é atraso.
+    // A branch `data` não guarda histórico: mostramos quantos projetos já têm explicação.
     prazoDias: null,
+    porCobertura: true,
     proxima: (agora, okHoje) => ({ dia: proximoDia(agora, okHoje, (d) => d.getUTCDay() === 1) }),
   },
   {
@@ -163,7 +173,26 @@ const textoProxima = (agoraBr: Date, p: { dia: Date; hora?: string }) => {
 };
 
 /** Situação de uma fonte a partir das tentativas (qualquer ordem). */
-export function situacaoDaFonte(fonte: Fonte, tentativas: Tentativa[], agora: Date): SituacaoFonte {
+export function situacaoDaFonte(
+  fonte: Fonte,
+  tentativas: Tentativa[],
+  agora: Date,
+  cobertura?: Cobertura,
+): SituacaoFonte {
+  if (fonte.porCobertura) {
+    const agoraBr = paraBr(agora);
+    return {
+      id: fonte.id,
+      nome: fonte.nome,
+      inclui: fonte.inclui,
+      frequencia: fonte.frequencia,
+      estado: cobertura && cobertura.total > 0 ? "em-dia" : "aguardando",
+      ultimaAtualizacao: null,
+      aviso: null,
+      proximaTentativa: textoProxima(agoraBr, fonte.proxima(agoraBr, false)),
+      ...(cobertura ? { cobertura } : {}),
+    };
+  }
   const lista = [...tentativas].sort((a, b) => b.quando.localeCompare(a.quando));
   const agoraBr = paraBr(agora);
   const hoje = chaveDia(agoraBr);
@@ -221,9 +250,10 @@ export function ultimosDias(tentativas: Tentativa[], agoraBr: Date, n: number): 
 export function calcularSituacao(
   tentativas: Partial<Record<IdFonte, Tentativa[]>>,
   agora: Date,
+  cobertura?: Partial<Record<IdFonte, Cobertura>>,
 ): Situacao {
   return {
     conferidoEm: agora.toISOString(),
-    fontes: FONTES.map((f) => situacaoDaFonte(f, tentativas[f.id] ?? [], agora)),
+    fontes: FONTES.map((f) => situacaoDaFonte(f, tentativas[f.id] ?? [], agora, cobertura?.[f.id])),
   };
 }

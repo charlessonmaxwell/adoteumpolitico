@@ -6,6 +6,7 @@ import {
   situacaoDaFonte,
   type Tentativa,
 } from "../pipeline/src/situacao/calculo.js";
+import { coletarSituacao, type Api } from "../pipeline/src/situacao/coletar.js";
 
 const fonte = (id: string) => FONTES.find((f) => f.id === id)!;
 // 10/11/2026 (terça) às 16:40 em Brasília
@@ -108,9 +109,11 @@ describe("Story 2.8 — situação das fontes", () => {
     expect(s.proximaTentativa).toBe("domingo, 15/11");
   });
 
-  it("explicações: sem prazo (sem projeto novo não há o que explicar)", () => {
-    const s = situacaoDaFonte(fonte("explicacoes"), [ok("2026-09-01T17:00:00Z")], AGORA);
+  it("explicações: mostra quantos projetos já têm explicação, sem prazo", () => {
+    const s = situacaoDaFonte(fonte("explicacoes"), [], AGORA, { com: 796, total: 799 });
     expect(s.estado).toBe("em-dia");
+    expect(s.cobertura).toEqual({ com: 796, total: 799 });
+    expect(s.ultimaAtualizacao).toBeNull();
     expect(s.proximaTentativa).toBe("segunda, 16/11");
   });
 
@@ -141,5 +144,44 @@ describe("Story 2.8 — situação das fontes", () => {
       "palacio",
     ]);
     expect(r.fontes!.every((f) => f.estado === "aguardando" && f.aviso === null)).toBe(true);
+  });
+});
+
+describe("Story 2.8 — coleta na API do GitHub", () => {
+  it("CA5: API fora do ar → situação não conferida, sem derrubar a publicação", async () => {
+    const api = async () => {
+      throw new Error("GitHub respondeu 503");
+    };
+    const s = await coletarSituacao(api as Api, "/pasta/inexistente", AGORA);
+    expect(s).toEqual({ conferidoEm: AGORA.toISOString(), fontes: null });
+  });
+
+  it("lê execuções, motivo da última falha e repescagem dispensada", async () => {
+    const respostas: Record<string, unknown> = {
+      "/actions/workflows/diario.yml/runs?status=completed&per_page=50": {
+        workflow_runs: [
+          { id: 3, conclusion: "failure", updated_at: "2026-11-10T16:30:00Z" },
+          { id: 2, conclusion: "success", updated_at: "2026-11-09T21:10:00Z" },
+          { id: 1, conclusion: "success", updated_at: "2026-11-09T18:55:00Z" },
+        ],
+      },
+      "/actions/runs/3/jobs": { jobs: [{ id: 30, name: "atualizar", conclusion: "failure" }] },
+      "/check-runs/30/annotations": [
+        {
+          annotation_level: "failure",
+          message: `Etapa "cadastro" falhou: HTTP 503 em https://dadosabertos.camara.leg.br/x`,
+        },
+      ],
+      "/actions/runs/2/jobs": { jobs: [{ id: 20, name: "atualizar", conclusion: "skipped" }] },
+      "/actions/runs/1/jobs": { jobs: [{ id: 10, name: "atualizar", conclusion: "success" }] },
+    };
+    const api = async (c: string) => respostas[c] ?? { workflow_runs: [] };
+    const s = await coletarSituacao(api as Api, "/pasta/inexistente", AGORA);
+    const d = s.fontes!.find((f) => f.id === "diario")!;
+    expect(d.estado).toBe("atrasada");
+    expect(d.ultimaAtualizacao).toBe("09/11 às 15:55");
+    expect(d.aviso).toBe(
+      "O site de dados da Câmara não respondeu na tentativa de 10/11. Os números mostrados são de 09/11.",
+    );
   });
 });
