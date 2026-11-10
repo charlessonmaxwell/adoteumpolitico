@@ -16,6 +16,7 @@ import { ErroHttp, getBytes, getJson, type OpcoesHttp } from "../util/http.js";
 import { gravarMetricas } from "../monitoramento/metricas.js";
 import { ErroTrava, verificarQuedas } from "../rotina/trava.js";
 
+const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const dormir = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export const URL_CPGF = (mes: string) =>
@@ -297,6 +298,7 @@ export async function executarPalacio(
   const baixar = o.baixar ?? ((m: string) => baixarMes(m));
   let baixados = 0;
   let semTempo = false;
+  let interrupcao: unknown = null;
   // Ano a ano, do mais antigo para o mais recente; cada mês baixado já fica gravado
   for (const m of todos) {
     if (o.soAno && !m.startsWith(o.soAno)) continue;
@@ -305,7 +307,20 @@ export async function executarPalacio(
       semTempo = true;
       break;
     }
-    const csv = await baixar(m);
+    let csv: string | null;
+    try {
+      csv = await baixar(m);
+    } catch (e) {
+      // Mês recente: o Portal pode ainda não ter liberado (às vezes responde 403 em vez de 404)
+      if (revisar.has(m)) {
+        console.warn(`::warning::Cartão corporativo de ${m} ainda indisponível: ${msg(e)}`);
+        continue;
+      }
+      // Mês antigo: para aqui, publica o que já tem e deixa o resto para a próxima execução
+      interrupcao = e;
+      console.warn(`::warning::Carga interrompida em ${m}: ${msg(e)}`);
+      break;
+    }
     if (csv === null) {
       // Só os meses mais recentes podem ainda não ter saído
       if (revisar.has(m)) continue;
@@ -319,9 +334,11 @@ export async function executarPalacio(
     if (o.pausaMs ?? 3000) await dormir(o.pausaMs ?? 3000);
   }
   if (novas.length && !o.ignorarTrava) throw new ErroUnidadeNova(novas);
-  if (!Object.keys(meses).length) throw new Error("Nenhum mês do cartão corporativo baixado ainda");
+  if (!Object.keys(meses).length)
+    throw interrupcao ?? new Error("Nenhum mês do cartão corporativo baixado ainda");
 
-  const faltando = todos.filter((m) => !meses[m] && !(semTempo ? false : revisar.has(m)));
+  const parou = semTempo || interrupcao !== null;
+  const faltando = todos.filter((m) => !meses[m] && !(parou ? false : revisar.has(m)));
   const anosFaltando = [...new Set(faltando.map((m) => m.slice(0, 4)))];
   const carga = { completa: anosFaltando.length === 0, anosFaltando };
 

@@ -280,6 +280,49 @@ describe("Story 7.2 — só um ano (teste manual)", () => {
   });
 });
 
+describe("Story 7.2 — Portal bloqueando", () => {
+  const ipca = { "202211": 100, "202212": 100, "202301": 105, "202302": 110 };
+  const agora = new Date("2023-03-10T10:00:00Z");
+  const bloqueio = () => {
+    throw new Error("HTTP 403 em https://portaldatransparencia.gov.br/x");
+  };
+
+  it("mês recente bloqueado é pulado; o resto publica normalmente", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "palacio-"));
+    const res = await executarPalacio(dir, {
+      cfg: CFG,
+      baixar: async (m) => (m === "202302" ? bloqueio() : BASE),
+      ipca,
+      agora,
+      pausaMs: 0,
+    });
+    expect(res.resumo.ultimoMes).toBe("202301");
+    expect(res.completa).toBe(true);
+  });
+
+  it("mês antigo bloqueado: para, publica o que já veio e marca a carga como incompleta", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "palacio-"));
+    const pedidos: string[] = [];
+    const res = await executarPalacio(dir, {
+      cfg: { ...CFG, inicio: "202210" },
+      baixar: async (m) => (pedidos.push(m), m === "202211" ? bloqueio() : BASE),
+      ipca: { "202210": 100, ...ipca },
+      agora,
+      pausaMs: 0,
+    });
+    expect(pedidos).toEqual(["202210", "202211"]);
+    expect(res.baixados).toBe(1);
+    expect(res.resumo.carga).toEqual({ completa: false, anosFaltando: ["2022", "2023"] });
+  });
+
+  it("bloqueado já no primeiro mês e nada gravado → falha com o erro do Portal", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "palacio-"));
+    await expect(
+      executarPalacio(dir, { cfg: CFG, baixar: async () => bloqueio(), ipca, agora, pausaMs: 0 }),
+    ).rejects.toThrow(/403/);
+  });
+});
+
 describe("baixarMes", () => {
   const resp = (status: number) =>
     new Response(status === 200 ? new Uint8Array([1, 2]) : "x", { status });
