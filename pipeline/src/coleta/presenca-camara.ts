@@ -195,6 +195,7 @@ async function main() {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().catch((erro) => {
+    console.error(`::error::${erro instanceof Error ? erro.message : String(erro)}`);
     console.error(erro);
     process.exit(1);
   });

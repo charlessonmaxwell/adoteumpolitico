@@ -1,0 +1,109 @@
+---
+/** Página pública "Quando os dados foram atualizados" (story 2.8). Lê situacao.json, gerado na publicação. */
+import Base from "../layouts/Base.astro";
+import { situacao } from "../lib/dados";
+import { dataHoraBr, paraBr, type Estado } from "../../../pipeline/src/situacao/calculo";
+
+const ROTULO: Record<Estado, string> = { "em-dia": "Em dia", atrasada: "Atrasada", aguardando: "Ainda não publicado" };
+const s = situacao();
+const fontes = s?.fontes ?? null;
+const emDia = fontes?.filter((f) => f.estado === "em-dia").length ?? 0;
+const conferido = s ? dataHoraBr(s.conferidoEm) : null;
+const inicioHist = s ? paraBr(new Date(new Date(s.conferidoEm).getTime() - 13 * 86_400_000)) : null;
+const rotuloInicio = inicioHist ? `${String(inicioHist.getUTCDate()).padStart(2, "0")}/${String(inicioHist.getUTCMonth() + 1).padStart(2, "0")}` : "";
+const DIA = { ok: "atualizou", falha: "tentou e não conseguiu", sem: "não rodou" } as const;
+---
+<Base titulo="Quando os dados foram atualizados" descricao="Veja quando cada fonte de dados do site foi atualizada pela última vez e se alguma está atrasada.">
+  <div class="conteiner pag-atual">
+    <h1>Quando os dados foram atualizados</h1>
+    <p class="lead">Todos os números do site vêm de sites oficiais do governo. Aqui você vê quando buscamos cada um pela última vez. Quando um site oficial sai do ar, a gente avisa aqui e tenta de novo.</p>
+
+    {!fontes ? (
+      <div class="resumo alerta">
+        <strong>?</strong>
+        <span>Não foi possível conferir a situação das atualizações agora. Os números do site continuam os últimos que deram certo.</span>
+        {conferido && <small>Tentamos conferir em {conferido}</small>}
+      </div>
+    ) : (
+      <>
+        <div class:list={["resumo", emDia === fontes.length ? "ok" : "alerta"]}>
+          <strong>{emDia} de {fontes.length}</strong>
+          <span>fontes em dia agora.{emDia < fontes.length && " As outras aparecem com o motivo logo abaixo."}</span>
+          <small>Conferido em {conferido}</small>
+        </div>
+
+        <ul class="fontes">
+          {fontes.map((f) => (
+            <li class:list={["fonte", f.estado]}>
+              <div class="cab">
+                <h2>{f.nome}</h2>
+                <span class:list={["chip", f.estado]}>{ROTULO[f.estado]}</span>
+              </div>
+              <p class="inclui">{f.inclui}</p>
+              {f.aviso && <p class="aviso">{f.aviso}</p>}
+              <dl>
+                {f.cobertura ? (
+                  <div><dt>Projetos com explicação</dt><dd>{f.cobertura.com} de {f.cobertura.total}</dd></div>
+                ) : (
+                  <div><dt>Última atualização</dt><dd>{f.ultimaAtualizacao ?? "nenhuma ainda"}</dd></div>
+                )}
+                <div><dt>Frequência</dt><dd>{f.frequencia}</dd></div>
+                <div><dt>Próxima tentativa</dt><dd>{f.proximaTentativa}</dd></div>
+              </dl>
+              {f.dias && (
+                <div class="hist">
+                  <p class="hist-tit">Últimos {f.dias.length} dias</p>
+                  <ol>
+                    {f.dias.map((d, i) => (
+                      <li class={d}><span class="so-leitor">{i === f.dias!.length - 1 ? "Hoje" : `${f.dias!.length - 1 - i} dia(s) atrás`}: {DIA[d]}</span></li>
+                    ))}
+                  </ol>
+                  <p class="hist-leg"><span>{rotuloInicio}</span><span>hoje</span></p>
+                  <p class="hist-chaves"><span class="ok"></span>atualizou <span class="falha"></span>tentou e não conseguiu <span class="sem"></span>não rodou</p>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </>
+    )}
+
+    <p class="nota">Horários de Brasília. O site é montado de novo depois de cada tentativa. Se uma tentativa falhar, nada é apagado: continuam no ar os últimos números que deram certo.</p>
+  </div>
+</Base>
+<style>
+  .pag-atual { padding: 2rem 0 3rem; max-width: 52rem; }
+  h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2rem, 5vw, 3rem); line-height: 1; margin: 0 0 0.8rem; color: var(--dado); }
+  .lead { margin: 0 0 1.4rem; color: var(--tinta-suave); max-width: 62ch; }
+  .resumo { display: grid; grid-template-columns: auto 1fr; gap: 0.1rem 1rem; align-items: center; border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1.4rem; background: var(--dado-fundo); }
+  .resumo.alerta { background: color-mix(in srgb, var(--falta) 14%, var(--folha)); }
+  .resumo strong { grid-row: span 2; font-family: var(--numeros); font-stretch: 78%; font-weight: 800; font-size: 2.6rem; line-height: 1; color: var(--tinta); }
+  .resumo small { color: var(--grafite); font-size: 0.8rem; }
+  .fontes { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+  .fonte { background: var(--folha); border: 1px solid var(--linha); border-left: 6px solid var(--dado); border-radius: 10px; padding: 1.1rem 1.2rem; display: grid; gap: 0.6rem; }
+  .fonte.atrasada { border-left-color: var(--falta); }
+  .fonte.aguardando { border-left-color: var(--linha); }
+  .cab { display: flex; justify-content: space-between; gap: 0.8rem; align-items: start; flex-wrap: wrap; }
+  h2 { margin: 0; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.2rem; }
+  .chip { font-weight: 700; font-size: 0.85rem; padding: 0.25rem 0.7rem; border-radius: 999px; white-space: nowrap; }
+  .chip.em-dia { background: var(--dado); color: var(--folha); }
+  .chip.atrasada { color: var(--falta); border: 2px solid var(--falta); }
+  .chip.aguardando { background: var(--trilho); color: var(--tinta-suave); }
+  .inclui { margin: 0; color: var(--grafite); font-size: 0.92rem; }
+  .aviso { margin: 0; padding: 0.6rem 0.8rem; border-radius: 8px; background: color-mix(in srgb, var(--falta) 10%, var(--folha)); font-size: 0.95rem; }
+  dl { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.5rem 1rem; }
+  dt { font-size: 0.78rem; color: var(--grafite); }
+  dd { margin: 0; font-weight: 700; }
+  .hist-tit { margin: 0.2rem 0 0.35rem; font-size: 0.78rem; color: var(--grafite); }
+  .hist ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; }
+  .hist li { height: 1.6rem; border-radius: 4px; }
+  .ok { background: var(--dado); }
+  .falha { background: var(--falta); }
+  .sem { background: var(--trilho); }
+  .hist-leg { display: flex; justify-content: space-between; margin: 0.2rem 0 0; font-size: 0.72rem; color: var(--grafite); }
+  .hist-chaves { margin: 0.4rem 0 0; font-size: 0.75rem; color: var(--grafite); display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+  .hist-chaves span { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 3px; margin-left: 0.4rem; }
+  .hist-chaves span:first-child { margin-left: 0; }
+  .so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .nota { margin-top: 1.5rem; font-size: 0.85rem; color: var(--grafite); }
+</style>

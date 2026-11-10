@@ -65,6 +65,12 @@ export function explicacoesDosProjetos(): Map<string, string | undefined> {
   return cacheExplicacoes;
 }
 
+/** Situação das atualizações (story 2.8). Null se a publicação ainda não tem o arquivo. */
+export function situacao(): import("../../../pipeline/src/situacao/calculo.js").Situacao | null {
+  const arq = join(DIR, "situacao.json");
+  return existsSync(arq) ? JSON.parse(readFileSync(arq, "utf8")) : null;
+}
+
 /** Números gerais do Congresso (página Panorama). Null se a publicação ainda não tem o arquivo. */
 export function panorama(): import("../../../pipeline/src/rotina/panorama.js").Panorama | null {
   const arq = join(DIR, "panorama.json");
