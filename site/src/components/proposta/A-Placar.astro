@@ -1,0 +1,61 @@
+---
+/** Proposta A — Placar: resumo em números + linhas compactas (voto à esquerda, projeto à direita). */
+import { dataBr } from "../../lib/formato";
+import { SELO, RESULTADO } from "../../lib/votos";
+import type { UltimaVotacao } from "../../lib/ultimas";
+interface Props { id: string; itens: UltimaVotacao[]; total: number }
+const { id, itens, total } = Astro.props;
+const sim = itens.filter((x) => x.voto === "sim").length;
+const nao = itens.filter((x) => x.voto === "nao").length;
+const outros = itens.length - sim - nao;
+const curto = (v: UltimaVotacao["voto"]) => (v === "sim" ? "SIM" : v === "nao" ? "NÃO" : v === "ausente" ? "FALTOU" : v === null ? "ETAPAS" : v === "nao_informado" ? "SEM INFO" : "OUTRO");
+---
+<section class="pa">
+  <h2>Últimas votações</h2>
+  <div class="placar" aria-label={`Nas últimas ${itens.length} votações: ${sim} sim, ${nao} não, ${outros} outros`}>
+    <div><strong>{sim}</strong><span>votou SIM</span></div>
+    <div><strong>{nao}</strong><span>votou NÃO</span></div>
+    <div><strong>{outros}</strong><span>faltou ou outro</span></div>
+  </div>
+  <p class="sub">Nas {itens.length} votações mais recentes</p>
+  <ul>
+    {itens.map((x) => (
+      <li>
+        <span class:list={["voto", x.voto ? SELO[x.voto].classe : "neutro"]}>{curto(x.voto)}</span>
+        <div class="corpo">
+          <p class="t"><a href={`/projeto/${x.idProposicao}/`}>{x.titulo}</a> · <span>{dataBr(x.data + "T12:00:00")}</span></p>
+          <p class="e">{x.texto}</p>
+          <p class="r">{x.voto ? `${RESULTADO(x.resultado)} no plenário` : "Votou só em etapas de procedimento"}</p>
+        </div>
+      </li>
+    ))}
+  </ul>
+  <a class="mais" href={`/p/${id}/votos/`}>Ver todos os {total} votos →</a>
+</section>
+<style>
+  .pa { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.3rem; display: grid; gap: 0.8rem; }
+  h2 { margin: 0; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.3rem; }
+  .placar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+  .placar div { background: var(--dado-fundo); border-radius: 10px; padding: 0.7rem; text-align: center; display: grid; }
+  .placar div:nth-child(2) { background: var(--trilho); }
+  .placar div:nth-child(3) { background: transparent; border: 1px dashed var(--linha); }
+  .placar strong { font-family: var(--numeros); font-stretch: 78%; font-weight: 800; font-size: 2.6rem; line-height: 1; color: var(--dado); }
+  .placar div:nth-child(2) strong { color: var(--tinta-suave); }
+  .placar div:nth-child(3) strong { color: var(--grafite); }
+  .placar span { font-size: 0.82rem; color: var(--grafite); }
+  .sub { margin: -0.3rem 0 0; font-size: 0.85rem; color: var(--grafite); }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { display: grid; grid-template-columns: 4.6rem 1fr; gap: 0.8rem; padding: 0.75rem 0; border-top: 1px solid var(--linha); align-items: start; }
+  .voto { display: grid; place-items: center; height: 2.4rem; border-radius: 8px; font-weight: 800; font-size: 0.78rem; text-align: center; line-height: 1; letter-spacing: 0.02em; }
+  .sim { background: var(--dado); color: var(--folha); }
+  .nao { background: var(--tinta-suave); color: var(--folha); }
+  .falta { color: var(--falta); border: 2px solid var(--falta); }
+  .neutro { background: var(--trilho); color: var(--tinta-suave); }
+  .corpo p { margin: 0; }
+  .t { font-weight: 700; font-size: 0.95rem; }
+  .t a { color: var(--tinta); }
+  .t span { font-weight: 400; color: var(--grafite); font-size: 0.85rem; }
+  .e { color: var(--tinta-suave); font-size: 0.92rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 0.15rem !important; }
+  .r { font-size: 0.8rem; color: var(--grafite); margin-top: 0.2rem !important; }
+  .mais { font-weight: 700; color: var(--acento-texto); }
+</style>

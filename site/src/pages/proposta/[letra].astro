@@ -1,0 +1,22 @@
+---
+import Base from "../../layouts/Base.astro";
+import A from "../../components/proposta/A-Placar.astro";
+import B from "../../components/proposta/B-LinhaDoTempo.astro";
+import C from "../../components/proposta/C-Cartoes.astro";
+import { votosDe, explicacoesDosProjetos } from "../../lib/dados";
+import { ultimasVotacoes } from "../../lib/ultimas";
+export function getStaticPaths() {
+  return ["a", "b", "c"].map((letra) => ({ params: { letra } }));
+}
+const { letra } = Astro.params;
+const id = "camara-204379";
+const lista = votosDe(id);
+const itens = ultimasVotacoes(lista, explicacoesDosProjetos());
+---
+<Base titulo="Proposta" descricao="">
+  <div class="conteiner" style="padding: 1.5rem 0">
+    {letra === "a" && <A id={id} itens={itens} total={lista.length} />}
+    {letra === "b" && <B id={id} itens={itens} total={lista.length} />}
+    {letra === "c" && <C id={id} itens={itens} total={lista.length} />}
+  </div>
+</Base>

@@ -1,0 +1,59 @@
+---
+/** Proposta B — Linha do tempo: datas em destaque, bolinha da cor do voto, texto ao lado. */
+import SeloVoto from "../SeloVoto.astro";
+import { RESULTADO } from "../../lib/votos";
+import type { UltimaVotacao } from "../../lib/ultimas";
+interface Props { id: string; itens: UltimaVotacao[]; total: number }
+const { id, itens, total } = Astro.props;
+const MES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+const dia = (d: string) => ({ d: d.slice(8, 10), m: MES[Number(d.slice(5, 7)) - 1], a: d.slice(0, 4) });
+const cor = (v: UltimaVotacao["voto"]) => (v === "sim" ? "sim" : v === "nao" ? "nao" : v === "ausente" ? "falta" : "neutro");
+---
+<section class="pb">
+  <h2>Últimas votações</h2>
+  <p class="intro">O que foi votado no plenário e como votou, do mais recente para o mais antigo.</p>
+  <ol>
+    {itens.map((x) => {
+      const q = dia(x.data);
+      return (
+        <li>
+          <div class="quando"><strong>{q.d}</strong><span>{q.m}</span><span class="ano">{q.a}</span></div>
+          <div class:list={["ponto", cor(x.voto)]} aria-hidden="true"></div>
+          <div class="card">
+            <a class="tit" href={`/projeto/${x.idProposicao}/`}>{x.titulo}</a>
+            <p class="e">{x.texto}</p>
+            {x.voto ? (
+              <div class="v"><SeloVoto voto={x.voto} pequeno /><span>{RESULTADO(x.resultado)}</span></div>
+            ) : (
+              <p class="proc">Votou só em etapas de procedimento</p>
+            )}
+          </div>
+        </li>
+      );
+    })}
+  </ol>
+  <a class="mais" href={`/p/${id}/votos/`}>Ver a linha do tempo completa ({total})</a>
+</section>
+<style>
+  .pb { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.3rem; }
+  h2 { margin: 0; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.3rem; }
+  .intro { margin: 0.3rem 0 1rem; color: var(--grafite); font-size: 0.92rem; }
+  ol { list-style: none; margin: 0; padding: 0; position: relative; }
+  ol::before { content: ""; position: absolute; left: 3.55rem; top: 0.4rem; bottom: 0.4rem; width: 2px; background: var(--linha); }
+  li { display: grid; grid-template-columns: 2.8rem 1.5rem 1fr; gap: 0 0.5rem; padding-bottom: 1.1rem; }
+  .quando { display: grid; justify-items: end; align-content: start; line-height: 1.1; }
+  .quando strong { font-family: var(--numeros); font-stretch: 78%; font-weight: 800; font-size: 1.6rem; color: var(--tinta); }
+  .quando span { font-size: 0.8rem; color: var(--grafite); text-transform: uppercase; }
+  .quando .ano { font-size: 0.7rem; }
+  .ponto { width: 0.95rem; height: 0.95rem; border-radius: 50%; margin: 0.45rem auto 0; position: relative; z-index: 1; box-shadow: 0 0 0 3px var(--folha); }
+  .ponto.sim { background: var(--dado); }
+  .ponto.nao { background: var(--tinta-suave); }
+  .ponto.falta { background: var(--folha); border: 3px solid var(--falta); }
+  .ponto.neutro { background: var(--linha); }
+  .card { display: grid; gap: 0.35rem; }
+  .tit { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.05rem; color: var(--tinta); }
+  .e { margin: 0; font-size: 0.93rem; color: var(--tinta-suave); }
+  .v { display: flex; gap: 0.6rem; align-items: center; font-size: 0.85rem; color: var(--grafite); }
+  .proc { margin: 0; font-size: 0.85rem; color: var(--grafite); }
+  .mais { display: inline-block; margin-top: 0.3rem; font-weight: 700; color: var(--acento-texto); }
+</style>

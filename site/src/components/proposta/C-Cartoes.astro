@@ -1,0 +1,55 @@
+---
+/** Proposta C — Cartões para deslizar: um projeto por cartão, voto em carimbo grande no topo. */
+import { dataBr } from "../../lib/formato";
+import { RESULTADO } from "../../lib/votos";
+import type { UltimaVotacao } from "../../lib/ultimas";
+interface Props { id: string; itens: UltimaVotacao[]; total: number }
+const { id, itens, total } = Astro.props;
+const rot = (v: UltimaVotacao["voto"]) => (v === "sim" ? "SIM" : v === "nao" ? "NÃO" : v === "ausente" ? "FALTOU" : v === null ? "SÓ ETAPAS" : v === "nao_informado" ? "SEM INFO" : "OUTRO");
+const cls = (v: UltimaVotacao["voto"]) => (v === "sim" ? "c-sim" : v === "nao" ? "c-nao" : v === "ausente" ? "c-falta" : "c-neutro");
+---
+<section class="pc">
+  <div class="topo">
+    <h2>Últimas votações</h2>
+    <span class="dica">Deslize para o lado →</span>
+  </div>
+  <ul>
+    {itens.map((x) => (
+      <li class:list={["cartao", cls(x.voto)]}>
+        <div class="carimbo"><span>Votou</span><strong>{rot(x.voto)}</strong></div>
+        <div class="miolo">
+          <p class="meta">{x.titulo} · {dataBr(x.data + "T12:00:00")}</p>
+          <p class="e">{x.texto}</p>
+          <p class="r">{x.voto ? `${RESULTADO(x.resultado)} no plenário` : "Votou só em etapas de procedimento"}</p>
+          <a href={`/projeto/${x.idProposicao}/`}>Ver como votou cada um</a>
+        </div>
+      </li>
+    ))}
+    <li class="cartao fim">
+      <a href={`/p/${id}/votos/`}><strong>{total}</strong><span>votos no total.<br />Ver todos →</span></a>
+    </li>
+  </ul>
+</section>
+<style>
+  .pc { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.3rem 0 1.3rem 1.3rem; overflow: hidden; }
+  .topo { display: flex; justify-content: space-between; align-items: baseline; padding-right: 1.3rem; margin-bottom: 0.9rem; }
+  h2 { margin: 0; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.3rem; }
+  .dica { font-size: 0.8rem; color: var(--grafite); }
+  ul { list-style: none; margin: 0; padding: 0 1.3rem 0.4rem 0; display: grid; grid-auto-flow: column; grid-auto-columns: min(78%, 17rem); gap: 0.8rem; overflow-x: auto; scroll-snap-type: x mandatory; }
+  .cartao { scroll-snap-align: start; border-radius: 12px; border: 1px solid var(--linha); display: flex; flex-direction: column; overflow: hidden; background: var(--papel); }
+  .carimbo { padding: 0.9rem 1rem; display: grid; color: var(--folha); background: var(--dado); }
+  .carimbo span { font-size: 0.8rem; opacity: 0.85; }
+  .carimbo strong { font-family: var(--numeros); font-stretch: 75%; font-weight: 800; font-size: 2.5rem; line-height: 1; }
+  .c-nao .carimbo { background: var(--tinta-suave); }
+  .c-falta .carimbo { background: var(--folha); color: var(--falta); border-bottom: 3px solid var(--falta); }
+  .c-neutro .carimbo { background: var(--trilho); color: var(--tinta-suave); }
+  .miolo { padding: 0.8rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.45rem; flex: 1; }
+  .miolo p { margin: 0; }
+  .meta { font-weight: 700; font-size: 0.85rem; color: var(--tinta); }
+  .e { font-size: 0.95rem; color: var(--tinta-suave); flex: 1; }
+  .r { font-size: 0.8rem; color: var(--grafite); }
+  .miolo a { font-weight: 700; font-size: 0.88rem; color: var(--acento-texto); }
+  .fim { background: var(--dado-fundo); border-style: dashed; }
+  .fim a { flex: 1; display: grid; place-content: center; text-align: center; text-decoration: none; color: var(--acento-texto); padding: 1rem; }
+  .fim strong { font-family: var(--numeros); font-stretch: 78%; font-weight: 800; font-size: 3rem; line-height: 1; }
+</style>
