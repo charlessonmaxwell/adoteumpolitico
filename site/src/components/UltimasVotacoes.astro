@@ -1,9 +1,8 @@
 ---
-/** Seção "Últimas votações" do perfil (story 2.7): os projetos votados mais recentes, com o voto. */
+/** Seção "Últimas votações" do perfil (story 2.7), em linha do tempo: data, bolinha da cor do voto, projeto. */
 import Icone from "./Icone.astro";
 import SeloVoto from "./SeloVoto.astro";
 import Texto from "./Texto.astro";
-import { dataBr } from "../lib/formato";
 import { RESULTADO } from "../lib/votos";
 import type { UltimaVotacao } from "../lib/ultimas";
 interface Props {
@@ -14,6 +13,9 @@ interface Props {
   atualizadoEm: string;
 }
 const { idParlamentar, itens, total, fonte, atualizadoEm } = Astro.props;
+const MES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+const quando = (d: string) => ({ dia: d.slice(8, 10), mes: MES[Number(d.slice(5, 7)) - 1], ano: d.slice(0, 4) });
+const cor = (v: UltimaVotacao["voto"]) => (v === "sim" ? "p-sim" : v === "nao" ? "p-nao" : v === "ausente" ? "p-falta" : "p-neutro");
 ---
 <section class="ultimas" aria-labelledby="ultimas-votacoes">
   <h2 id="ultimas-votacoes"><span class="selo"><Icone nome="urna" /></span>Últimas votações</h2>
@@ -21,30 +23,31 @@ const { idParlamentar, itens, total, fonte, atualizadoEm } = Astro.props;
     <p class="vazio">Não encontramos votos registrados para este parlamentar no período. Só entram as votações em que cada voto fica registrado.</p>
   ) : (
     <>
-      <p class="intro"><Texto texto="Os projetos votados mais recentes e o voto na votação do projeto. Só entram as votações nominais. As decididas em votação simbólica não têm registro de quem votou o quê." /></p>
-      <ol class="lista">
-        {itens.map((x) => (
-          <li class="item">
-            <div class="cab">
-              <a class="tit" href={`/projeto/${x.idProposicao}/`}>{x.titulo}</a>
-              <span class="data">{dataBr(x.data + "T12:00:00")}</span>
-            </div>
-            {x.texto && (
-              <p class="texto">
-                {x.texto}
-                <span class="origem">{x.origemTexto === "explicacao" ? "Explicação feita por inteligência artificial a partir do texto oficial." : "Texto oficial do Congresso."}</span>
-              </p>
-            )}
-            {x.voto ? (
-              <div class="voto">
-                <SeloVoto voto={x.voto} />
-                <span class="res">{RESULTADO(x.resultado)} no plenário</span>
+      <p class="intro"><Texto texto="O que foi votado no plenário e como votou, do mais recente para o mais antigo. Só entram as votações nominais. As decididas em votação simbólica não têm registro de quem votou o quê." /></p>
+      <ol class="linha">
+        {itens.map((x) => {
+          const q = quando(x.data);
+          return (
+            <li>
+              <time class="quando" datetime={x.data}><strong>{q.dia}</strong><span>{q.mes}</span><span class="ano">{q.ano}</span></time>
+              <span class:list={["ponto", cor(x.voto)]} aria-hidden="true"></span>
+              <div class="item">
+                <a class="tit" href={`/projeto/${x.idProposicao}/`}>{x.titulo}</a>
+                {x.texto && (
+                  <p class="texto">
+                    {x.texto}
+                    <span class="origem">{x.origemTexto === "explicacao" ? "Explicação feita por inteligência artificial a partir do texto oficial." : "Texto oficial do Congresso."}</span>
+                  </p>
+                )}
+                {x.voto ? (
+                  <div class="voto"><SeloVoto voto={x.voto} pequeno /><span>{RESULTADO(x.resultado)} no plenário</span></div>
+                ) : (
+                  <p class="so-proc">Votou só em etapas de procedimento deste projeto.</p>
+                )}
               </div>
-            ) : (
-              <p class="so-proc">Votou só em etapas de procedimento deste projeto.</p>
-            )}
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ol>
       {total > itens.length && <a class="link-detalhe" href={`/p/${idParlamentar}/votos/`}>Ver todos os votos ({total})</a>}
     </>
@@ -56,16 +59,24 @@ const { idParlamentar, itens, total, fonte, atualizadoEm } = Astro.props;
   h2 { display: flex; align-items: center; gap: 0.7rem; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.3rem; color: var(--tinta); margin: 0; }
   .selo { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--dado-fundo); color: var(--dado); font-size: 0.95rem; }
   .intro { margin: 0; color: var(--tinta-suave); max-width: 70ch; }
-  .lista { list-style: none; padding: 0; margin: 0; display: grid; gap: 0; }
-  .item { display: grid; gap: 0.5rem; padding: 0.9rem 0; border-top: 1px solid var(--linha); }
-  .cab { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; flex-wrap: wrap; }
-  .tit { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.15rem; color: var(--tinta); }
-  .data { color: var(--grafite); font-size: 0.9rem; }
-  .texto { margin: 0; max-width: 75ch; }
-  .origem { display: block; margin-top: 0.2rem; font-size: 0.8rem; color: var(--grafite); }
-  .voto { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
-  .res { color: var(--grafite); font-size: 0.95rem; }
-  .so-proc { margin: 0; color: var(--grafite); font-size: 0.95rem; }
+  .linha { list-style: none; margin: 0.3rem 0 0; padding: 0; position: relative; }
+  .linha::before { content: ""; position: absolute; left: 3.55rem; top: 0.5rem; bottom: 1.6rem; width: 2px; background: var(--linha); }
+  li { display: grid; grid-template-columns: 2.8rem 1.5rem 1fr; gap: 0 0.5rem; padding-bottom: 1.2rem; }
+  .quando { display: grid; justify-items: end; align-content: start; line-height: 1.1; }
+  .quando strong { font-family: var(--numeros); font-stretch: 78%; font-weight: 800; font-size: 1.6rem; color: var(--tinta); }
+  .quando span { font-size: 0.8rem; color: var(--grafite); text-transform: uppercase; }
+  .quando .ano { font-size: 0.7rem; }
+  .ponto { width: 0.95rem; height: 0.95rem; border-radius: 50%; margin: 0.45rem auto 0; position: relative; z-index: 1; box-shadow: 0 0 0 3px var(--folha); }
+  .p-sim { background: var(--dado); }
+  .p-nao { background: var(--tinta-suave); }
+  .p-falta { background: var(--folha); border: 3px solid var(--falta); }
+  .p-neutro { background: var(--linha); }
+  .item { display: grid; gap: 0.4rem; max-width: 70ch; }
+  .tit { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.1rem; color: var(--tinta); }
+  .texto { margin: 0; color: var(--tinta-suave); }
+  .origem { display: block; margin-top: 0.2rem; font-size: 0.78rem; color: var(--grafite); }
+  .voto { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; font-size: 0.88rem; color: var(--grafite); }
+  .so-proc { margin: 0; font-size: 0.88rem; color: var(--grafite); }
   .vazio { color: var(--grafite); margin: 0; }
   .link-detalhe { display: inline-flex; align-self: flex-start; font-weight: 700; color: var(--folha); background: var(--dado); padding: 0.6rem 1.1rem; border-radius: 999px; text-decoration: none; }
   .link-detalhe:hover { filter: brightness(1.1); }
