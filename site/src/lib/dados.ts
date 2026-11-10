@@ -58,6 +58,13 @@ export function projetos(): ProjetoVotado[] {
   return cacheProjetos;
 }
 
+let cacheExplicacoes: Map<string, string | undefined> | null = null;
+/** Explicação popular de cada projeto votado, por id (story 2.7). */
+export function explicacoesDosProjetos(): Map<string, string | undefined> {
+  cacheExplicacoes ??= new Map(projetos().map((p) => [p.id, p.explicacao]));
+  return cacheExplicacoes;
+}
+
 /** Números gerais do Congresso (página Panorama). Null se a publicação ainda não tem o arquivo. */
 export function panorama(): import("../../../pipeline/src/rotina/panorama.js").Panorama | null {
   const arq = join(DIR, "panorama.json");

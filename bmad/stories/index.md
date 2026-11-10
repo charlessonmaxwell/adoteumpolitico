@@ -16,6 +16,7 @@
 | 2.4 | Compartilhar perfil | 2 | 2.2 | Concluída |
 | 2.5 | Medição de visitas | 2 | 2.6 | Pronta |
 | 2.6 | Publicação | 2 | 2.1–2.4 | Pronta |
+| 2.7 | Últimas votações no perfil | 2 | 2.2, 2.3 | Concluída |
 
 | 7.1 | Cartão corporativo do Palácio (Presidente e Vice) | 7 | 1.5, 2.6 | Concluída |
 
