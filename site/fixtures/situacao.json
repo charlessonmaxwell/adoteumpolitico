@@ -1,0 +1,75 @@
+{
+  "conferidoEm": "2026-11-10T19:40:00.000Z",
+  "fontes": [
+    {
+      "id": "diario",
+      "nome": "Votos, gastos, projetos e cadastro",
+      "inclui": "Como cada um votou, gastos da cota, projetos apresentados e a lista de deputados e senadores.",
+      "frequencia": "Todo dia",
+      "estado": "atrasada",
+      "ultimaAtualizacao": "09/11 às 15:54",
+      "aviso": "O site de dados da Câmara não respondeu na tentativa de 10/11. Os números mostrados são de 09/11.",
+      "proximaTentativa": "amanhã, 11/11, às 10:07",
+      "dias": [
+        "sem",
+        "ok",
+        "ok",
+        "ok",
+        "ok",
+        "ok",
+        "ok",
+        "ok",
+        "ok",
+        "ok",
+        "ok",
+        "ok",
+        "ok",
+        "falha"
+      ]
+    },
+    {
+      "id": "presenca",
+      "nome": "Presença na Câmara",
+      "inclui": "Dias de votação em que o deputado foi, faltou com justificativa ou faltou sem justificativa.",
+      "frequencia": "Uma vez por semana (domingo)",
+      "estado": "em-dia",
+      "ultimaAtualizacao": "08/11 às 11:35",
+      "aviso": null,
+      "proximaTentativa": "domingo, 15/11"
+    },
+    {
+      "id": "emendas",
+      "nome": "Emendas parlamentares",
+      "inclui": "Dinheiro que cada parlamentar mandou para cidades e estados.",
+      "frequencia": "Duas vezes por mês (dias 1 e 15)",
+      "estado": "atrasada",
+      "ultimaAtualizacao": "29/10 às 22:15",
+      "aviso": "O site de dados da Câmara não respondeu na tentativa de 01/11. Os números mostrados são de 29/10.",
+      "proximaTentativa": "domingo, 15/11"
+    },
+    {
+      "id": "explicacoes",
+      "nome": "Explicação simples dos projetos",
+      "inclui": "O texto em linguagem do dia a dia de cada projeto votado. Quando o texto oficial não diz o que muda, o projeto fica sem explicação para não inventar.",
+      "frequencia": "Uma vez por semana (segunda), quando há projeto novo votado",
+      "estado": "em-dia",
+      "ultimaAtualizacao": null,
+      "aviso": null,
+      "proximaTentativa": "segunda, 16/11",
+      "cobertura": {
+        "com": 795,
+        "total": 798
+      }
+    },
+    {
+      "id": "palacio",
+      "nome": "Cartão corporativo do Palácio",
+      "inclui": "Gastos do cartão da Presidência e da Vice-Presidência.",
+      "frequencia": "Duas vezes por mês (dias 3 e 18)",
+      "estado": "aguardando",
+      "ultimaAtualizacao": null,
+      "aviso": "A atualização não terminou na tentativa de 03/11. Ainda não há dados desta fonte no site.",
+      "proximaTentativa": "quarta, 18/11"
+    }
+  ]
+}
