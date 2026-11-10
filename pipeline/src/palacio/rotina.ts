@@ -274,6 +274,8 @@ export async function executarPalacio(
     orcamentoMs?: number;
     /** Relógio (para testes). */
     relogio?: () => number;
+    /** Baixa só este ano (AAAA), sem mexer nos outros já gravados. */
+    soAno?: string;
   } = {},
 ) {
   const cfg = o.cfg ?? ((await lerJson<Config>("config/palacio.json")) as Config);
@@ -297,6 +299,7 @@ export async function executarPalacio(
   let semTempo = false;
   // Ano a ano, do mais antigo para o mais recente; cada mês baixado já fica gravado
   for (const m of todos) {
+    if (o.soAno && !m.startsWith(o.soAno)) continue;
     if (meses[m] && !revisar.has(m)) continue;
     if (relogio() - t0 >= orcamento) {
       semTempo = true;
@@ -338,11 +341,16 @@ async function main() {
   const dir = process.argv[2] ?? "publicado";
   const inicio = Date.now();
   try {
+    const soAno = /^\d{4}$/.test(process.env.PALACIO_ANO ?? "")
+      ? process.env.PALACIO_ANO
+      : undefined;
     const { resumo, baixados, completa } = await executarPalacio(dir, {
       ignorarTrava: process.env.IGNORAR_TRAVA === "true",
+      soAno,
     });
-    // O workflow lê este arquivo para disparar a próxima execução (só se esta trouxe algo novo)
-    if (!completa && baixados > 0)
+    // O workflow lê este arquivo para disparar a próxima execução (só se esta trouxe algo novo).
+    // Execução de um ano só (teste manual) não encadeia outras.
+    if (!completa && baixados > 0 && !soAno)
       await writeFile("palacio-continuar", resumo.carga.anosFaltando.join(","));
     const p = resumo.presidente.total;
     console.log(

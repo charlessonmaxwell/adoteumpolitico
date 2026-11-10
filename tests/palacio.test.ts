@@ -263,6 +263,23 @@ describe("Story 7.2 — carga ano a ano com limite de tempo", () => {
   });
 });
 
+describe("Story 7.2 — só um ano (teste manual)", () => {
+  it("baixa só o ano pedido e mantém a carga marcada como incompleta", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "palacio-"));
+    const pedidos: string[] = [];
+    const res = await executarPalacio(dir, {
+      cfg: CFG,
+      baixar: async (m) => (pedidos.push(m), BASE),
+      ipca: { "202211": 100, "202212": 100, "202301": 105, "202302": 110 },
+      agora: new Date("2023-03-10T10:00:00Z"),
+      pausaMs: 0,
+      soAno: "2023",
+    });
+    expect(pedidos).toEqual(["202301", "202302"]);
+    expect(res.resumo.carga).toEqual({ completa: false, anosFaltando: ["2022"] });
+  });
+});
+
 describe("baixarMes", () => {
   const resp = (status: number) =>
     new Response(status === 200 ? new Uint8Array([1, 2]) : "x", { status });
