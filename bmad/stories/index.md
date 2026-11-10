@@ -20,6 +20,6 @@
 | 2.8 | Página "Quando os dados foram atualizados" | 2 | 1.5, 2.6 | Concluída |
 
 | 7.1 | Cartão corporativo do Palácio (Presidente e Vice) | 7 | 1.5, 2.6 | Concluída |
-| 7.2 | Cartão do Palácio: carga ano a ano desde 2018 | 7 | 7.1 | Em andamento |
+| 7.2 | Cartão do Palácio: carga ano a ano desde 2018 | 7 | 7.1 | Concluída |
 
 1.2, 1.3 e 1.4 podem ser feitas em paralelo após 1.1.
