@@ -5,7 +5,9 @@ import BarraEmpilhada from "../../components/BarraEmpilhada.astro";
 import Colunas from "../../components/Colunas.astro";
 import Linhas from "../../components/Linhas.astro";
 import Compartilhar from "../../components/Compartilhar.astro";
-import { dados, cargo, paginaOficial, emendasDe, resumoEmendas } from "../../lib/dados";
+import UltimasVotacoes from "../../components/UltimasVotacoes.astro";
+import { dados, cargo, paginaOficial, emendasDe, resumoEmendas, votosDe, explicacoesDosProjetos } from "../../lib/dados";
+import { ultimasVotacoes } from "../../lib/ultimas";
 import { mensagemPerfil } from "../../lib/compartilhar";
 import { frasesEmendas, pagoTotal, idCidade } from "../../lib/emendas";
 import { frasesGastos, frasesPresenca, frasesProjetos, frasesVotacoes, VOTO_ROTULO } from "../../lib/frases";
@@ -62,6 +64,8 @@ const fatiasVotos = [
   { rotulo: "Votou (secreta)", valor: v.votou ?? 0, cor: "var(--dado-claro)" },
   { rotulo: "Abstenção ou obstrução", valor: (v.abstencao ?? 0) + (v.obstrucao ?? 0), cor: "var(--linha)" },
 ];
+const listaVotos = votosDe(p.id);
+const ultimas = ultimasVotacoes(listaVotos, explicacoesDosProjetos());
 const ini = iniciais(p.nome);
 const titulo = `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato`;
 ---
@@ -79,6 +83,8 @@ const titulo = `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato`;
         <Compartilhar texto={mensagemPerfil(r, em?.total.empenhado ?? null, resEm?.anoInicial ?? 2023)} url={new URL(`/p/${p.id}/`, Astro.site).toString()} />
       </div>
     </header>
+
+    <UltimasVotacoes idParlamentar={p.id} itens={ultimas} total={listaVotos.length} fonte={{ nome: camara ? "Câmara dos Deputados, votações do plenário" : "Senado Federal, votações nominais", url: oficial }} atualizadoEm={atualizado} />
 
     <div class="grade">
       <Bloco

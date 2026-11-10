@@ -1,0 +1,75 @@
+---
+/** Seção "Últimas votações" do perfil (story 2.7): os projetos votados mais recentes, com o voto. */
+import Icone from "./Icone.astro";
+import SeloVoto from "./SeloVoto.astro";
+import Texto from "./Texto.astro";
+import { dataBr } from "../lib/formato";
+import { RESULTADO } from "../lib/votos";
+import type { UltimaVotacao } from "../lib/ultimas";
+interface Props {
+  idParlamentar: string;
+  itens: UltimaVotacao[];
+  total: number;
+  fonte: { nome: string; url: string };
+  atualizadoEm: string;
+}
+const { idParlamentar, itens, total, fonte, atualizadoEm } = Astro.props;
+---
+<section class="ultimas" aria-labelledby="ultimas-votacoes">
+  <h2 id="ultimas-votacoes"><span class="selo"><Icone nome="urna" /></span>Últimas votações</h2>
+  {itens.length === 0 ? (
+    <p class="vazio">Não encontramos votos registrados para este parlamentar no período. Só entram as votações em que cada voto fica registrado.</p>
+  ) : (
+    <>
+      <p class="intro"><Texto texto="Os projetos votados mais recentes e o voto na votação do projeto. Só entram as votações nominais. As decididas em votação simbólica não têm registro de quem votou o quê." /></p>
+      <ol class="lista">
+        {itens.map((x) => (
+          <li class="item">
+            <div class="cab">
+              <a class="tit" href={`/projeto/${x.idProposicao}/`}>{x.titulo}</a>
+              <span class="data">{dataBr(x.data + "T12:00:00")}</span>
+            </div>
+            {x.texto && (
+              <p class="texto">
+                {x.texto}
+                <span class="origem">{x.origemTexto === "explicacao" ? "Explicação feita por inteligência artificial a partir do texto oficial." : "Texto oficial do Congresso."}</span>
+              </p>
+            )}
+            {x.voto ? (
+              <div class="voto">
+                <SeloVoto voto={x.voto} />
+                <span class="res">{RESULTADO(x.resultado)} no plenário</span>
+              </div>
+            ) : (
+              <p class="so-proc">Votou só em etapas de procedimento deste projeto.</p>
+            )}
+          </li>
+        ))}
+      </ol>
+      {total > itens.length && <a class="link-detalhe" href={`/p/${idParlamentar}/votos/`}>Ver todos os votos ({total})</a>}
+    </>
+  )}
+  <p class="fonte">Fonte: <a href={fonte.url} rel="external noopener" target="_blank">{fonte.nome}</a>. Dados de {atualizadoEm}.</p>
+</section>
+<style>
+  .ultimas { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.5rem 1.5rem 1.1rem; display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 1.25rem; }
+  h2 { display: flex; align-items: center; gap: 0.7rem; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.3rem; color: var(--tinta); margin: 0; }
+  .selo { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--dado-fundo); color: var(--dado); font-size: 0.95rem; }
+  .intro { margin: 0; color: var(--tinta-suave); max-width: 70ch; }
+  .lista { list-style: none; padding: 0; margin: 0; display: grid; gap: 0; }
+  .item { display: grid; gap: 0.5rem; padding: 0.9rem 0; border-top: 1px solid var(--linha); }
+  .cab { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; flex-wrap: wrap; }
+  .tit { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.15rem; color: var(--tinta); }
+  .data { color: var(--grafite); font-size: 0.9rem; }
+  .texto { margin: 0; max-width: 75ch; }
+  .origem { display: block; margin-top: 0.2rem; font-size: 0.8rem; color: var(--grafite); }
+  .voto { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+  .res { color: var(--grafite); font-size: 0.95rem; }
+  .so-proc { margin: 0; color: var(--grafite); font-size: 0.95rem; }
+  .vazio { color: var(--grafite); margin: 0; }
+  .link-detalhe { display: inline-flex; align-self: flex-start; font-weight: 700; color: var(--folha); background: var(--dado); padding: 0.6rem 1.1rem; border-radius: 999px; text-decoration: none; }
+  .link-detalhe:hover { filter: brightness(1.1); }
+  .link-detalhe:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
+  .fonte { margin: 0; padding-top: 0.6rem; font-size: 0.85rem; color: var(--grafite); }
+  .fonte a { color: inherit; }
+</style>
