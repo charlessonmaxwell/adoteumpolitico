@@ -20,6 +20,8 @@ on:
 permissions:
   contents: read
   issues: write
+  actions: read # situação das rotinas (story 2.8)
+  checks: read # motivo da falha (anotações)
 
 concurrency:
   group: publicar-site
@@ -30,8 +32,9 @@ env:
 
 jobs:
   publicar:
-    # Não publica se a atualização de dados falhou (o site anterior continua no ar)
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    # Publica também depois de uma rotina que falhou: os dados continuam os últimos que deram certo
+    # e só a página "Quando os dados foram atualizados" muda (story 2.8).
+    if: github.event_name != 'workflow_run' || contains(fromJSON('["success","failure","timed_out"]'), github.event.workflow_run.conclusion)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -51,6 +54,12 @@ jobs:
           cd dados
           git sparse-checkout set --no-cone '/resumo/' '/votos/' '/projetos/' '/medias.json' '/panorama.json' '/emendas/' '/palacio/' '/meta.json' '/parlamentares.json'
           echo "Perfis: $(ls resumo | wc -l)"
+
+      - name: Situação das atualizações (página Quando os dados foram atualizados)
+        continue-on-error: true # nunca impede a publicação
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: pnpm -s tsx pipeline/src/situacao/coletar.ts dados
 
       - name: Criar o projeto na Cloudflare (só na primeira vez)
         env:

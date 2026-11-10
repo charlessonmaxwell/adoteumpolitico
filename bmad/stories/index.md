@@ -17,7 +17,7 @@
 | 2.5 | Medição de visitas | 2 | 2.6 | Pronta |
 | 2.6 | Publicação | 2 | 2.1–2.4 | Pronta |
 | 2.7 | Últimas votações no perfil | 2 | 2.2, 2.3 | Concluída |
-| 2.8 | Página "Quando os dados foram atualizados" | 2 | 1.5, 2.6 | Em andamento |
+| 2.8 | Página "Quando os dados foram atualizados" | 2 | 1.5, 2.6 | Concluída |
 
 | 7.1 | Cartão corporativo do Palácio (Presidente e Vice) | 7 | 1.5, 2.6 | Concluída |
 
