@@ -123,7 +123,13 @@ describe("executarPalacio", () => {
     expect(resumo.ipcaBase).toBe("202302");
     const gravado = JSON.parse(await readFile(join(dir, "palacio", "resumo.json"), "utf8"));
     expect(gravado.vice.total.total).toBe(800);
-    expect(await readFile(join(dir, "palacio", "meses.json"), "utf8")).not.toMatch(/FULANO/);
+    expect(gravado.carga).toEqual({ completa: true, anosFaltando: [] });
+    // Story 7.2: um JSON por ano
+    const a2022 = await readFile(join(dir, "palacio", "anos", "2022.json"), "utf8");
+    const a2023 = JSON.parse(await readFile(join(dir, "palacio", "anos", "2023.json"), "utf8"));
+    expect(Object.keys(JSON.parse(a2022))).toEqual(["202211", "202212"]);
+    expect(Object.keys(a2023)).toEqual(["202301", "202302"]);
+    expect(a2022).not.toMatch(/FULANO/);
   });
 
   it("reaproveita meses antigos e só baixa os recentes", async () => {
@@ -169,6 +175,91 @@ describe("executarPalacio", () => {
       executarPalacio(dir, { cfg: CFG, baixar: async () => comNova, ipca, agora, pausaMs: 0 }),
     ).rejects.toBeInstanceOf(ErroUnidadeNova);
     await expect(readFile(join(dir, "palacio", "resumo.json"))).rejects.toThrow();
+  });
+});
+
+describe("Story 7.2 — carga ano a ano com limite de tempo", () => {
+  const ipca = { "202211": 100, "202212": 100, "202301": 105, "202302": 110 };
+  const agora = new Date("2023-03-10T10:00:00Z");
+  /** Relógio que avança 1 min a cada mês baixado. */
+  const relogioPorMes = () => {
+    let t = 0;
+    return { relogio: () => t, avancar: () => (t += 60_000) };
+  };
+
+  it("CA2: para no limite, mantém o que baixou e marca a carga como incompleta", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "palacio-"));
+    const r = relogioPorMes();
+    const pedidos: string[] = [];
+    const res = await executarPalacio(dir, {
+      cfg: CFG,
+      baixar: async (m) => (pedidos.push(m), r.avancar(), BASE),
+      ipca,
+      agora,
+      pausaMs: 0,
+      orcamentoMs: 2 * 60_000,
+      relogio: r.relogio,
+    });
+    expect(pedidos).toEqual(["202211", "202212"]);
+    expect(res.completa).toBe(false);
+    expect(res.resumo.carga).toEqual({ completa: false, anosFaltando: ["2023"] });
+    expect(res.resumo.contagens.meses).toBe(2);
+    const a2022 = JSON.parse(await readFile(join(dir, "palacio", "anos", "2022.json"), "utf8"));
+    expect(Object.keys(a2022)).toEqual(["202211", "202212"]);
+  });
+
+  it("CA3: a execução seguinte só baixa o que falta e completa a carga", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "palacio-"));
+    const r = relogioPorMes();
+    await executarPalacio(dir, {
+      cfg: { ...CFG, inicio: "202211" },
+      baixar: async () => (r.avancar(), BASE),
+      ipca,
+      agora,
+      pausaMs: 0,
+      orcamentoMs: 60_000,
+      relogio: r.relogio,
+    });
+    const pedidos: string[] = [];
+    const res = await executarPalacio(dir, {
+      cfg: CFG,
+      baixar: async (m) => (pedidos.push(m), BASE),
+      ipca,
+      agora,
+      pausaMs: 0,
+    });
+    // 202211 já estava; os 3 últimos (revisão) e o que faltava
+    expect(pedidos).toEqual(["202212", "202301", "202302"]);
+    expect(res.completa).toBe(true);
+    expect(res.resumo.contagens.meses).toBe(4);
+  });
+
+  it("CA1: ignora meses anteriores ao início configurado", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "palacio-"));
+    const pedidos: string[] = [];
+    const res = await executarPalacio(dir, {
+      cfg: { ...CFG, inicio: "202301" },
+      baixar: async (m) => (pedidos.push(m), BASE),
+      ipca,
+      agora,
+      pausaMs: 0,
+    });
+    expect(pedidos).toEqual(["202301", "202302"]);
+    expect(res.resumo.primeiroMes).toBe("202301");
+  });
+
+  it("CA2: sem tempo nem para o primeiro mês e nada gravado antes → falha (não publica vazio)", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "palacio-"));
+    await expect(
+      executarPalacio(dir, {
+        cfg: CFG,
+        baixar: async () => BASE,
+        ipca,
+        agora,
+        pausaMs: 0,
+        orcamentoMs: 0,
+      }),
+    ).rejects.toThrow(/Nenhum mês/);
   });
 });
 
