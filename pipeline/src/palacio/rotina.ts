@@ -2,11 +2,13 @@
  * Story 7.1 — Cartão corporativo do Palácio (Presidente e família; Vice).
  * Rotina mensal: baixa do Portal da Transparência os meses que faltam (e revisa os 3 últimos),
  * soma por ficha, corrige pelo IPCA e regrava só a pasta `palacio/` da publicação.
+ * Story 7.2: meses guardados em um JSON por ano (`palacio/anos/AAAA.json`), gravado a cada mês,
+ * baixados ano a ano com limite de tempo por execução; o que faltar fica para a próxima.
  * Nunca lê nem guarda CPF ou nome de portador: só unidade, transação e valor.
  * Uso: pnpm rotina:palacio <pasta-publicada>
  */
 import { unzipSync } from "fflate";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { percorrerCsv, valorBr } from "../coleta/emendas.js";
@@ -14,6 +16,7 @@ import { ErroHttp, getBytes, getJson, type OpcoesHttp } from "../util/http.js";
 import { gravarMetricas } from "../monitoramento/metricas.js";
 import { ErroTrava, verificarQuedas } from "../rotina/trava.js";
 
+const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const dormir = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export const URL_CPGF = (mes: string) =>
@@ -24,6 +27,8 @@ export const URL_IPCA = "https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/226
 export const LIMITE_UG_NOVA = 10_000;
 /** Meses mais recentes refeitos a cada rodada (o Portal revisa lançamentos). */
 export const MESES_REVISAO = 3;
+/** Tempo máximo baixando meses por execução (o job tem 30 min; sobra tempo para IPCA e publicar). */
+export const ORCAMENTO_MS = 20 * 60_000;
 
 export type IdFicha = "presidente" | "vice";
 export interface Config {
@@ -129,6 +134,7 @@ export function montarResumo(
   ipca: Record<string, number>,
   cfg: Config,
   atualizadoEm: string,
+  carga: { completa: boolean; anosFaltando: string[] } = { completa: true, anosFaltando: [] },
 ) {
   const lista = Object.keys(meses).sort();
   const base = Object.keys(ipca).sort().pop()!;
@@ -183,6 +189,7 @@ export function montarResumo(
     presidente: ficha("presidente"),
     vice: ficha("vice"),
     contagens: { meses: lista.length },
+    carga,
   };
 }
 export type ResumoPalacio = ReturnType<typeof montarResumo>;
@@ -229,6 +236,32 @@ const lerJson = async <T>(arq: string): Promise<T | null> => {
   }
 };
 
+/** Lê os meses já gravados: um JSON por ano em `palacio/anos/` (e o antigo `meses.json`, se houver). */
+async function lerMeses(pasta: string): Promise<Record<string, Mes>> {
+  const meses: Record<string, Mes> = {
+    ...((await lerJson<Record<string, Mes>>(join(pasta, "meses.json"))) ?? {}),
+  };
+  try {
+    for (const a of (await readdir(join(pasta, "anos"))).filter((f) => /^\d{4}\.json$/.test(f)))
+      Object.assign(meses, await lerJson<Record<string, Mes>>(join(pasta, "anos", a)));
+  } catch {
+    // primeira execução: pasta ainda não existe
+  }
+  return meses;
+}
+
+/** Grava o JSON de um ano só com os meses daquele ano, em ordem. */
+async function gravarAno(pasta: string, ano: string, meses: Record<string, Mes>) {
+  await mkdir(join(pasta, "anos"), { recursive: true });
+  const doAno = Object.fromEntries(
+    Object.keys(meses)
+      .filter((m) => m.startsWith(ano))
+      .sort()
+      .map((m) => [m, meses[m]]),
+  );
+  await writeFile(join(pasta, "anos", `${ano}.json`), JSON.stringify(doAno));
+}
+
 export async function executarPalacio(
   dir: string,
   o: {
@@ -238,24 +271,56 @@ export async function executarPalacio(
     agora?: Date;
     ignorarTrava?: boolean;
     pausaMs?: number;
+    /** Tempo máximo baixando meses nesta execução. */
+    orcamentoMs?: number;
+    /** Relógio (para testes). */
+    relogio?: () => number;
+    /** Baixa só este ano (AAAA), sem mexer nos outros já gravados. */
+    soAno?: string;
   } = {},
 ) {
   const cfg = o.cfg ?? ((await lerJson<Config>("config/palacio.json")) as Config);
   const agora = o.agora ?? new Date();
+  const relogio = o.relogio ?? Date.now;
+  const t0 = relogio();
+  const orcamento = o.orcamentoMs ?? ORCAMENTO_MS;
   const pasta = join(dir, "palacio");
-  const anterior = (await lerJson<Record<string, Mes>>(join(pasta, "meses.json"))) ?? {};
   const resumoAnt = await lerJson<{ contagens: Record<string, number> }>(
     join(pasta, "resumo.json"),
   );
   const todos = mesesEntre(cfg.inicio, ultimoMesFechado(agora));
   const revisar = new Set(todos.slice(-MESES_REVISAO));
-  const meses: Record<string, Mes> = { ...anterior };
+  // Meses antes do início configurado (cargas antigas) ficam de fora
+  const meses = Object.fromEntries(
+    Object.entries(await lerMeses(pasta)).filter(([m]) => m >= cfg.inicio),
+  );
   const novas: ErroUnidadeNova["unidades"] = [];
   const baixar = o.baixar ?? ((m: string) => baixarMes(m));
   let baixados = 0;
+  let semTempo = false;
+  let interrupcao: unknown = null;
+  // Ano a ano, do mais antigo para o mais recente; cada mês baixado já fica gravado
   for (const m of todos) {
+    if (o.soAno && !m.startsWith(o.soAno)) continue;
     if (meses[m] && !revisar.has(m)) continue;
-    const csv = await baixar(m);
+    if (relogio() - t0 >= orcamento) {
+      semTempo = true;
+      break;
+    }
+    let csv: string | null;
+    try {
+      csv = await baixar(m);
+    } catch (e) {
+      // Mês recente: o Portal pode ainda não ter liberado (às vezes responde 403 em vez de 404)
+      if (revisar.has(m)) {
+        console.warn(`::warning::Cartão corporativo de ${m} ainda indisponível: ${msg(e)}`);
+        continue;
+      }
+      // Mês antigo: para aqui, publica o que já tem e deixa o resto para a próxima execução
+      interrupcao = e;
+      console.warn(`::warning::Carga interrompida em ${m}: ${msg(e)}`);
+      break;
+    }
     if (csv === null) {
       // Só os meses mais recentes podem ainda não ter saído
       if (revisar.has(m)) continue;
@@ -265,36 +330,49 @@ export async function executarPalacio(
     novas.push(...r.novas.map((n) => ({ mes: m, ...n })));
     meses[m] = r.mes;
     baixados++;
+    await gravarAno(pasta, m.slice(0, 4), meses);
     if (o.pausaMs ?? 3000) await dormir(o.pausaMs ?? 3000);
   }
   if (novas.length && !o.ignorarTrava) throw new ErroUnidadeNova(novas);
+  if (!Object.keys(meses).length)
+    throw interrupcao ?? new Error("Nenhum mês do cartão corporativo baixado ainda");
+
+  const parou = semTempo || interrupcao !== null;
+  const faltando = todos.filter((m) => !meses[m] && !(parou ? false : revisar.has(m)));
+  const anosFaltando = [...new Set(faltando.map((m) => m.slice(0, 4)))];
+  const carga = { completa: anosFaltando.length === 0, anosFaltando };
 
   const ipca = o.ipca ?? (await lerIpca());
-  const resumo = montarResumo(meses, ipca, cfg, agora.toISOString());
+  const resumo = montarResumo(meses, ipca, cfg, agora.toISOString(), carga);
   const quedas = verificarQuedas(resumoAnt?.contagens ?? null, resumo.contagens);
   if (quedas.length && !o.ignorarTrava) throw new ErroTrava(quedas);
 
   await mkdir(pasta, { recursive: true });
-  const ordenado = Object.fromEntries(
-    Object.keys(meses)
-      .sort()
-      .map((k) => [k, meses[k]]),
-  );
-  await writeFile(join(pasta, "meses.json"), JSON.stringify(ordenado));
+  for (const a of new Set(Object.keys(meses).map((m) => m.slice(0, 4))))
+    await gravarAno(pasta, a, meses);
   await writeFile(join(pasta, "resumo.json"), JSON.stringify(resumo));
-  return { resumo, baixados, novas };
+  return { resumo, baixados, novas, completa: carga.completa };
 }
 
 async function main() {
   const dir = process.argv[2] ?? "publicado";
   const inicio = Date.now();
   try {
-    const { resumo, baixados } = await executarPalacio(dir, {
+    const soAno = /^\d{4}$/.test(process.env.PALACIO_ANO ?? "")
+      ? process.env.PALACIO_ANO
+      : undefined;
+    const { resumo, baixados, completa } = await executarPalacio(dir, {
       ignorarTrava: process.env.IGNORAR_TRAVA === "true",
+      soAno,
     });
+    // O workflow lê este arquivo para disparar a próxima execução (só se esta trouxe algo novo).
+    // Execução de um ano só (teste manual) não encadeia outras.
+    if (!completa && baixados > 0 && !soAno)
+      await writeFile("palacio-continuar", resumo.carga.anosFaltando.join(","));
     const p = resumo.presidente.total;
     console.log(
-      `Palácio: ${resumo.contagens.meses} meses (${resumo.primeiroMes}–${resumo.ultimoMes}), ${baixados} baixados; ` +
+      `Palácio: ${resumo.contagens.meses} meses (${resumo.primeiroMes}–${resumo.ultimoMes}), ${baixados} baixados` +
+        (completa ? "; " : ` (faltam ${resumo.carga.anosFaltando.join(", ")}); `) +
         `presidente R$ ${p.total.toFixed(2)} (${Math.round((p.sigiloso / (p.total || 1)) * 100)}% sigiloso); IPCA base ${resumo.ipcaBase}.`,
     );
     await gravarMetricas({

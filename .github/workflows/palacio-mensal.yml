@@ -1,6 +1,8 @@
 name: Cartão do Palácio (mensal)
 # Story 7.1. O Portal publica o cartão corporativo uma vez por mês; a rotina baixa só os meses
-# que faltam e revisa os 3 últimos. A primeira execução faz a carga desde 2013 (~5 min).
+# que faltam e revisa os 3 últimos.
+# Story 7.2: dados desde 2018, um JSON por ano. Cada execução baixa por até 20 min, publica o que
+# tem e, se ainda faltar ano e esta execução trouxe algo novo, dispara a próxima sozinha.
 
 on:
   schedule:
@@ -11,10 +13,15 @@ on:
         description: "Publicar mesmo com unidade nova ou queda (só depois de revisar config/palacio.json)"
         type: boolean
         default: false
+      ano:
+        description: "Baixar só este ano (AAAA). Vazio: carga normal, ano a ano desde 2018"
+        type: string
+        default: ""
 
 permissions:
   contents: write
   issues: write
+  actions: write # disparar a próxima execução enquanto a carga não termina (story 7.2)
 
 concurrency:
   group: dados # mesmo grupo das outras rotinas: nunca publicam ao mesmo tempo
@@ -41,6 +48,7 @@ jobs:
       - name: Coletar e somar o cartão corporativo
         env:
           IGNORAR_TRAVA: ${{ github.event.inputs.ignorar_trava == 'true' }}
+          PALACIO_ANO: ${{ github.event.inputs.ano }}
         run: |
           set -o pipefail
           pnpm rotina:palacio publicado | tee palacio.log
@@ -50,6 +58,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: scripts/publicar-dados.sh publicado "Cartão do Palácio de $(date -u +%F)"
+
+      - name: Continuar a carga (ainda faltam anos)
+        if: hashFiles('palacio-continuar') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "::notice::Ainda faltam: $(cat palacio-continuar). Disparando a próxima execução."
+          gh workflow run palacio-mensal.yml --ref "${{ github.ref_name }}" --repo "${{ github.repository }}"
 
       - name: Enviar métricas ao Grafana
         if: always()

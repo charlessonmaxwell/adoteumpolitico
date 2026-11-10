@@ -21,18 +21,23 @@ const fichas = p
   : [];
 const escala = (vs: number[]) => (Math.max(...vs) >= 1_000_000 ? { d: 1_000_000, u: "milhões" } : { d: 1_000, u: "mil" });
 const curta = (v: number, e: { d: number }) => (v / e.d).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+const anoInicio = p?.primeiroMes?.slice(0, 4) ?? "";
+const faltando = p?.carga && !p.carga.completa ? p.carga.anosFaltando : [];
 const anoFechado = p ? String(Number(p.ultimoMes!.slice(0, 4)) - (p.ultimoMes!.endsWith("12") ? 0 : 1)) : "";
 ---
 <Base titulo="Cartão do Palácio" descricao="Quanto o cartão corporativo da Presidência e da Vice-Presidência gastou por ano e por governo, e quanto disso é segredo.">
   <div class="conteiner pagina-panorama pagina-palacio">
     <p class="volta"><a href="/">Início</a></p>
     <h1>Cartão do Palácio</h1>
-    <p class="intro">O cartão corporativo paga despesas do dia a dia do Palácio do Planalto e da residência oficial. Aqui estão os totais desde 2013, direto do Portal da Transparência. Quase tudo é segredo: o governo publica quanto gastou, mas não em quê.</p>
+    <p class="intro">O cartão corporativo paga despesas do dia a dia do Palácio do Planalto e da residência oficial. Aqui estão os totais desde {anoInicio || 2018}, direto do Portal da Transparência. Quase tudo é segredo: o governo publica quanto gastou, mas não em quê.</p>
 
     {!p ? (
       <p class="vazio">Os números aparecem depois da próxima atualização mensal.</p>
     ) : (
       <>
+        {faltando.length > 0 && (
+          <p class="carregando">Ainda estamos trazendo do Portal da Transparência os meses de {faltando.join(", ")}. Os totais desses anos e dos governos vão mudar até a carga terminar.</p>
+        )}
         <nav class="abas" aria-label="Escolha a ficha">
           <a href="#presidente">Presidente e família</a>
           <a href="#vice">Vice</a>
@@ -55,7 +60,7 @@ const anoFechado = p ? String(Number(p.ultimoMes!.slice(0, 4)) - (p.ultimoMes!.e
                   />
                   <p class="nota">Em R$ {eAno.u}, valores da época, sem correção. O ano atual ainda não terminou.</p>
                   <details>
-                    <summary>Todos os anos desde 2013</summary>
+                    <summary>Todos os anos desde {anoInicio}</summary>
                     <table>
                       <thead><tr><th>Ano</th><th>Gastou</th><th>Em segredo</th></tr></thead>
                       <tbody>{Object.entries(f.porAno).map(([a, s]) => <tr><td>{a}</td><td class="num">{formatarMoeda(s.total)}</td><td class="num">{deCada100(s)}%</td></tr>)}</tbody>
@@ -82,7 +87,7 @@ const anoFechado = p ? String(Number(p.ultimoMes!.slice(0, 4)) - (p.ultimoMes!.e
                       <tbody>{f.porGoverno.map((g) => <tr><td>{g.nome}</td><td class="num">{g.meses}</td><td class="num">{formatarMoeda(g.total)}</td><td class="num">{formatarMoeda(g.corrigido)}</td></tr>)}</tbody>
                     </table>
                   </div>
-                  <p class="nota">Os dados começam em 2013, então o governo Dilma aparece só a partir daí. A média por mês deixa comparar governos de tamanhos diferentes.</p>
+                  <p class="nota">Os dados começam em {anoInicio}{f.porGoverno[0] ? `, então o governo ${f.porGoverno[0].nome} aparece só a partir daí` : ""}. A média por mês deixa comparar governos de tamanhos diferentes.</p>
                 </article>
               </div>
               <p class="nota">{rotulo}</p>
@@ -100,6 +105,7 @@ const anoFechado = p ? String(Number(p.ultimoMes!.slice(0, 4)) - (p.ultimoMes!.e
   </div>
 </Base>
 <style is:global>
+  .pagina-palacio .carregando { margin: 0 0 1.2rem; padding: 0.7rem 0.9rem; border-radius: 8px; max-width: 62ch; background: color-mix(in srgb, var(--falta) 10%, var(--folha)); }
   .pagina-palacio .colunas { gap: 0.35rem; grid-auto-columns: minmax(0, 1fr); }
   .pagina-palacio .colunas .valor, .pagina-palacio .colunas .eixo { font-size: 0.68rem; }
   .pagina-panorama .volta { margin: 2rem 0 1rem; font-size: 0.95rem; }
