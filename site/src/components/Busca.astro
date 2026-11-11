@@ -25,7 +25,7 @@ const indice: ItemBusca[] = dados().resumos.map(({ parlamentar: p }) => ({
   </div>
   <p id="dica-busca" class="dica">Pode errar a grafia, a gente acha. Exemplo: "Danilo Fort" ou "Sergipe".</p>
   <ul id="resultados-busca" class="resultados" role="list" aria-live="polite"></ul>
-  <script type="application/json" id="indice-busca" set:html={JSON.stringify(indice)} />
+  <script type="application/json" id="indice-busca" set:html={JSON.stringify(indice).replace(/</g, "\\u003c")} />
 </div>
 <script>
   import { buscar, type ItemBusca } from "../lib/busca";
