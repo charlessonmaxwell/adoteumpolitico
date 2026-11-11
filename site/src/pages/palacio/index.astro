@@ -87,7 +87,7 @@ const anoFechado = p ? String(Number(p.ultimoMes!.slice(0, 4)) - (p.ultimoMes!.e
                       <tbody>{f.porGoverno.map((g) => <tr><td>{g.nome}</td><td class="num">{g.meses}</td><td class="num">{formatarMoeda(g.total)}</td><td class="num">{formatarMoeda(g.corrigido)}</td></tr>)}</tbody>
                     </table>
                   </div>
-                  <p class="nota">Os dados começam em {anoInicio}{f.porGoverno[0] ? `, então o governo ${f.porGoverno[0].nome} aparece só a partir daí` : ""}. A média por mês deixa comparar governos de tamanhos diferentes.</p>
+                  <p class="nota">Os dados começam em {anoInicio}. A média por mês deixa comparar governos de tamanhos diferentes.</p>
                 </article>
               </div>
               <p class="nota">{rotulo}</p>

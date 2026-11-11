@@ -1,6 +1,6 @@
 {
   "_leia": "Story 7.1. Unidades gestoras (UG) do cartão corporativo (CPGF). Unidade nova sob a Presidência com valor relevante trava a publicação: classifique-a aqui em uma das listas.",
-  "inicio": "201801",
+  "inicio": "201901",
   "fichas": {
     "presidente": {
       "nome": "Presidente e família",
@@ -22,8 +22,6 @@
     "115406": "Empresa Brasil de Comunicação"
   },
   "governos": [
-    { "nome": "Dilma Rousseff", "de": "201301", "ate": "201605" },
-    { "nome": "Michel Temer", "de": "201606", "ate": "201812" },
     { "nome": "Jair Bolsonaro", "de": "201901", "ate": "202212" },
     { "nome": "Luiz Inácio Lula da Silva", "de": "202301", "ate": "202612" }
   ]

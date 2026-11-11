@@ -8,7 +8,7 @@
  * Uso: pnpm rotina:palacio <pasta-publicada>
  */
 import { unzipSync } from "fflate";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { percorrerCsv, valorBr } from "../coleta/emendas.js";
@@ -350,6 +350,10 @@ export async function executarPalacio(
   await mkdir(pasta, { recursive: true });
   for (const a of new Set(Object.keys(meses).map((m) => m.slice(0, 4))))
     await gravarAno(pasta, a, meses);
+  // Anos anteriores ao início configurado saem da publicação (story 7.3)
+  for (const a of await readdir(join(pasta, "anos")).catch(() => [] as string[]))
+    if (/^\d{4}\.json$/.test(a) && a.slice(0, 4) < cfg.inicio.slice(0, 4))
+      await rm(join(pasta, "anos", a));
   await writeFile(join(pasta, "resumo.json"), JSON.stringify(resumo));
   return { resumo, baixados, novas, completa: carga.completa };
 }
