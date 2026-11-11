@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
 import { iniciais } from "./formato.js";
+import { SELO_DATA_URI } from "./marca.js";
 
 const require = createRequire(import.meta.url);
 const fonte = (pkg: string) => readFileSync(require.resolve(pkg));
@@ -42,6 +43,19 @@ const h = (type: string, style: Record<string, unknown>, ...children: unknown[])
     children: children.length === 1 ? children[0] : children,
   },
 });
+
+/** Selo + nome do site, no alto das imagens de prévia. */
+const assinatura = (
+  tamanhoTexto: number,
+  tamanhoSelo: number,
+  estilo: Record<string, unknown> = {},
+): No =>
+  h(
+    "div",
+    { alignItems: "center", gap: 14, ...estilo },
+    { type: "img", props: { src: SELO_DATA_URI, width: tamanhoSelo, height: tamanhoSelo } },
+    h("div", { fontSize: tamanhoTexto, color: COR.suave }, "Adote um Político"),
+  );
 
 /** Baixa a foto oficial e devolve como data URI; null se falhar (usa iniciais). */
 export async function fotoComoDataUri(
@@ -111,7 +125,7 @@ export async function imagemPerfil(d: DadosPrevia): Promise<Buffer> {
     h(
       "div",
       { flexDirection: "column", flex: 1, height: 502, justifyContent: "space-between" },
-      h("div", { fontSize: 28, color: COR.suave }, "Adote um Político"),
+      assinatura(28, 36),
       h(
         "div",
         { flexDirection: "column", gap: 16 },
@@ -154,7 +168,7 @@ export async function imagemInicio(): Promise<Buffer> {
       fontFamily: "Lexend",
       color: COR.tinta,
     },
-    linha("Adote um Político", { fontSize: 30, color: COR.suave, marginBottom: 150 }),
+    assinatura(30, 56, { marginBottom: 130 }),
     linha("Votou,", {
       fontFamily: "Archivo",
       fontSize: 86,
