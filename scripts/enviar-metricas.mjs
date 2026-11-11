@@ -29,11 +29,9 @@ export function paraLinhas(m) {
   return linhas;
 }
 
-async function main() {
-  const arquivo = process.argv[2] ?? "metricas.json";
+/** Envia linhas Influx ao Grafana Cloud. Nunca lança erro: só registra aviso. */
+export async function enviarLinhas(linhas) {
   const { GRAFANA_INFLUX_URL: url, GRAFANA_USUARIO: usuario, GRAFANA_TOKEN: token } = process.env;
-  if (!existsSync(arquivo)) return console.log(`Sem ${arquivo}: nada a enviar.`);
-  const linhas = paraLinhas(JSON.parse(readFileSync(arquivo, "utf8")));
   if (!url || !usuario || !token)
     return console.log(`Grafana não configurado; ${linhas.length} métricas não enviadas.`);
   try {
@@ -51,6 +49,12 @@ async function main() {
   } catch (e) {
     console.log(`::warning::Falha ao enviar métricas ao Grafana: ${e.message}`);
   }
+}
+
+async function main() {
+  const arquivo = process.argv[2] ?? "metricas.json";
+  if (!existsSync(arquivo)) return console.log(`Sem ${arquivo}: nada a enviar.`);
+  await enviarLinhas(paraLinhas(JSON.parse(readFileSync(arquivo, "utf8"))));
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) await main();

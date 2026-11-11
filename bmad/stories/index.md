@@ -14,7 +14,7 @@
 | 2.2 | Página de perfil | 2 | 2.0 | Concluída |
 | 2.3 | Textos em linguagem popular | 2 | 2.2 | Concluída |
 | 2.4 | Compartilhar perfil | 2 | 2.2 | Concluída |
-| 2.5 | Medição de visitas | 2 | 2.6 | Pronta |
+| 2.5 | Medição de visitas | 2 | 2.6 | Concluída |
 | 2.6 | Publicação | 2 | 2.1–2.4 | Pronta |
 | 2.7 | Últimas votações no perfil | 2 | 2.2, 2.3 | Concluída |
 | 2.8 | Página "Quando os dados foram atualizados" | 2 | 1.5, 2.6 | Concluída |

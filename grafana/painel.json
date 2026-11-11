@@ -110,6 +110,123 @@
         "type": "prometheus",
         "uid": "${ds}"
       }
+    },
+    {
+      "type": "row",
+      "title": "Visitas do site (dia anterior, Cloudflare Web Analytics)",
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Visitas por dia",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "max_over_time(site_visitas_visitas[1d])",
+          "legendFormat": "Visitas",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Páginas vistas por dia",
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "max_over_time(site_visitas_paginas[1d])",
+          "legendFormat": "Páginas vistas",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "bargauge",
+      "title": "Páginas mais vistas (ontem)",
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 12,
+        "h": 9
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "sort_desc(last_over_time(site_pagina_paginas[2d]))",
+          "legendFormat": "{{caminho}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "De onde vêm as visitas (ontem)",
+      "gridPos": {
+        "x": 12,
+        "y": 22,
+        "w": 6,
+        "h": 9
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "last_over_time(site_origem_visitas[2d])",
+          "legendFormat": "{{origem}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Celular x computador (ontem)",
+      "gridPos": {
+        "x": 18,
+        "y": 22,
+        "w": 6,
+        "h": 9
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${ds}"
+      },
+      "targets": [
+        {
+          "expr": "last_over_time(site_dispositivo_visitas[2d])",
+          "legendFormat": "{{tipo}}",
+          "refId": "A"
+        }
+      ]
     }
   ],
   "templating": {
