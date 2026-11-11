@@ -1,4 +1,4 @@
-/* global fetch, Response */
+/* global fetch, Response, crypto, TextEncoder, btoa */
 /**
  * Recebe o formulário "Achou um erro?" e abre uma issue no GitHub (Cloudflare Pages Function, plano grátis).
  * Não guarda IP, e-mail nem nada pessoal. Segredo: ERROS_GITHUB_TOKEN (fine-grained, só "Issues: write" no repositório).
@@ -17,7 +17,33 @@ const limpar = (s, max) =>
     .trim()
     .slice(0, max);
 
+// Limite por visitante: 5 envios a cada 10 minutos. Fica só na memória da Function (zera ao reiniciar);
+// o IP vira um hash e nunca é gravado.
+const LIMITE = 5;
+const JANELA_MS = 10 * 60 * 1000;
+const envios = new Map();
+async function excedeuLimite(request) {
+  const ip = request.headers.get("cf-connecting-ip") || "desconhecido";
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip));
+  const chave = btoa(String.fromCharCode(...new Uint8Array(bytes))).slice(0, 16);
+  const agora = Date.now();
+  if (envios.size > 5000)
+    for (const [k, v] of envios) if (agora - v.inicio > JANELA_MS) envios.delete(k);
+  const atual = envios.get(chave);
+  if (!atual || agora - atual.inicio > JANELA_MS) {
+    envios.set(chave, { inicio: agora, total: 1 });
+    return false;
+  }
+  atual.total += 1;
+  return atual.total > LIMITE;
+}
+
 export async function onRequestPost({ request, env }) {
+  if (await excedeuLimite(request))
+    return json(429, {
+      ok: false,
+      erro: "Muitos envios seguidos. Tente de novo em alguns minutos.",
+    });
   let d;
   try {
     d = await request.json();
