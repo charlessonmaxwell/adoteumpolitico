@@ -18,6 +18,7 @@
 | 2.6 | Publicação | 2 | 2.1–2.4 | Pronta |
 | 2.7 | Últimas votações no perfil | 2 | 2.2, 2.3 | Concluída |
 | 2.8 | Página "Quando os dados foram atualizados" | 2 | 1.5, 2.6 | Concluída |
+| 2.9 | Novo rodapé | 2 | 2.0 | Concluída |
 
 | 7.1 | Cartão corporativo do Palácio (Presidente e Vice) | 7 | 1.5, 2.6 | Concluída |
 | 7.2 | Cartão do Palácio: carga ano a ano desde 2018 | 7 | 7.1 | Concluída |
