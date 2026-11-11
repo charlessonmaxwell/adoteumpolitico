@@ -55,7 +55,7 @@ export async function coletarSenadores(
       nome: p.NomeParlamentar,
       partido: p.SiglaPartidoParlamentar,
       uf: p.UfParlamentar,
-      urlFoto: p.UrlFotoParlamentar ?? null,
+      urlFoto: p.UrlFotoParlamentar?.replace(/^http:\/\//, "https://") ?? null,
       idLegislatura: legislaturaAtual(s.Mandato, legislaturaVigente),
       urlFonte: `${BASE_SENADO}/senador/${p.CodigoParlamentar}.json`,
       coletadoEm,
