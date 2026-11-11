@@ -1,0 +1,71 @@
+---
+/** Rodapé do site (story 2.9): fundo escuro, atalhos com ícone, links sobre os dados, apoio discreto. */
+import Icone from "./Icone.astro";
+
+const ACOMPANHE = [
+  { href: "/#busca", texto: "Achar meu deputado ou senador", icone: "lupa" },
+  { href: "/cidades/", texto: "Emendas na minha cidade", icone: "mapa" },
+  { href: "/panorama/", texto: "O Congresso em números", icone: "urna" },
+  { href: "/palacio/", texto: "Cartão do Palácio", icone: "cadeado" },
+] as const;
+const DADOS = [
+  { href: "/como-funciona/", texto: "Como funciona" },
+  { href: "/atualizacoes/", texto: "Quando os dados foram atualizados" },
+  { href: "https://github.com/charlessonmaxwell/adoteumpolitico", texto: "Código aberto" },
+  { href: `/erro/?de=${encodeURIComponent(Astro.url.pathname)}`, texto: "Achou um erro?" },
+];
+const FONTES = ["Câmara dos Deputados", "Senado Federal", "Portal da Transparência", "IBGE"];
+---
+<footer class="rodape">
+  <div class="conteiner topo">
+    <div>
+      <p class="marca">Adote um<br />Político</p>
+      <p class="lema">Só fatos, com a fonte oficial. Aqui não tem nota nem ranking, nem lado.</p>
+    </div>
+    <nav aria-label="Acompanhe" class="atalhos">
+      <p class="tit">Acompanhe</p>
+      <ul>
+        {ACOMPANHE.map((l) => (
+          <li><a href={l.href}><span class="ic"><Icone nome={l.icone} /></span>{l.texto}</a></li>
+        ))}
+      </ul>
+    </nav>
+    <nav aria-label="Sobre os dados">
+      <p class="tit">Sobre os dados</p>
+      <ul>{DADOS.map((l) => <li><a href={l.href}>{l.texto}</a></li>)}</ul>
+    </nav>
+  </div>
+  <div class="conteiner base">
+    <p>Dados de: {FONTES.join(" · ")}</p>
+    <a class="apoie" href="/apoie/"><span aria-hidden="true">♥</span> Apoie com um Pix</a>
+  </div>
+</footer>
+<style>
+  /* Cores próprias: o rodapé é escuro tanto no modo claro quanto no noturno */
+  .rodape {
+    --r-fundo: #0f2629;
+    --r-texto: #c9d6d6;
+    --r-forte: #ffffff;
+    --r-linha: #24464a;
+    --r-acento: #6fd3d9;
+    margin-top: 4rem;
+    background: var(--r-fundo);
+    color: var(--r-texto);
+    font-size: 0.92rem;
+  }
+  .topo { display: grid; gap: 2rem; padding-top: 2.6rem; padding-bottom: 2rem; }
+  @media (min-width: 52rem) { .topo { grid-template-columns: 1.1fr 1.4fr 1fr; gap: 3rem; } }
+  .marca { margin: 0; font-family: var(--numeros); font-stretch: 78%; font-weight: 800; font-size: clamp(2.2rem, 5vw, 3rem); line-height: 0.95; color: var(--r-forte); }
+  .lema { margin: 0.8rem 0 0; max-width: 28ch; }
+  .tit { margin: 0 0 0.8rem; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--r-acento); }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+  a { color: var(--r-texto); text-decoration: none; }
+  a:hover { color: var(--r-forte); text-decoration: underline; }
+  a:focus-visible { outline: 3px solid var(--r-acento); outline-offset: 3px; border-radius: 4px; }
+  .atalhos a { display: flex; align-items: center; gap: 0.7rem; color: var(--r-forte); font-weight: 600; }
+  .ic { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; flex: none; border-radius: 50%; background: var(--r-linha); color: var(--r-acento); }
+  .ic :global(svg) { width: 1.15rem; height: 1.15rem; }
+  .base { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.6rem 1.5rem; border-top: 1px solid var(--r-linha); padding-top: 1rem; padding-bottom: 2rem; font-size: 0.8rem; }
+  .base p { margin: 0; }
+  .apoie { color: var(--r-acento); font-weight: 700; }
+</style>
