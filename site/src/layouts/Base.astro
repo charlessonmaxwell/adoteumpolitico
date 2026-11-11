@@ -26,6 +26,7 @@ const url = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={titulo} />
     <meta property="og:locale" content="pt_BR" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -45,7 +46,10 @@ const url = new URL(Astro.url.pathname, Astro.site);
   <body>
     <header class="topo">
       <div class="conteiner topo-in">
-        <a href="/" class="marca">Adote um Político</a>
+        <a href="/" class="marca">
+          <svg class="selo" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="98" fill="var(--dado)"/><circle cx="100" cy="100" r="80" fill="none" stroke="var(--folha)" stroke-width="7"/><path transform="translate(37.16 119.89)" d="M0.5800000000000001 0.0 15.138 -39.904H30.044L44.602000000000004 0.0H31.03L29.348000000000003 -5.626H15.370000000000001L13.688 0.0ZM18.038 -14.558000000000002H26.738000000000003L24.824 -20.938000000000002Q24.592000000000002 -21.634 24.302 -22.62Q24.012 -23.606 23.722 -24.708000000000002Q23.432000000000002 -25.810000000000002 23.142000000000003 -26.883000000000003Q22.852 -27.956000000000003 22.62 -28.768H22.156000000000002Q21.924 -27.724 21.547 -26.39Q21.17 -25.056 20.764000000000003 -23.635Q20.358 -22.214000000000002 19.952 -20.938000000000002Z" fill="var(--folha)"/><path transform="translate(82.28 119.89)" d="M6.090000000000001 0.0V-8.932H15.544V-26.970000000000002H6.090000000000001V-33.698Q8.816 -33.872 11.919 -34.8Q15.022 -35.728 17.98 -37.120000000000005Q20.938000000000002 -38.512 23.200000000000003 -39.962H27.086000000000002V-8.932H36.192V0.0Z" fill="var(--folha)"/><path transform="translate(120.97 119.89)" d="M4.292 0.0V-39.904H27.84Q31.610000000000003 -39.904 34.481 -38.193Q37.352000000000004 -36.482 38.976 -33.466Q40.6 -30.450000000000003 40.6 -26.448Q40.6 -22.330000000000002 38.947 -19.285000000000004Q37.294000000000004 -16.240000000000002 34.423 -14.558000000000002Q31.552000000000003 -12.876000000000001 27.84 -12.876000000000001H17.11V0.0ZM17.11 -22.214000000000002H23.548000000000002Q25.578000000000003 -22.214000000000002 26.593000000000004 -23.258000000000003Q27.608 -24.302 27.608 -26.332Q27.608 -27.724 27.173000000000002 -28.623Q26.738000000000003 -29.522000000000002 25.839000000000002 -29.986000000000004Q24.94 -30.450000000000003 23.548000000000002 -30.450000000000003H17.11Z" fill="var(--folha)"/></svg>
+          <span>Adote um Político</span>
+        </a>
         <div class="acoes">
           <a href="/panorama/" class="buscar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>
@@ -89,7 +93,8 @@ const url = new URL(Astro.url.pathname, Astro.site);
 <style>
   .topo { border-bottom: 1px solid var(--linha); background: var(--papel); }
   .topo-in { display: flex; justify-content: space-between; align-items: center; min-height: 3.5rem; gap: 1rem; }
-  .marca { font-family: var(--numeros); font-stretch: 87%; font-weight: 800; color: var(--tinta); text-decoration: none; font-size: 1.1rem; }
+  .marca { display: inline-flex; align-items: center; gap: 0.55rem; font-family: var(--numeros); font-stretch: 87%; font-weight: 800; color: var(--tinta); text-decoration: none; font-size: 1.1rem; }
+  .selo { width: 2.25rem; height: 2.25rem; flex: none; }
   .acoes { display: flex; align-items: center; gap: 1rem; }
   .buscar { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.95rem; color: var(--tinta); text-decoration: none; font-weight: 600; }
   .buscar svg { width: 1.2rem; height: 1.2rem; }
