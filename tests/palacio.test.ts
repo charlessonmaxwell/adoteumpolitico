@@ -1,4 +1,4 @@
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -320,6 +320,26 @@ describe("Story 7.2 — Portal bloqueando", () => {
     await expect(
       executarPalacio(dir, { cfg: CFG, baixar: async () => bloqueio(), ipca, agora, pausaMs: 0 }),
     ).rejects.toThrow(/403/);
+  });
+});
+
+describe("Story 7.3 — início mais recente apaga os anos antigos", () => {
+  it("remove da publicação o JSON de ano anterior ao início", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "palacio-"));
+    const ipca = { "202211": 100, "202212": 100, "202301": 105, "202302": 110 };
+    const agora = new Date("2023-03-10T10:00:00Z");
+    await executarPalacio(dir, { cfg: CFG, baixar: async () => BASE, ipca, agora, pausaMs: 0 });
+    const res = await executarPalacio(dir, {
+      cfg: { ...CFG, inicio: "202301" },
+      baixar: async () => BASE,
+      ipca,
+      agora,
+      pausaMs: 0,
+      ignorarTrava: true,
+    });
+    expect(res.resumo.primeiroMes).toBe("202301");
+    expect(await readdir(join(dir, "palacio", "anos"))).toEqual(["2023.json"]);
+    expect(res.resumo.presidente.porGoverno.map((g) => g.nome)).toEqual(["Governo B"]);
   });
 });
 
