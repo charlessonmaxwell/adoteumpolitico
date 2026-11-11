@@ -11,6 +11,10 @@ import type {
 
 /** Pasta com a publicação da branch `data`. Sem ela, usa os dados simulados (desenvolvimento e CI). */
 const DIR = resolve(process.env.DADOS_DIR ?? "site/fixtures");
+/** O Senado entrega fotos em http; a CSP (story 8.1) só aceita https. */
+export const fotoSegura = (url: string | null): string | null =>
+  url ? url.replace(/^http:\/\//, "https://") : url;
+
 const ler = <T>(arq: string): T => JSON.parse(readFileSync(join(DIR, arq), "utf8")) as T;
 
 let cache: {
@@ -26,6 +30,10 @@ export function dados() {
   const resumos = readdirSync(join(DIR, "resumo"))
     .filter((f) => f.endsWith(".json"))
     .map((f) => ler<ResumoParlamentar>(`resumo/${f}`))
+    .map((r) => ({
+      ...r,
+      parlamentar: { ...r.parlamentar, urlFoto: fotoSegura(r.parlamentar.urlFoto) },
+    }))
     .sort((a, b) => a.parlamentar.nome.localeCompare(b.parlamentar.nome, "pt-BR"));
   cache = { resumos, medias: ler("medias.json"), meta: ler("meta.json") };
   return cache;
