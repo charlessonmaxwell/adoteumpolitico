@@ -5,8 +5,12 @@ import { UFS } from "../lib/formato";
 import type { ItemBusca } from "../lib/busca";
 interface Props {
   grande?: boolean;
+  /** Texto do botão dentro da caixa (ex.: "Fiscalizar"). Sem ele, a caixa fica como antes. */
+  botao?: string;
+  /** Esconde o título "Quem você quer fiscalizar?" (continua para leitor de tela). */
+  semRotulo?: boolean;
 }
-const { grande = false } = Astro.props;
+const { grande = false, botao, semRotulo = false } = Astro.props;
 const indice: ItemBusca[] = dados().resumos.map(({ parlamentar: p }) => ({
   id: p.id,
   nome: p.nome,
@@ -18,10 +22,11 @@ const indice: ItemBusca[] = dados().resumos.map(({ parlamentar: p }) => ({
 }));
 ---
 <div class:list={["busca", { grande }]} data-busca>
-  <label for="campo-busca" class="rotulo">Quem você quer fiscalizar?</label>
+  <label for="campo-busca" class:list={["rotulo", { sr: semRotulo }]}>Quem você quer fiscalizar?</label>
   <div class="campo">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.4-4.4" /></svg>
     <input id="campo-busca" type="search" autocomplete="off" spellcheck="false" placeholder="Nome, estado ou partido" aria-describedby="dica-busca" aria-controls="resultados-busca" />
+    {botao && <button type="button" class="botao-busca" data-botao-busca>{botao}</button>}
   </div>
   <p id="dica-busca" class="dica">Pode errar a grafia, a gente acha. Exemplo: "Danilo Fort" ou "Sergipe".</p>
   <ul id="resultados-busca" class="resultados" role="list" aria-live="polite"></ul>
@@ -63,6 +68,11 @@ const indice: ItemBusca[] = dados().resumos.map(({ parlamentar: p }) => ({
   campo.addEventListener("keydown", (e) => {
     if (e.key === "Enter") lista.querySelector("a")?.click();
   });
+  raiz.querySelector("[data-botao-busca]")?.addEventListener("click", () => {
+    const primeiro = lista.querySelector("a");
+    if (primeiro) primeiro.click();
+    else campo.focus();
+  });
   if (location.hash === "#busca") campo.focus();
 </script>
 <style>
@@ -75,6 +85,9 @@ const indice: ItemBusca[] = dados().resumos.map(({ parlamentar: p }) => ({
   input { flex: 1; border: 0; background: none; font: inherit; font-size: 1.1rem; color: var(--tinta); padding: 0.95rem 0; outline: none; min-width: 0; }
   .grande input { font-size: 1.25rem; padding: 1.15rem 0; }
   input::placeholder { color: var(--grafite); }
+  .botao-busca { flex: none; margin-right: -0.6rem; padding: 0.8rem 1.4rem; border: 0; border-radius: 10px; background: #c2410c; color: #fff; font: inherit; font-weight: 700; font-size: 1.1rem; cursor: pointer; }
+  .botao-busca:hover { background: #9a3412; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .dica { margin: 0; color: var(--grafite); font-size: 0.9rem; }
   .resultados { list-style: none; margin: 0.3rem 0 0; padding: 0; display: grid; gap: 0.4rem; }
   .resultados :global(a) { display: grid; padding: 0.7rem 0.9rem; background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; text-decoration: none; color: var(--tinta); }
