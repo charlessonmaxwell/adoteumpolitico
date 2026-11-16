@@ -2,10 +2,13 @@
 /**
  * Recebe o formulário "Sugestões" e repassa para um Google Form (Cloudflare Pages Function, plano grátis).
  * O visitante só envia: não há como consultar o que foi mandado. Não guarda IP, e-mail nem nada pessoal.
- * Configuração (variáveis no Cloudflare Pages):
+ * Form "Sugestões - Adote um Político" (respostas na planilha de mesmo nome, no Drive do projeto).
+ * Valores públicos (aparecem no próprio link do Form); variáveis no Cloudflare Pages só sobrescrevem:
  *   SUGESTOES_FORM_ID  → trecho do link do Form entre /d/e/ e /viewform
  *   SUGESTOES_CAMPOS   → "entry.111,entry.222,entry.333" (tipo, mensagem, página — nessa ordem)
  */
+const FORM_ID = "1FAIpQLSfrXTG_-lchw4b9RUa88DCwS99zJS4W9WzkyWVjssj452-gVA";
+const CAMPOS = "entry.1702564675,entry.1051366112,entry.1285524240";
 const json = (status, corpo) =>
   new Response(JSON.stringify(corpo), {
     status,
@@ -58,10 +61,11 @@ export async function onRequestPost({ request, env }) {
   if (mensagem.length < 10)
     return json(400, { ok: false, erro: "Conte um pouco mais (pelo menos 10 letras)." });
 
-  const campos = String(env.SUGESTOES_CAMPOS ?? "")
+  const campos = String(env.SUGESTOES_CAMPOS || CAMPOS)
     .split(",")
     .map((c) => c.trim());
-  if (!env.SUGESTOES_FORM_ID || campos.length < 3 || campos.some((c) => !c.startsWith("entry.")))
+  const formId = env.SUGESTOES_FORM_ID || FORM_ID;
+  if (!formId || campos.length < 3 || campos.some((c) => !c.startsWith("entry.")))
     return json(503, { ok: false, erro: "indisponivel" });
 
   const corpo = new URLSearchParams();
@@ -69,7 +73,7 @@ export async function onRequestPost({ request, env }) {
   corpo.append(campos[1], mensagem);
   corpo.append(campos[2], pagina);
   const r = await fetch(
-    `https://docs.google.com/forms/d/e/${encodeURIComponent(env.SUGESTOES_FORM_ID)}/formResponse`,
+    `https://docs.google.com/forms/d/e/${encodeURIComponent(formId)}/formResponse`,
     { method: "POST", body: corpo, redirect: "manual" },
   );
   // O Google responde 200 (ou redireciona) quando aceita; 4xx/5xx = configuração errada ou fora do ar
