@@ -12,6 +12,7 @@ const DADOS = [
   { href: "/como-funciona/", texto: "Como funciona" },
   { href: "/atualizacoes/", texto: "Quando os dados foram atualizados" },
   { href: `/erro/?de=${encodeURIComponent(Astro.url.pathname)}`, texto: "Achou um erro?" },
+  { href: `/sugestoes/?de=${encodeURIComponent(Astro.url.pathname)}`, texto: "Mande uma sugestão" },
 ];
 const FONTES = ["Câmara dos Deputados", "Senado Federal", "Portal da Transparência", "IBGE"];
 ---

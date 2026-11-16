@@ -1,0 +1,76 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base titulo="Sugestões" descricao="Mande sua ideia para melhorar o Adote um Político. Não precisa se identificar.">
+  <div class="conteiner pagina-sugestao">
+    <h1>Ajude a melhorar o "Adote um Político"</h1>
+    <p class="intro">Achou algo confuso, faltando ou errado? Conta pra gente. Toda sugestão é bem-vinda e será lida.</p>
+    <form data-form novalidate>
+      <label>
+        <span>Sobre o que é sua sugestão?</span>
+        <select name="tipo">
+          <option>Ideia nova</option>
+          <option>Algo difícil de entender</option>
+          <option>Informação errada ou desatualizada</option>
+          <option>Problema no site</option>
+          <option>Outro</option>
+        </select>
+      </label>
+      <label>
+        <span>Sua sugestão</span>
+        <textarea name="mensagem" rows="6" required minlength="10" maxlength="1500" placeholder="Escreva do seu jeito"></textarea>
+      </label>
+      <input type="hidden" name="pagina" data-pagina />
+      <label class="escondido" aria-hidden="true">Deixe em branco <input name="site" tabindex="-1" autocomplete="off" /></label>
+      <button type="submit">Enviar sugestão</button>
+      <p class="retorno" role="status" aria-live="polite" data-retorno></p>
+    </form>
+    <p class="alternativa">Depois de enviada, a sugestão não pode ser vista nem editada. Não pedimos nem guardamos nenhum dado seu.</p>
+  </div>
+</Base>
+<script>
+  const form = document.querySelector<HTMLFormElement>("[data-form]")!;
+  const retorno = document.querySelector<HTMLElement>("[data-retorno]")!;
+  const pagina = document.querySelector<HTMLInputElement>("[data-pagina]")!;
+  const inicio = Date.now();
+  pagina.value = new URLSearchParams(location.search).get("de") ?? document.referrer ?? "";
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const dados = Object.fromEntries(new FormData(form));
+    if (String(dados.mensagem ?? "").trim().length < 10) {
+      retorno.textContent = "Conte um pouco mais (pelo menos 10 letras).";
+      return;
+    }
+    const botao = form.querySelector("button")!;
+    botao.disabled = true;
+    retorno.textContent = "Enviando…";
+    try {
+      const r = await fetch("/api/sugestao", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...dados, inicio }) });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.ok) {
+        form.reset();
+        retorno.textContent = "Recebido, obrigado! Sua sugestão foi enviada.";
+      } else if (j.erro === "indisponivel" || r.status === 404) {
+        retorno.textContent = "O envio de sugestões ainda não está ativo. Tente de novo em breve.";
+      } else retorno.textContent = j.erro ?? "Não deu certo. Tente de novo em alguns minutos.";
+    } catch {
+      retorno.textContent = "Sem conexão. Tente de novo em alguns minutos.";
+    } finally {
+      botao.disabled = false;
+    }
+  });
+</script>
+<style>
+  .pagina-sugestao { max-width: 40rem; padding-bottom: 3rem; }
+  h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 6vw, 3.2rem); color: var(--dado); margin: 2rem 0 0.6rem; }
+  .intro { color: var(--tinta-suave); font-size: 1.1rem; }
+  form { display: grid; gap: 1rem; margin-top: 1.5rem; }
+  label { display: grid; gap: 0.3rem; font-weight: 600; }
+  select, textarea { font: inherit; font-weight: 400; padding: 0.7rem 0.9rem; border: 2px solid var(--linha); border-radius: 10px; background: var(--folha); color: var(--tinta); }
+  select:focus, textarea:focus { outline: none; border-color: var(--dado); }
+  button { justify-self: start; font: inherit; font-weight: 700; padding: 0.75rem 1.4rem; border-radius: 999px; border: 0; background: var(--dado); color: var(--folha); cursor: pointer; }
+  button:disabled { opacity: 0.6; }
+  .escondido { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .retorno { min-height: 1.5rem; margin: 0; font-weight: 600; }
+  .alternativa { margin-top: 2rem; color: var(--grafite); font-size: 0.9rem; }
+</style>
