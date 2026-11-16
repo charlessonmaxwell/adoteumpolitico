@@ -14,7 +14,7 @@ on:
   # Mudança no visual ou nos textos do site
   push:
     branches: [main]
-    paths: ["site/**", "astro.config.mjs", "package.json", "pnpm-lock.yaml"]
+    paths: ["site/**", "functions/**", "astro.config.mjs", "package.json", "pnpm-lock.yaml"]
   workflow_dispatch:
 
 permissions:

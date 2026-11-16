@@ -1,9 +1,11 @@
-/* global fetch, Response, crypto, TextEncoder, btoa */
+/* global fetch, Response, crypto, TextEncoder, btoa, URLSearchParams */
 /**
- * Recebe o formulário "Achou um erro?" e abre uma issue no GitHub (Cloudflare Pages Function, plano grátis).
- * Não guarda IP, e-mail nem nada pessoal. Segredo: ERROS_GITHUB_TOKEN (fine-grained, só "Issues: write" no repositório).
+ * Recebe o formulário "Achou um erro?" e repassa para um Google Form (Cloudflare Pages Function, plano grátis).
+ * Respostas na planilha "Erros - Adote um Político". O visitante só envia; não guarda IP, e-mail nem nada pessoal.
+ * Valores públicos (aparecem no próprio link do Form); ERROS_FORM_ID / ERROS_CAMPOS no Cloudflare só sobrescrevem.
  */
-const REPO = "charlessonmaxwell/adoteumpolitico";
+const FORM_ID = "1FAIpQLSdHmsx3WJO5lGhkvo4kYZLClm_jgn0VK9GW3ffsv_0OPIfssA";
+const CAMPOS = "entry.447320788,entry.1904711986,entry.1994705230"; // tipo, mensagem, página
 const json = (status, corpo) =>
   new Response(JSON.stringify(corpo), {
     status,
@@ -13,7 +15,6 @@ const limpar = (s, max) =>
   String(s ?? "")
     // eslint-disable-next-line no-control-regex -- remove caracteres de controle
     .replace(/[\u0000-\u0008\u000b-\u001f]/g, "")
-    .replace(/@/g, "@​") // não notifica ninguém por menção
     .trim()
     .slice(0, max);
 
@@ -57,23 +58,19 @@ export async function onRequestPost({ request, env }) {
   const tipo = limpar(d.tipo, 60) || "Outro";
   if (mensagem.length < 10)
     return json(400, { ok: false, erro: "Conte um pouco mais (pelo menos 10 letras)." });
-  if (!env.ERROS_GITHUB_TOKEN) return json(503, { ok: false, erro: "indisponivel" });
-
-  const r = await fetch(`https://api.github.com/repos/${REPO}/issues`, {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${env.ERROS_GITHUB_TOKEN}`,
-      accept: "application/vnd.github+json",
-      "user-agent": "adoteumpolitico-formulario",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      title: `[Visitante] ${tipo}: ${mensagem.slice(0, 60)}${mensagem.length > 60 ? "…" : ""}`,
-      body: `**Página:** ${pagina || "não informada"}\n**Tipo:** ${tipo}\n\n${mensagem}\n\n---\n_Enviado pelo formulário "Achou um erro?" do site. Nenhum dado pessoal é coletado._`,
-      labels: ["erro-reportado"],
-    }),
-  });
-  if (!r.ok)
+  const campos = String(env.ERROS_CAMPOS || CAMPOS)
+    .split(",")
+    .map((c) => c.trim());
+  const formId = env.ERROS_FORM_ID || FORM_ID;
+  const corpo = new URLSearchParams();
+  corpo.append(campos[0], tipo);
+  corpo.append(campos[1], mensagem);
+  corpo.append(campos[2], pagina);
+  const r = await fetch(
+    `https://docs.google.com/forms/d/e/${encodeURIComponent(formId)}/formResponse`,
+    { method: "POST", body: corpo, redirect: "manual" },
+  );
+  if (r.status >= 400)
     return json(502, {
       ok: false,
       erro: "Não conseguimos registrar agora. Tente de novo em alguns minutos.",

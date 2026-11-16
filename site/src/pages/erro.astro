@@ -28,7 +28,7 @@ import Base from "../layouts/Base.astro";
       <button type="submit">Enviar aviso</button>
       <p class="retorno" role="status" aria-live="polite" data-retorno></p>
     </form>
-    <p class="alternativa">Prefere acompanhar a correção? Abra um aviso direto no <a href="https://github.com/charlessonmaxwell/adoteumpolitico/issues/new" rel="external noopener" target="_blank">GitHub</a> (precisa de conta).</p>
+    <p class="alternativa">Depois de enviado, o aviso não pode ser visto nem editado. Não pedimos nem guardamos nenhum dado seu.</p>
   </div>
 </Base>
 <script>
@@ -54,7 +54,7 @@ import Base from "../layouts/Base.astro";
         form.reset();
         retorno.textContent = "Recebido! Obrigado por ajudar a deixar os dados certos.";
       } else if (j.erro === "indisponivel" || r.status === 404) {
-        retorno.innerHTML = 'O envio pelo site ainda não está ativo. Use o link do GitHub abaixo, por favor.';
+        retorno.textContent = "O envio ainda não está ativo. Tente de novo em breve.";
       } else retorno.textContent = j.erro ?? "Não deu certo. Tente de novo em alguns minutos.";
     } catch {
       retorno.textContent = "Sem conexão. Tente de novo em alguns minutos.";
