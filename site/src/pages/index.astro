@@ -2,9 +2,13 @@
 import Base from "../layouts/Base.astro";
 import Busca from "../components/Busca.astro";
 import Icone from "../components/Icone.astro";
+import HomeNova from "../components/HomeNova.astro";
+import { ligado } from "../lib/flags";
 import { dados } from "../lib/dados";
 import { UFS, dataBr } from "../lib/formato";
 const { resumos, meta } = dados();
+/** Chave HOME_NOVA no GitHub (Settings › Variables), lida na hora de gerar o site. */
+const homeNova = ligado(import.meta.env.PUBLIC_HOME_NOVA);
 const deputados = resumos.filter((r) => r.parlamentar.casa === "camara").length;
 const senadores = resumos.length - deputados;
 const porUf = new Map<string, number>();
@@ -12,6 +16,10 @@ for (const r of resumos) porUf.set(r.parlamentar.uf, (porUf.get(r.parlamentar.uf
 const ufs = Object.entries(UFS).sort(([, a], [, b]) => a.localeCompare(b, "pt-BR"));
 ---
 <Base titulo="Adote um Político: o que seu deputado e seu senador fazem" descricao="Veja em linguagem simples se seu deputado e seu senador vão às sessões, quanto gastam, o que propõem e como votam. Dados oficiais, sem nota nem ranking.">
+  {/* Chave HOME_NOVA: ligada mostra a nova abertura; desligada mantém a versão de sempre. */}
+  {homeNova ? (
+    <HomeNova porUf={porUf} />
+  ) : (
   <section class="abertura">
     <div class="conteiner abertura-in">
       <div class="chamada">
@@ -22,6 +30,7 @@ const ufs = Object.entries(UFS).sort(([, a], [, b]) => a.localeCompare(b, "pt-BR
       <div id="busca"><Busca grande /><p class="porta-cidade"><a href="/cidades/">Ou veja quanto de emenda chegou na sua cidade →</a></p></div>
     </div>
   </section>
+  )}
 
   <section class="conteiner bloco-ufs" aria-labelledby="titulo-ufs">
     <h2 id="titulo-ufs"><Icone nome="mapa" /> Ou escolha seu estado</h2>

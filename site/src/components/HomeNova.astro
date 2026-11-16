@@ -1,0 +1,184 @@
+---
+/**
+ * Nova abertura da página inicial: busca no centro, com três abas
+ * (Deputado ou senador / Meu estado / Minha cidade). Só aparece com a chave HOME_NOVA ligada.
+ */
+import Busca from "./Busca.astro";
+import { UFS } from "../lib/formato";
+interface Props {
+  /** Quantos parlamentares cada estado tem (UF → total). */
+  porUf: Map<string, number>;
+}
+const { porUf } = Astro.props;
+const ufs = Object.keys(UFS).sort();
+---
+<section class="abertura-nova">
+  <div class="conteiner centro">
+    <h1>Votou,<br class="so-celular" /> agora fiscalize e cobre.</h1>
+    <p class="lema">Político não é time de futebol: <strong>não é pra torcer, é pra cobrar.</strong></p>
+
+    <div class="caixa" data-home-nova>
+      <div class="abas" role="group" aria-label="O que você quer fiscalizar">
+        <button type="button" class="aba" aria-pressed="true" data-aba="politico">Deputado ou senador</button>
+        <button type="button" class="aba" aria-pressed="false" data-aba="estado">Meu estado</button>
+        <button type="button" class="aba" aria-pressed="false" data-aba="cidade">Minha cidade (emendas)</button>
+      </div>
+
+      <div class="painel" data-painel="politico" id="busca">
+        <Busca grande semRotulo botao="Fiscalizar" />
+        <p class="dica">Não lembra o nome? <button type="button" class="link" data-ir="estado">Veja todos do seu estado</button></p>
+      </div>
+
+      <div class="painel" data-painel="estado" hidden>
+        <div class="quadro">
+          <p class="titulo-quadro" id="titulo-estado">Toque no seu estado</p>
+          <div class="siglas" role="group" aria-labelledby="titulo-estado">
+            {ufs.map((uf) => (
+              <button type="button" class="sigla" aria-pressed="false" data-uf={uf} data-nome={UFS[uf]} data-total={porUf.get(uf) ?? 0} title={UFS[uf]}>{uf}</button>
+            ))}
+          </div>
+          <a class="acao" href="#" aria-disabled="true" data-ver-estado>Escolha um estado</a>
+        </div>
+        <p class="dica">Você vê todos os deputados federais e senadores do estado, lado a lado.</p>
+      </div>
+
+      <div class="painel" data-painel="cidade" hidden>
+        <div class="campo-cidade">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.4-4.4" /></svg>
+          <label for="campo-cidade" class="sr">Sua cidade</label>
+          <input id="campo-cidade" type="search" autocomplete="off" placeholder="Digite o nome da sua cidade" aria-controls="cidades-achadas" data-cidade />
+          <button type="button" class="botao-acao" data-ver-cidade>Ver emendas</button>
+        </div>
+        <ul id="cidades-achadas" class="cidades" aria-live="polite" data-cidades></ul>
+        <p class="dica" data-sem-cidade hidden>Não achamos essa cidade. Confira se está escrita certinho.</p>
+        <p class="dica">Você vê quanto dinheiro de emenda chegou, qual político mandou e para onde foi.</p>
+      </div>
+    </div>
+
+    <ul class="itens">
+      <li><strong>Presença</strong> · vai trabalhar?</li>
+      <li><strong>Gastos</strong> · quanto custa?</li>
+      <li><strong>Votos</strong> · como votou?</li>
+      <li><strong>Propostas</strong> · o que propõe?</li>
+    </ul>
+  </div>
+</section>
+<script>
+  const raiz = document.querySelector<HTMLElement>("[data-home-nova]")!;
+  const abas = [...raiz.querySelectorAll<HTMLButtonElement>("[data-aba]")];
+  const paineis = [...raiz.querySelectorAll<HTMLElement>("[data-painel]")];
+
+  function abrir(nome: string) {
+    for (const a of abas) a.setAttribute("aria-pressed", String(a.dataset.aba === nome));
+    for (const p of paineis) p.hidden = p.dataset.painel !== nome;
+  }
+  for (const a of abas) a.addEventListener("click", () => abrir(a.dataset.aba!));
+  raiz.querySelector<HTMLButtonElement>("[data-ir]")?.addEventListener("click", (e) => abrir((e.currentTarget as HTMLElement).dataset.ir!));
+
+  // Meu estado: escolhe a sigla, o botão diz o que vai acontecer
+  const ver = raiz.querySelector<HTMLAnchorElement>("[data-ver-estado]")!;
+  const siglas = [...raiz.querySelectorAll<HTMLButtonElement>("[data-uf]")];
+  for (const s of siglas) {
+    s.addEventListener("click", () => {
+      for (const o of siglas) o.setAttribute("aria-pressed", String(o === s));
+      const total = Number(s.dataset.total);
+      ver.href = `/uf/${s.dataset.uf!.toLowerCase()}/`;
+      ver.textContent = `Ver os ${total} políticos de ${s.dataset.nome}`;
+      ver.removeAttribute("aria-disabled");
+    });
+  }
+  ver.addEventListener("click", (e) => {
+    if (ver.hasAttribute("aria-disabled")) e.preventDefault();
+  });
+
+  // Minha cidade: sugestões enquanto digita (lista baixada só quando a pessoa usa)
+  const campo = raiz.querySelector<HTMLInputElement>("[data-cidade]")!;
+  const lista = raiz.querySelector<HTMLUListElement>("[data-cidades]")!;
+  const nada = raiz.querySelector<HTMLElement>("[data-sem-cidade]")!;
+  const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").trim();
+  let cidades: [string, string, string][] | null = null;
+  const carregar = async () => (cidades ??= await (await fetch("/cidades.json")).json());
+  campo.addEventListener("focus", carregar, { once: true });
+  campo.addEventListener("input", async () => {
+    const q = norm(campo.value);
+    const todas = await carregar();
+    lista.replaceChildren();
+    if (q.length < 2) return void (nada.hidden = true);
+    const achadas = todas
+      .map((c) => ({ c, n: norm(c[1]) }))
+      .filter((x) => x.n.includes(q))
+      .sort((a, b) => Number(!a.n.startsWith(q)) - Number(!b.n.startsWith(q)) || a.n.length - b.n.length)
+      .slice(0, 6);
+    nada.hidden = achadas.length > 0;
+    for (const { c } of achadas) {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = `/cidade/${c[0]}/`;
+      const nome = document.createElement("span");
+      nome.textContent = c[1];
+      const uf = document.createElement("span");
+      uf.className = "uf";
+      uf.textContent = c[2];
+      a.append(nome, uf);
+      li.append(a);
+      lista.append(li);
+    }
+  });
+  campo.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") lista.querySelector("a")?.click();
+  });
+  raiz.querySelector("[data-ver-cidade]")!.addEventListener("click", () => {
+    const primeira = lista.querySelector("a");
+    if (primeira) primeira.click();
+    else campo.focus();
+  });
+</script>
+<style>
+  .abertura-nova { background: var(--folha); border-bottom: 1px solid var(--linha); }
+  .centro { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 1.2rem; padding-block: 3rem 3.5rem; }
+  @media (min-width: 60rem) { .centro { padding-block: 4.5rem; } }
+  h1 { font-family: var(--numeros); font-stretch: 78%; font-weight: 800; font-size: clamp(2.8rem, 7vw, 5.2rem); line-height: 0.95; letter-spacing: -0.02em; margin: 0; color: var(--dado); }
+  .so-celular { display: none; }
+  @media (max-width: 600px) { .so-celular { display: inline; } }
+  .lema { font-size: 1.25rem; line-height: 1.4; margin: 0; color: var(--tinta); }
+  .lema strong { font-weight: 650; }
+
+  .caixa { width: 100%; max-width: 52rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.9rem; margin-top: 0.6rem; }
+  .abas { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+  .aba { min-height: 2.9rem; padding: 0 1.3rem; border-radius: 999px; border: 2px solid var(--linha); background: var(--folha); color: var(--tinta); font: inherit; font-weight: 700; cursor: pointer; }
+  .aba[aria-pressed="true"] { background: var(--dado); border-color: var(--dado); color: var(--folha); }
+  @media (max-width: 600px) { .abas { flex-direction: column; } .aba { width: 100%; border-radius: 12px; } }
+
+  .painel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.6rem; text-align: left; }
+  .painel[hidden] { display: none; }
+  .painel :global(.busca) { max-width: none; grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: 600px) { .painel :global(.botao-busca), .botao-acao { padding: 0.75rem 1rem; font-size: 1rem; } }
+  .painel :global(.busca .dica) { text-align: center; }
+  .painel :global(.busca .campo) { border-color: var(--dado); }
+  .dica { margin: 0; color: var(--grafite); font-size: 0.95rem; text-align: center; }
+  .link { border: 0; background: none; padding: 0; font: inherit; color: var(--acento-texto); text-decoration: underline; cursor: pointer; }
+
+  .quadro { display: grid; gap: 0.9rem; padding: 1.2rem; border: 2px solid var(--dado); border-radius: 14px; }
+  .titulo-quadro { margin: 0; font-weight: 700; }
+  .siglas { display: grid; grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr)); gap: 0.4rem; }
+  .sigla { min-height: 2.75rem; border-radius: 10px; border: 2px solid var(--linha); background: var(--folha); color: var(--tinta); font-family: var(--numeros); font-weight: 800; font-size: 1rem; cursor: pointer; }
+  .sigla[aria-pressed="true"] { background: var(--dado); border-color: var(--dado); color: var(--folha); }
+  .acao, .botao-acao { justify-self: center; padding: 0.85rem 1.6rem; border: 0; border-radius: 10px; background: #c2410c; color: #fff; font: inherit; font-weight: 700; font-size: 1.1rem; text-decoration: none; text-align: center; cursor: pointer; }
+  .acao:hover, .botao-acao:hover { background: #9a3412; }
+  .acao[aria-disabled="true"] { background: var(--trilho); color: var(--grafite); cursor: default; }
+
+  .campo-cidade { display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0.35rem 0.35rem 1rem; background: var(--folha); border: 2px solid var(--dado); border-radius: 14px; }
+  .campo-cidade svg { width: 1.4rem; color: var(--grafite); flex: none; }
+  .campo-cidade input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; font-size: 1.2rem; color: var(--tinta); padding: 0.8rem 0; outline: none; }
+  .campo-cidade:focus-within { box-shadow: 0 0 0 4px var(--dado-fundo); }
+  .cidades { list-style: none; margin: 0; padding: 0; border-radius: 12px; overflow: hidden; }
+  .cidades:not(:empty) { border: 1px solid var(--linha); }
+  .cidades :global(a) { display: flex; justify-content: space-between; padding: 0.8rem 1rem; border-top: 1px solid var(--linha); color: var(--tinta); text-decoration: none; font-weight: 600; }
+  .cidades :global(li:first-child a) { border-top: 0; }
+  .cidades :global(a:hover), .cidades :global(a:focus-visible) { background: var(--dado-fundo); outline: none; }
+  .cidades :global(.uf) { color: var(--grafite); font-weight: 400; }
+
+  .itens { list-style: none; margin: 1rem 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem 2rem; color: var(--tinta-suave); }
+  .itens strong { color: var(--acento-texto); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
