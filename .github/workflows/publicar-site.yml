@@ -125,7 +125,7 @@ jobs:
           PUBLIC_PIX_CHAVE: ${{ vars.PIX_CHAVE }}
           PUBLIC_PIX_NOME: ${{ vars.PIX_NOME }}
           PUBLIC_PIX_CIDADE: ${{ vars.PIX_CIDADE }}
-          # Chave da nova página inicial: variável HOME_NOVA (true = nova, vazio/false = atual)
+          # Chave da página inicial: variável HOME_NOVA (vazia/true = nova, false = antiga)
           PUBLIC_HOME_NOVA: ${{ vars.HOME_NOVA }}
         run: pnpm site:build
 

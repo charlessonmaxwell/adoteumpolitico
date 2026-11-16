@@ -7,3 +7,8 @@
 export function ligado(valor: string | undefined | null): boolean {
   return ["true", "1", "sim", "ligado", "on"].includes((valor ?? "").trim().toLowerCase());
 }
+
+/** Como `ligado`, mas com um valor padrão quando a variável está vazia ou não existe. */
+export function chave(valor: string | undefined | null, padrao: boolean): boolean {
+  return (valor ?? "").trim() === "" ? padrao : ligado(valor);
+}

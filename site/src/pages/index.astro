@@ -3,12 +3,12 @@ import Base from "../layouts/Base.astro";
 import Busca from "../components/Busca.astro";
 import Icone from "../components/Icone.astro";
 import HomeNova from "../components/HomeNova.astro";
-import { ligado } from "../lib/flags";
+import { chave } from "../lib/flags";
 import { dados } from "../lib/dados";
 import { UFS, dataBr } from "../lib/formato";
 const { resumos, meta } = dados();
-/** Chave HOME_NOVA no GitHub (Settings › Variables), lida na hora de gerar o site. */
-const homeNova = ligado(import.meta.env.PUBLIC_HOME_NOVA);
+/** Chave HOME_NOVA no GitHub (Settings › Variables). Sem variável = versão nova; "false" = versão antiga. */
+const homeNova = chave(import.meta.env.PUBLIC_HOME_NOVA, true);
 const deputados = resumos.filter((r) => r.parlamentar.casa === "camara").length;
 const senadores = resumos.length - deputados;
 const porUf = new Map<string, number>();
