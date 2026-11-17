@@ -1,8 +1,8 @@
 ---
 /** Caixa de busca com resultado enquanto digita. O índice (~45 KB) vai junto na página. */
-import { dados } from "../lib/dados";
+import { dados, projetos } from "../lib/dados";
 import { UFS } from "../lib/formato";
-import type { ItemBusca } from "../lib/busca";
+import type { ItemBusca, ProjetoBusca } from "../lib/busca";
 interface Props {
   grande?: boolean;
   /** Texto do botão dentro da caixa (ex.: "Fiscalizar"). Sem ele, a caixa fica como antes. */
@@ -20,49 +20,70 @@ const indice: ItemBusca[] = dados().resumos.map(({ parlamentar: p }) => ({
   casa: p.casa,
   foto: p.urlFoto,
 }));
+const indiceProjetos: ProjetoBusca[] = projetos().map((p) => ({ id: p.id, titulo: p.titulo, ementa: p.ementa, casa: p.casa }));
+const json = (v: unknown) => JSON.stringify(v).replace(/</g, "\\u003c");
 ---
 <div class:list={["busca", { grande }]} data-busca>
   <label for="campo-busca" class:list={["rotulo", { sr: semRotulo }]}>Quem você quer fiscalizar?</label>
   <div class="campo">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.4-4.4" /></svg>
-    <input id="campo-busca" type="search" autocomplete="off" spellcheck="false" placeholder="Nome, estado ou partido" aria-describedby="dica-busca" aria-controls="resultados-busca" />
+    <input id="campo-busca" type="search" autocomplete="off" spellcheck="false" placeholder="Nome, estado, partido ou projeto" aria-describedby="dica-busca" aria-controls="resultados-busca" />
     {botao && <button type="button" class="botao-busca" data-botao-busca>{botao}</button>}
   </div>
-  <p id="dica-busca" class="dica">Pode errar a grafia, a gente acha. Exemplo: "Danilo Fort" ou "Sergipe".</p>
+  <p id="dica-busca" class="dica">Pode errar a grafia, a gente acha. Exemplo: "Danilo Fort", "Sergipe" ou "cartão de crédito".</p>
   <ul id="resultados-busca" class="resultados" role="list" aria-live="polite"></ul>
-  <script type="application/json" id="indice-busca" set:html={JSON.stringify(indice).replace(/</g, "\\u003c")} />
+  <script type="application/json" id="indice-busca" set:html={json(indice)} />
+  <script type="application/json" id="indice-projetos" set:html={json(indiceProjetos)} />
+  <script type="application/json" id="indice-ufs" set:html={json(UFS)} />
 </div>
 <script>
-  import { buscar, type ItemBusca } from "../lib/busca";
+  import { buscar, buscarEstados, buscarProjetos, type ItemBusca, type ProjetoBusca } from "../lib/busca";
   const raiz = document.querySelector<HTMLElement>("[data-busca]")!;
   const campo = raiz.querySelector<HTMLInputElement>("input")!;
   const lista = raiz.querySelector<HTMLUListElement>(".resultados")!;
   const indice = JSON.parse(document.getElementById("indice-busca")!.textContent!) as ItemBusca[];
+  const projetos = JSON.parse(document.getElementById("indice-projetos")!.textContent!) as ProjetoBusca[];
+  const ufs = JSON.parse(document.getElementById("indice-ufs")!.textContent!) as Record<string, string>;
   const cargo = (c: string) => (c === "camara" ? "Deputado(a)" : "Senador(a)");
 
+  function item(href: string, titulo: string, detalhe: string) {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = href;
+    const forte = document.createElement("strong");
+    forte.textContent = titulo;
+    const meta = document.createElement("span");
+    meta.textContent = detalhe;
+    a.append(forte, meta);
+    li.append(a);
+    return li;
+  }
+  function grupo(nome: string) {
+    const li = document.createElement("li");
+    li.className = "grupo";
+    li.textContent = nome;
+    return li;
+  }
   function mostrar() {
     const q = campo.value;
-    const achados = buscar(indice, q);
+    const estados = buscarEstados(ufs, q);
+    const pessoas = buscar(indice, q, estados.length ? 8 : 12);
+    const projs = buscarProjetos(projetos, q);
     lista.replaceChildren();
-    if (q.trim() && !achados.length) {
+    if (q.trim() && !estados.length && !pessoas.length && !projs.length) {
       const li = document.createElement("li");
       li.className = "nada";
-      li.textContent = "Não achamos ninguém com esse nome. Tente só o sobrenome ou o estado.";
+      li.textContent = "Não achamos nada com isso. Tente só o sobrenome, o estado ou uma palavra do projeto.";
       lista.append(li);
       return;
     }
-    for (const r of achados) {
-      const li = document.createElement("li");
-      const a = document.createElement("a");
-      a.href = `/p/${r.id}/`;
-      const nome = document.createElement("strong");
-      nome.textContent = r.nome;
-      const meta = document.createElement("span");
-      meta.textContent = `${cargo(r.casa)}, ${r.partido}, ${r.estado}`;
-      a.append(nome, meta);
-      li.append(a);
-      lista.append(li);
-    }
+    for (const e of estados)
+      lista.append(item(`/uf/${e.uf.toLowerCase()}/`, e.estado, `Ver todos os deputados e senadores de ${e.estado}`));
+    if (pessoas.length && (estados.length || projs.length)) lista.append(grupo("Políticos"));
+    for (const r of pessoas) lista.append(item(`/p/${r.id}/`, r.nome, `${cargo(r.casa)}, ${r.partido}, ${r.estado}`));
+    if (projs.length) lista.append(grupo("Projetos votados"));
+    for (const p of projs)
+      lista.append(item(`/projeto/${p.id}/`, p.titulo, `${p.ementa} (${p.casa === "camara" ? "Câmara" : "Senado"})`));
   }
   campo.addEventListener("input", mostrar);
   campo.addEventListener("keydown", (e) => {
@@ -93,5 +114,6 @@ const indice: ItemBusca[] = dados().resumos.map(({ parlamentar: p }) => ({
   .resultados :global(a) { display: grid; padding: 0.7rem 0.9rem; background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; text-decoration: none; color: var(--tinta); }
   .resultados :global(a:hover), .resultados :global(a:focus-visible) { border-color: var(--dado); outline: none; box-shadow: 0 0 0 3px var(--dado-fundo); }
   .resultados :global(span) { color: var(--grafite); font-size: 0.9rem; }
+  .resultados :global(.grupo) { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--grafite); padding: 0.4rem 0 0; }
   .resultados :global(.nada) { color: var(--grafite); padding: 0.5rem 0; }
 </style>

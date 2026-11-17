@@ -110,3 +110,87 @@ export function buscar(itens: ItemBusca[], consulta: string, limite = 12): ItemB
     .slice(0, limite)
     .map((r) => r.item);
 }
+
+/** Projeto votado no índice da busca (título + resumo curto). */
+export interface ProjetoBusca {
+  id: string;
+  titulo: string;
+  ementa: string;
+  casa: "camara" | "senado";
+}
+
+/** Estados batem pelo nome ou pela sigla ("ce", "ceara", "rio gra"). */
+export function buscarEstados(
+  ufs: Record<string, string>,
+  consulta: string,
+): { uf: string; estado: string }[] {
+  const q = normalizar(consulta);
+  if (!q) return [];
+  return Object.entries(ufs)
+    .filter(([uf, estado]) => {
+      const n = normalizar(estado);
+      return (
+        q === uf.toLowerCase() ||
+        (q.length >= 3 &&
+          (n.startsWith(q) ||
+            Math.min(
+              distancia(q, n, tolerancia(q)),
+              distancia(q, n.slice(0, q.length), tolerancia(q)),
+            ) <= tolerancia(q)))
+      );
+    })
+    .map(([uf, estado]) => ({ uf, estado }))
+    .slice(0, 3);
+}
+
+const PALAVRAS_VAZIAS = new Set([
+  "de",
+  "da",
+  "do",
+  "das",
+  "dos",
+  "e",
+  "a",
+  "o",
+  "as",
+  "os",
+  "em",
+  "no",
+  "na",
+  "para",
+  "por",
+  "com",
+]);
+
+/** Projetos: número ("pl 186", "186/2026") ou palavras do assunto ("cartao credito"). */
+export function buscarProjetos(
+  itens: ProjetoBusca[],
+  consulta: string,
+  limite = 5,
+): ProjetoBusca[] {
+  const termos = normalizar(consulta)
+    .split(" ")
+    .filter((t) => t && !PALAVRAS_VAZIAS.has(t));
+  if (!termos.length || (termos.length === 1 && termos[0]!.length < 3 && !/\d/.test(termos[0]!)))
+    return [];
+  const resultados: { item: ProjetoBusca; pontos: number }[] = [];
+  for (const item of itens) {
+    const titulo = normalizar(item.titulo).split(" ");
+    const palavras = [...titulo, ...normalizar(item.ementa).split(" ")];
+    let total = 0;
+    let ok = true;
+    for (const t of termos) {
+      const s = /\d/.test(t) ? (titulo.includes(t) ? 0 : null) : pontuarTermo(t, palavras);
+      if (s === null) {
+        ok = false;
+        break;
+      }
+      total += s;
+    }
+    if (ok) resultados.push({ item, pontos: total });
+  }
+  return resultados
+    .sort((a, b) => a.pontos - b.pontos)
+    .slice(0, limite)
+    .map((r) => r.item);
+}
