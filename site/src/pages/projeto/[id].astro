@@ -49,17 +49,17 @@ const titulo = `${proj.titulo}: como votaram os ${quem}`;
     <p class="casa">{casa}</p>
     <h1>{proj.titulo}</h1>
     <div class="compartilhar-proj"><Compartilhar texto={`${proj.titulo.replace(/\s*\(.*\)$/, "")}: veja como votou cada ${proj.casa === "camara" ? "deputado" : "senador"} do seu estado e fiscalize:`} url={new URL(`/projeto/${proj.id}/`, Astro.site).toString()} /></div>
-    {proj.ementa && (
-      <div class="oficial">
-        <p class="rotulo-oficial">Texto oficial (como está no Congresso)</p>
-        <p class="ementa">{proj.ementa}</p>
+    {proj.explicacao && (
+      <div class="explicacao">
+        <p class="rotulo-explicacao">Explicando de um jeito simples</p>
+        <p class="texto-explicacao">{proj.explicacao}</p>
+        <p class="selo-ia">Explicação feita por inteligência artificial a partir do texto oficial.</p>
       </div>
     )}
-    {proj.explicacao && (
-      <details class="explicacao">
-        <summary>Não entendeu? Veja a explicação simples</summary>
-        <p>{proj.explicacao}</p>
-        <p class="selo-ia">Explicação feita por inteligência artificial a partir do texto oficial acima.</p>
+    {proj.ementa && (
+      <details class="oficial" open={!proj.explicacao}>
+        <summary>Ver o texto oficial (como está no Congresso)</summary>
+        <p class="ementa">{proj.ementa}</p>
       </details>
     )}
 
@@ -151,12 +151,14 @@ const titulo = `${proj.titulo}: como votaram os ${quem}`;
   .compartilhar-proj { margin: 0 0 1.2rem; }
   .casa { margin: 0; color: var(--grafite); font-weight: 600; }
   h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1; margin: 0.2rem 0 0.8rem; color: var(--dado); }
-  .explicacao { background: var(--folha); border-left: 5px solid var(--dado); border-radius: 10px; padding: 1rem 1.3rem; margin: 0 0 1.2rem; max-width: 70ch; }
-  .explicacao summary { cursor: pointer; font-weight: 700; color: var(--dado); }
-  .explicacao p { margin: 0.6rem 0 0; font-size: 1.15rem; }
-  .explicacao .selo-ia { margin-top: 0.6rem; font-size: 0.85rem; color: var(--grafite); }
-  .rotulo-oficial { margin: 0 0 0.2rem; font-size: 0.85rem; font-weight: 700; color: var(--grafite); text-transform: uppercase; letter-spacing: 0.03em; }
-  .ementa { font-size: 1.15rem; max-width: 65ch; color: var(--tinta-suave); margin: 0 0 1.5rem; }
+  .explicacao { background: var(--folha); border: 1px solid var(--linha); border-left: 5px solid var(--dado); border-radius: 10px; padding: 1.3rem 1.4rem; margin: 0 0 1rem; }
+  .rotulo-explicacao { margin: 0; font-weight: 700; color: var(--dado); }
+  .texto-explicacao { margin: 0.5rem 0 0; font-size: 1.15rem; line-height: 1.55; }
+  .explicacao .selo-ia { margin: 0.6rem 0 0; font-size: 0.85rem; color: var(--grafite); }
+  .oficial { margin: 0 0 1.5rem; }
+  .oficial .ementa { max-width: 90ch; }
+  .oficial summary { cursor: pointer; font-size: 0.95rem; font-weight: 600; color: var(--grafite); }
+  .ementa { font-size: 1.05rem; color: var(--tinta-suave); margin: 0.5rem 0 0; }
   h2 { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.35rem; margin: 0 0 0.8rem; }
   .caixa { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.3rem 1.4rem; margin-bottom: 1.5rem; }
   .o-que { margin: 0 0 0.4rem; }

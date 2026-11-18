@@ -102,6 +102,25 @@ describe("explicação popular — orquestração", () => {
     expect(chamadas).toHaveLength(2);
     expect(r.contagem).toMatchObject({ reaproveitadas: 1, molde: 1, ia: 2, falhas: 0 });
   });
+  it("molde antigo é refeito com o molde atual", async () => {
+    const c = proj("camara-5", "PL 5/2024", "Institui o Dia Nacional do Forró.");
+    const r = await explicarProjetos([c], {
+      anteriores: new Map([
+        [
+          "camara-5",
+          {
+            ...c,
+            explicacao: "Molde velho.",
+            explicacaoBase: baseDe(c),
+            explicacaoOrigem: "molde" as const,
+          },
+        ],
+      ]),
+      ia: null,
+    });
+    expect(r.projetos[0]!.explicacao).toContain("data no calendário");
+    expect(r.contagem).toMatchObject({ reaproveitadas: 0, molde: 1 });
+  });
   it("sem chave da IA: não quebra, deixa pendente", async () => {
     const r = await explicarProjetos([proj("camara-9", "PL 9/2024", "Algo novo.")], {
       anteriores: new Map(),
