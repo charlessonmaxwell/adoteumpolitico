@@ -21,8 +21,9 @@ export async function pendentes(dir: string) {
   let moldes = 0;
   for (const { arq, p } of await projetos(dir)) {
     const base = baseDe(p);
-    if (p.explicacao && p.explicacaoBase === base) continue;
+    if (p.explicacao && p.explicacaoBase === base && p.explicacaoOrigem !== "molde") continue;
     const m = moldeFixo(p);
+    if (m && m === p.explicacao && p.explicacaoBase === base) continue;
     if (m) {
       await gravar(arq, { ...p, explicacao: m, explicacaoBase: base, explicacaoOrigem: "molde" });
       moldes++;

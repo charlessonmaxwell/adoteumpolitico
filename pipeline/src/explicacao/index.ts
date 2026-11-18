@@ -55,19 +55,19 @@ export function moldeFixo(p: Pick<ProjetoVotado, "titulo" | "ementa" | "casa">):
   ) {
     const i = indicacao(p.ementa);
     if (!i) return null;
-    return `${quem} votaram a indicação de ${i.nome} para ${i.cargo}. A indicação vem de fora do Senado (do presidente da República ou de outro órgão), mas o Senado precisa aprovar.`;
+    return `${quem} votaram a indicação de ${i.nome} para ${i.cargo}. Esse nome não é escolhido pelo Senado: quem indica é o presidente da República ou outro órgão, conforme o cargo. Mas a pessoa só pode assumir se o Senado aprovar. Se a maioria votar não, a indicação cai e outro nome precisa ser indicado.`;
   }
   if (s === "PDL" && /^escolhe (o|a) senhora?/i.test(p.ementa)) {
     const i = indicacao(p.ementa);
     if (!i) return null;
-    return `${quem} votaram a escolha de ${i.nome} para ${i.cargo}. Essa vaga é indicada pelo Congresso.`;
+    return `${quem} votaram a escolha de ${i.nome} para ${i.cargo}. Essa vaga é preenchida por indicação do próprio Congresso, e não do presidente da República. A votação decide se o nome indicado fica com o cargo.`;
   }
   if (["REQ", "RQS"].includes(s)) {
     const alvo =
       /(?:Proposta de Emenda à Constituição|Projeto de Lei[^n]*|PEC|PL)\s*n?º?\s*[\d./]+/i.exec(
         p.ementa,
       )?.[0];
-    return `É um pedido sobre o andamento da votação${alvo ? ` (${alvo})` : ""}, como acelerar ou mudar a ordem. Não muda nenhuma lei por si só.`;
+    return `É um pedido sobre o andamento da votação${alvo ? ` (${alvo})` : ""}, como acelerar a análise ou mudar a ordem do que vai ser votado. Esse tipo de pedido não muda nenhuma lei por si só: ele decide quando e como o assunto entra em votação. O conteúdo do projeto é decidido depois, em outra votação.`;
   }
   if (
     /^institui (o|a)?\s*(dia|semana|mês|mes|ano)\b|\bcomo (o )?(dia|mês|mes|semana) (nacional )?d/i.test(
@@ -75,7 +75,7 @@ export function moldeFixo(p: Pick<ProjetoVotado, "titulo" | "ementa" | "casa">):
     ) &&
     p.ementa.length < 200
   ) {
-    return "Cria uma data no calendário oficial, para campanhas e conscientização. É uma lei simbólica: não cria benefício nem gasto direto.";
+    return "Cria uma data no calendário oficial do país, para lembrar um tema e incentivar campanhas de conscientização. É uma lei simbólica: não cria benefício, não muda direitos e não gera gasto direto. Na prática, escolas, órgãos públicos e entidades podem usar a data para fazer eventos e divulgar o assunto.";
   }
   return null;
 }
@@ -90,8 +90,9 @@ const PROIBIDAS =
 
 export const PROMPT = `Você explica projetos de lei do Congresso brasileiro para o povo, em português simples.
 Regras:
-- No máximo 3 frases curtas, até 450 caracteres no total.
-- Diga o que muda na prática e quem é afetado.
+- De 3 a 5 frases curtas, até 700 caracteres no total. Palavras do dia a dia; se usar um termo técnico, explique na mesma frase.
+- Diga o que é, o que muda na prática e quem é afetado. Quando o texto permitir, dê um exemplo do dia a dia.
+- Não encha linguiça: se o texto oficial for curto, a explicação pode ter 3 frases.
 - Sem opinião, sem adjetivos de valor (bom, ruim, polêmico, importante), sem citar partidos ou políticos.
 - Não invente: use só o que está no texto. Se o texto não disser o que muda, responda exatamente: SEM_INFORMACAO
 - Não repita o número do projeto. Responda só com a explicação, sem título.`;
@@ -109,7 +110,7 @@ export function chamarIAReal(chave: string, fetcher: typeof fetch = fetch): Cham
       },
       body: JSON.stringify({
         model: MODELO,
-        max_tokens: 300,
+        max_tokens: 600,
         system: PROMPT,
         messages: [{ role: "user", content: texto }],
       }),
@@ -142,7 +143,7 @@ export async function textoCompletoCamara(idProjeto: string): Promise<string | n
 /** Resposta da IA aceitável para publicar? */
 export function validarExplicacao(t: string): string | null {
   const s = t.replace(/\s+/g, " ").trim();
-  if (!s || s.includes("SEM_INFORMACAO") || s.length > 600 || PROIBIDAS.test(s)) return null;
+  if (!s || s.includes("SEM_INFORMACAO") || s.length > 900 || PROIBIDAS.test(s)) return null;
   return s;
 }
 
@@ -165,7 +166,8 @@ export async function explicarProjetos(
   for (const p of projetos) {
     const base = baseDe(p);
     const ant = o.anteriores.get(p.id);
-    if (ant?.explicacao && ant.explicacaoBase === base) {
+    // Molde é recalculado sempre (barato): assim uma mudança no molde chega a todos os projetos.
+    if (ant?.explicacao && ant.explicacaoBase === base && ant.explicacaoOrigem !== "molde") {
       saida.push({
         ...p,
         explicacao: ant.explicacao,
