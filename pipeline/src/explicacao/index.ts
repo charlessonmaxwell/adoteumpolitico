@@ -90,9 +90,10 @@ const PROIBIDAS =
 
 export const PROMPT = `Você explica projetos de lei do Congresso brasileiro para o povo, em português simples.
 Regras:
-- De 3 a 5 frases curtas, até 700 caracteres no total. Palavras do dia a dia; se usar um termo técnico, explique na mesma frase.
-- Diga o que é, o que muda na prática e quem é afetado. Quando o texto permitir, dê um exemplo do dia a dia.
-- Não encha linguiça: se o texto oficial for curto, a explicação pode ter 3 frases.
+- De 4 a 6 frases curtas, até 950 caracteres no total. Palavras do dia a dia; se usar um termo técnico, explique na mesma frase.
+- Diga o que é, o que muda na prática e quem é afetado.
+- Termine com um exemplo de aplicação no dia a dia, começando por "Por exemplo,": uma situação concreta de uma pessoa, família, empresa ou cidade que mostre a regra funcionando. O exemplo só pode ilustrar o que o texto diz; não invente valores, prazos ou regras.
+- Pedidos de procedimento (requerimentos, recursos) e indicações para cargos não precisam de exemplo.
 - Sem opinião, sem adjetivos de valor (bom, ruim, polêmico, importante), sem citar partidos ou políticos.
 - Não invente: use só o que está no texto. Se o texto não disser o que muda, responda exatamente: SEM_INFORMACAO
 - Não repita o número do projeto. Responda só com a explicação, sem título.`;
@@ -110,7 +111,7 @@ export function chamarIAReal(chave: string, fetcher: typeof fetch = fetch): Cham
       },
       body: JSON.stringify({
         model: MODELO,
-        max_tokens: 600,
+        max_tokens: 900,
         system: PROMPT,
         messages: [{ role: "user", content: texto }],
       }),
@@ -143,7 +144,7 @@ export async function textoCompletoCamara(idProjeto: string): Promise<string | n
 /** Resposta da IA aceitável para publicar? */
 export function validarExplicacao(t: string): string | null {
   const s = t.replace(/\s+/g, " ").trim();
-  if (!s || s.includes("SEM_INFORMACAO") || s.length > 900 || PROIBIDAS.test(s)) return null;
+  if (!s || s.includes("SEM_INFORMACAO") || s.length > 1100 || PROIBIDAS.test(s)) return null;
   return s;
 }
 
