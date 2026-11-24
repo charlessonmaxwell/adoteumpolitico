@@ -56,6 +56,43 @@ describe("explicação popular — moldes fixos", () => {
       moldeFixo(proj("c", "PL 2/2024", "Garante internação de jovens dependentes.")),
     ).toBeNull();
   });
+  it("todo molde termina com exemplo do dia a dia", () => {
+    const casos = [
+      proj(
+        "s1",
+        "MSF 37/2023",
+        "Submete à apreciação do Senado Federal a indicação do Senhor JOÃO DA SILVA, para exercer o cargo de Embaixador do Brasil no Chile.",
+        "senado",
+      ),
+      proj(
+        "c1",
+        "PDL 1/2024",
+        "Escolhe o Senhor JOÃO DA SILVA para exercer o cargo de Ministro do TCU.",
+      ),
+      proj("c2", "REQ 1/2024", "Requer urgência para o PL 2903/2023"),
+      proj("c3", "PL 1/2024", "Institui o Dia Nacional do Forró."),
+    ];
+    for (const c of casos) expect(moldeFixo(c)).toMatch(/Por exemplo, /);
+  });
+  it("molde de requerimento vale só para pedido de andamento (moção vai para a fila)", () => {
+    for (const e of [
+      "Requer calendário especial para a Proposta de Emenda à Constituição nº 8, de 2021.",
+      "Requer preferência para a votação da Emenda Substitutiva n° 23 em relação ao Substitutivo da CCJ.",
+      "Requer o encerramento da discussão do Projeto de Lei nº 3626/2023.",
+      "Requer dispensa de interstício entre o primeiro e o segundo turno de deliberação da PEC nº 66, de 2023.",
+      "Solicita regime de urgência no trâmite do Projeto de Lei nº 5.900/2025.",
+    ])
+      expect(moldeFixo(proj("c", "REQ 1/2025", e))).toContain("pedido sobre o andamento");
+    expect(
+      moldeFixo(
+        proj(
+          "c",
+          "REQ 3458/2023",
+          "Requer aprovação de Moção de Repúdio contra os atos de guerra.",
+        ),
+      ),
+    ).toBeNull();
+  });
   it("detecta ementa vaga e barra resposta ruim da IA", () => {
     expect(ementaVaga("Altera a Lei nº 9.605, de 12 de fevereiro de 1998.")).toBe(true);
     expect(ementaVaga("Cria contas separadas para o dinheiro da saúde nos municípios.")).toBe(

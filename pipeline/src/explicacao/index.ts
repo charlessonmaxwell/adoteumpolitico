@@ -45,6 +45,10 @@ function indicacao(ementa: string): { nome: string; cargo: string } | null {
   return { nome: nomeBonito, cargo: (cargo ?? "um cargo público").trim() };
 }
 
+/** Requerimento que só mexe no andamento da votação (o molde de requerimento só vale para esses). */
+const PEDIDO_DE_ANDAMENTO =
+  /urg[êe]ncia|calend[áa]rio especial|prefer[êe]ncia|encerramento d[ae] discuss|interst[íi]cio|adiamento|retirada de pauta|inclus[ãa]o (n[ao] |em )?(pauta|ordem do dia)/i;
+
 /** Explicação por molde fixo para tipos previsíveis; null quando precisa de IA. */
 export function moldeFixo(p: Pick<ProjetoVotado, "titulo" | "ementa" | "casa">): string | null {
   const s = sigla(p.titulo);
@@ -55,19 +59,20 @@ export function moldeFixo(p: Pick<ProjetoVotado, "titulo" | "ementa" | "casa">):
   ) {
     const i = indicacao(p.ementa);
     if (!i) return null;
-    return `${quem} votaram a indicação de ${i.nome} para ${i.cargo}. Esse nome não é escolhido pelo Senado: quem indica é o presidente da República ou outro órgão, conforme o cargo. Mas a pessoa só pode assumir se o Senado aprovar. Se a maioria votar não, a indicação cai e outro nome precisa ser indicado.`;
+    return `${quem} votaram a indicação de ${i.nome} para ${i.cargo}. Esse nome não é escolhido pelo Senado: quem indica é o presidente da República ou outro órgão, conforme o cargo. Mas a pessoa só pode assumir se o Senado aprovar. Se a maioria votar não, a indicação cai e outro nome precisa ser indicado. Por exemplo, é como numa empresa em que o dono escolhe quem vai gerenciar uma filial, mas o nome só vale depois que o conselho da empresa aprova.`;
   }
   if (s === "PDL" && /^escolhe (o|a) senhora?/i.test(p.ementa)) {
     const i = indicacao(p.ementa);
     if (!i) return null;
-    return `${quem} votaram a escolha de ${i.nome} para ${i.cargo}. Essa vaga é preenchida por indicação do próprio Congresso, e não do presidente da República. A votação decide se o nome indicado fica com o cargo.`;
+    return `${quem} votaram a escolha de ${i.nome} para ${i.cargo}. Essa vaga é preenchida por indicação do próprio Congresso, e não do presidente da República. A votação decide se o nome indicado fica com o cargo. Por exemplo, é como numa associação de moradores em que os próprios associados votam para decidir quem ocupa uma vaga no conselho.`;
   }
-  if (["REQ", "RQS"].includes(s)) {
+  // Só pedidos de andamento (urgência, calendário, preferência...). Moções e outros pedidos vão para a fila.
+  if (["REQ", "RQS"].includes(s) && PEDIDO_DE_ANDAMENTO.test(p.ementa)) {
     const alvo =
       /(?:Proposta de Emenda à Constituição|Projeto de Lei[^n]*|PEC|PL)\s*n?º?\s*[\d./]+/i.exec(
         p.ementa,
       )?.[0];
-    return `É um pedido sobre o andamento da votação${alvo ? ` (${alvo})` : ""}, como acelerar a análise ou mudar a ordem do que vai ser votado. Esse tipo de pedido não muda nenhuma lei por si só: ele decide quando e como o assunto entra em votação. O conteúdo do projeto é decidido depois, em outra votação.`;
+    return `É um pedido sobre o andamento da votação${alvo ? ` (${alvo})` : ""}, como acelerar a análise ou mudar a ordem do que vai ser votado. Esse tipo de pedido não muda nenhuma lei por si só: ele decide quando e como o assunto entra em votação. O conteúdo do projeto é decidido depois, em outra votação. Por exemplo, é como numa reunião de condomínio em que um morador pede para um assunto ser discutido antes dos outros: votar esse pedido não decide o assunto em si.`;
   }
   if (
     /^institui (o|a)?\s*(dia|semana|mês|mes|ano)\b|\bcomo (o )?(dia|mês|mes|semana) (nacional )?d/i.test(
@@ -75,7 +80,7 @@ export function moldeFixo(p: Pick<ProjetoVotado, "titulo" | "ementa" | "casa">):
     ) &&
     p.ementa.length < 200
   ) {
-    return "Cria uma data no calendário oficial do país, para lembrar um tema e incentivar campanhas de conscientização. É uma lei simbólica: não cria benefício, não muda direitos e não gera gasto direto. Na prática, escolas, órgãos públicos e entidades podem usar a data para fazer eventos e divulgar o assunto.";
+    return "Cria uma data no calendário oficial do país, para lembrar um tema e incentivar campanhas de conscientização. É uma lei simbólica: não cria benefício, não muda direitos e não gera gasto direto. Na prática, escolas, órgãos públicos e entidades podem usar a data para fazer eventos e divulgar o assunto. Por exemplo, no dia escolhido uma escola pode fazer trabalhos e palestras sobre o tema com os alunos, e o posto de saúde do bairro pode colar cartazes e fazer uma campanha.";
   }
   return null;
 }
