@@ -45,6 +45,10 @@ function indicacao(ementa: string): { nome: string; cargo: string } | null {
   return { nome: nomeBonito, cargo: (cargo ?? "um cargo público").trim() };
 }
 
+/** Requerimento que só mexe no andamento da votação (o molde de requerimento só vale para esses). */
+const PEDIDO_DE_ANDAMENTO =
+  /urg[êe]ncia|calend[áa]rio especial|prefer[êe]ncia|encerramento d[ae] discuss|interst[íi]cio|adiamento|retirada de pauta|inclus[ãa]o (n[ao] |em )?(pauta|ordem do dia)/i;
+
 /** Explicação por molde fixo para tipos previsíveis; null quando precisa de IA. */
 export function moldeFixo(p: Pick<ProjetoVotado, "titulo" | "ementa" | "casa">): string | null {
   const s = sigla(p.titulo);
@@ -55,19 +59,20 @@ export function moldeFixo(p: Pick<ProjetoVotado, "titulo" | "ementa" | "casa">):
   ) {
     const i = indicacao(p.ementa);
     if (!i) return null;
-    return `${quem} votaram a indicação de ${i.nome} para ${i.cargo}. Esse nome não é escolhido pelo Senado: quem indica é o presidente da República ou outro órgão, conforme o cargo. Mas a pessoa só pode assumir se o Senado aprovar. Se a maioria votar não, a indicação cai e outro nome precisa ser indicado.`;
+    return `${quem} votaram a indicação de ${i.nome} para ${i.cargo}. Esse nome não é escolhido pelo Senado: quem indica é o presidente da República ou outro órgão, conforme o cargo. Mas a pessoa só pode assumir se o Senado aprovar. Se a maioria votar não, a indicação cai e outro nome precisa ser indicado. Por exemplo, é como numa empresa em que o dono escolhe quem vai gerenciar uma filial, mas o nome só vale depois que o conselho da empresa aprova.`;
   }
   if (s === "PDL" && /^escolhe (o|a) senhora?/i.test(p.ementa)) {
     const i = indicacao(p.ementa);
     if (!i) return null;
-    return `${quem} votaram a escolha de ${i.nome} para ${i.cargo}. Essa vaga é preenchida por indicação do próprio Congresso, e não do presidente da República. A votação decide se o nome indicado fica com o cargo.`;
+    return `${quem} votaram a escolha de ${i.nome} para ${i.cargo}. Essa vaga é preenchida por indicação do próprio Congresso, e não do presidente da República. A votação decide se o nome indicado fica com o cargo. Por exemplo, é como numa associação de moradores em que os próprios associados votam para decidir quem ocupa uma vaga no conselho.`;
   }
-  if (["REQ", "RQS"].includes(s)) {
+  // Só pedidos de andamento (urgência, calendário, preferência...). Moções e outros pedidos vão para a fila.
+  if (["REQ", "RQS"].includes(s) && PEDIDO_DE_ANDAMENTO.test(p.ementa)) {
     const alvo =
       /(?:Proposta de Emenda à Constituição|Projeto de Lei[^n]*|PEC|PL)\s*n?º?\s*[\d./]+/i.exec(
         p.ementa,
       )?.[0];
-    return `É um pedido sobre o andamento da votação${alvo ? ` (${alvo})` : ""}, como acelerar a análise ou mudar a ordem do que vai ser votado. Esse tipo de pedido não muda nenhuma lei por si só: ele decide quando e como o assunto entra em votação. O conteúdo do projeto é decidido depois, em outra votação.`;
+    return `É um pedido sobre o andamento da votação${alvo ? ` (${alvo})` : ""}, como acelerar a análise ou mudar a ordem do que vai ser votado. Esse tipo de pedido não muda nenhuma lei por si só: ele decide quando e como o assunto entra em votação. O conteúdo do projeto é decidido depois, em outra votação. Por exemplo, é como numa reunião de condomínio em que um morador pede para um assunto ser discutido antes dos outros: votar esse pedido não decide o assunto em si.`;
   }
   if (
     /^institui (o|a)?\s*(dia|semana|mês|mes|ano)\b|\bcomo (o )?(dia|mês|mes|semana) (nacional )?d/i.test(
@@ -75,7 +80,7 @@ export function moldeFixo(p: Pick<ProjetoVotado, "titulo" | "ementa" | "casa">):
     ) &&
     p.ementa.length < 200
   ) {
-    return "Cria uma data no calendário oficial do país, para lembrar um tema e incentivar campanhas de conscientização. É uma lei simbólica: não cria benefício, não muda direitos e não gera gasto direto. Na prática, escolas, órgãos públicos e entidades podem usar a data para fazer eventos e divulgar o assunto.";
+    return "Cria uma data no calendário oficial do país, para lembrar um tema e incentivar campanhas de conscientização. É uma lei simbólica: não cria benefício, não muda direitos e não gera gasto direto. Na prática, escolas, órgãos públicos e entidades podem usar a data para fazer eventos e divulgar o assunto. Por exemplo, no dia escolhido uma escola pode fazer trabalhos e palestras sobre o tema com os alunos, e o posto de saúde do bairro pode colar cartazes e fazer uma campanha.";
   }
   return null;
 }
@@ -90,10 +95,10 @@ const PROIBIDAS =
 
 export const PROMPT = `Você explica projetos de lei do Congresso brasileiro para o povo, em português simples.
 Regras:
-- De 4 a 6 frases curtas, até 950 caracteres no total. Palavras do dia a dia; se usar um termo técnico, explique na mesma frase.
+- Texto claro e popular, com palavras do dia a dia, como se explicasse para um vizinho. Nada de termo técnico; se for inevitável, explique na mesma frase.
+- Não há número fixo de frases: use o tamanho necessário para ficar claro, sem enrolar (no máximo 1.000 caracteres).
 - Diga o que é, o que muda na prática e quem é afetado.
-- Termine com um exemplo de aplicação no dia a dia, começando por "Por exemplo,": uma situação concreta de uma pessoa, família, empresa ou cidade que mostre a regra funcionando. O exemplo só pode ilustrar o que o texto diz; não invente valores, prazos ou regras.
-- Pedidos de procedimento (requerimentos, recursos) e indicações para cargos não precisam de exemplo.
+- Sempre termine com um exemplo, começando por "Por exemplo,": uma situação que a população conhece do dia a dia (a feira, o mercado, o ônibus, o posto de saúde, a escola, a conta de luz, o trabalho, o bairro). Vale também para pedidos de procedimento (requerimentos, recursos): explique com uma comparação conhecida. O exemplo só pode ilustrar o que o texto diz; não invente valores, prazos ou regras.
 - Sem opinião, sem adjetivos de valor (bom, ruim, polêmico, importante), sem citar partidos ou políticos.
 - Não invente: use só o que está no texto. Se o texto não disser o que muda, responda exatamente: SEM_INFORMACAO
 - Não repita o número do projeto. Responda só com a explicação, sem título.`;
