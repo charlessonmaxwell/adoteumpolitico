@@ -2,10 +2,10 @@ name: Atualização diária de dados
 
 on:
   schedule:
-    # Fora da hora cheia: o GitHub atrasa/descarta agendamentos em :00 sob carga.
-    # O GitHub costuma rodar horas depois do horário agendado; por isso a repescagem fica 6 h depois.
-    - cron: "7 13 * * *" # 10:07 em Brasília
-    - cron: "7 19 * * *" # 16:07 em Brasília — repescagem: só roda se os dados de hoje ainda não saíram
+    # 05:30 em Brasília (pedido do Charlesson, 25/11/2026). Fora da hora cheia: o GitHub atrasa/descarta
+    # agendamentos em :00 sob carga. Ele costuma rodar horas depois do horário; por isso a repescagem fica 6 h depois.
+    - cron: "30 8 * * *" # 05:30 em Brasília
+    - cron: "30 14 * * *" # 11:30 em Brasília — repescagem: só roda se os dados de hoje ainda não saíram
   workflow_dispatch:
     inputs:
       ignorar_trava:
@@ -28,10 +28,10 @@ jobs:
       rodar: ${{ steps.c.outputs.rodar }}
     steps:
       - id: c
-        name: Já atualizou hoje? (só importa na repescagem das 16:07)
+        name: Já atualizou hoje? (só importa na repescagem das 11:30)
         run: |
           rodar=true
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ github.event.schedule }}" = "7 19 * * *" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ github.event.schedule }}" = "30 14 * * *" ]; then
             hoje=$(TZ=America/Sao_Paulo date +%F)
             ult=$(curl -sfL "https://raw.githubusercontent.com/${{ github.repository }}/data/meta.json" | python3 -c "import json,sys,datetime; d=json.load(sys.stdin)['atualizadoEm']; print((datetime.datetime.fromisoformat(d.replace('Z','+00:00'))-datetime.timedelta(hours=3)).date())" || echo nunca)
             [ "$ult" = "$hoje" ] && rodar=false
