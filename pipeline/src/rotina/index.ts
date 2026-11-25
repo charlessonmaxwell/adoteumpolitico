@@ -14,6 +14,9 @@ import type { Presenca, ResumoPresencaCamara } from "../modelo/votacao.js";
 import { agregar, type Dados } from "./agregacao.js";
 import { agruparPorProjeto } from "./votos-por-projeto.js";
 import { montarPanorama } from "./panorama.js";
+import { montarComposicao } from "./composicao.js";
+import { coletarMulheres, type MulheresPorCasa } from "../coleta/composicao.js";
+import { legislaturaVigente } from "../modelo/legislatura.js";
 import { ErroTrava, verificarQuedas, type Contagens } from "./trava.js";
 import { gravarMetricas } from "../monitoramento/metricas.js";
 import {
@@ -33,6 +36,8 @@ export interface Coletores {
   ) => Promise<Pick<Dados, "votacoes" | "votos" | "presencasSenado" | "licencas">>;
   gastos: (anos: number[]) => Promise<{ validas: Dados["despesas"]; invalidas: DespesaInvalida[] }>;
   proposicoes: (parlamentares: Parlamentar[], anos: number[]) => Promise<Dados["proposicoes"]>;
+  /** Mulheres por casa (story 9.1). Ausente = cartão de gênero sem dado. */
+  mulheres?: () => Promise<MulheresPorCasa>;
 }
 
 export const coletoresReais: Coletores = {
@@ -56,6 +61,7 @@ export const coletoresReais: Coletores = {
   },
   gastos: (anos) => coletarGastos(anos),
   proposicoes: (parlamentares, anos) => coletarProposicoes(parlamentares, anos),
+  mulheres: () => coletarMulheres(),
 };
 
 export interface Meta {
@@ -63,6 +69,8 @@ export interface Meta {
   impressao: string;
   contagens: Contagens;
   anos: number[];
+  /** Legislatura vigente na fonte (story 9.2). Ausente em publicações antigas. */
+  legislatura?: number;
 }
 
 export interface OpcoesRotina {
@@ -156,6 +164,7 @@ export async function executarRotina(
   const parlamentares = await etapa("cadastro", c.parlamentares);
   contagens["parlamentares"] = parlamentares.length;
   const senadores = parlamentares.filter((p) => p.casa === "senado");
+  const legislatura = legislaturaVigente(parlamentares);
 
   const vot = await etapa("votacoes", () => c.votacoes(anos, senadores));
   const gastos = await etapa("gastos", () => c.gastos(anos));
@@ -221,9 +230,16 @@ export async function executarRotina(
 
   // Validação: trava contra fonte quebrada
   const metaAnterior = await lerJson<Meta>(join(o.anterior, "meta.json"));
+  // Virada de legislatura (story 9.2): a fonte passou a devolver a legislatura seguinte
+  const legAnterior = metaAnterior?.legislatura;
+  const virada = legAnterior !== undefined && legislatura > legAnterior;
   await etapa("validacao", async () => {
     const quedas = verificarQuedas(metaAnterior?.contagens ?? null, contagens);
-    if (quedas.length && o.ignorarTrava) {
+    if (quedas.length && virada) {
+      log(
+        `⚠ Virada para a ${legislatura}ª legislatura: trava não se aplica hoje. Quedas: ${new ErroTrava(quedas).message}`,
+      );
+    } else if (quedas.length && o.ignorarTrava) {
       log(`⚠ Trava ignorada manualmente. Quedas: ${new ErroTrava(quedas).message}`);
     } else if (quedas.length) throw new ErroTrava(quedas);
   });
@@ -241,6 +257,33 @@ export async function executarRotina(
     }),
   );
   for (const r of agg.resumos) arquivos.set(`resumo/${r.parlamentar.id}.json`, r);
+
+  // Legislaturas encerradas (story 9.2): o arquivo passa de uma publicação para a outra;
+  // no dia da virada, os resumos da publicação anterior viram o arquivo da legislatura que acabou.
+  for (const arq of await listarJson(join(o.anterior, "arquivo"))) {
+    const v = await lerJson<unknown>(join(o.anterior, "arquivo", arq));
+    if (v !== null) arquivos.set(`arquivo/${arq}`, v);
+  }
+  if (virada) {
+    for (const arq of await listarJson(join(o.anterior, "resumo"))) {
+      const v = await lerJson<unknown>(join(o.anterior, "resumo", arq));
+      if (v !== null) arquivos.set(`arquivo/${legAnterior}/resumo/${arq}`, v);
+    }
+    const medias = await lerJson<unknown>(join(o.anterior, "medias.json"));
+    if (medias !== null) arquivos.set(`arquivo/${legAnterior}/medias.json`, medias);
+    log(`✓ Resumos da ${legAnterior}ª legislatura guardados em arquivo/${legAnterior}/`);
+  }
+
+  // Quem ocupa as cadeiras (story 9.1): um arquivo por legislatura, os anteriores ficam
+  for (const arq of await listarJson(join(o.anterior, "composicao"))) {
+    const v = await lerJson<unknown>(join(o.anterior, "composicao", arq));
+    if (v !== null) arquivos.set(`composicao/${arq}`, v);
+  }
+  const mulheres = c.mulheres ? await etapa("composicao", c.mulheres) : null;
+  arquivos.set(
+    `composicao/${legislatura}.json`,
+    montarComposicao(parlamentares, mulheres, legislatura),
+  );
 
   // Votos por projeto (story 3.1): um arquivo por parlamentar e um por projeto
   const vp = await etapa("votos-por-projeto", async () =>
@@ -293,6 +336,7 @@ export async function executarRotina(
     impressao,
     contagens,
     anos,
+    legislatura,
   };
   const mudou = impressao !== metaAnterior?.impressao;
 

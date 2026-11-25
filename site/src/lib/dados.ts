@@ -4,6 +4,7 @@ import type { ResumoParlamentar } from "../../../pipeline/src/rotina/agregacao.j
 import type { Meta } from "../../../pipeline/src/rotina/index.js";
 import type { Parlamentar } from "../../../pipeline/src/modelo/parlamentar.js";
 import type { Medias } from "./frases.js";
+import { fimLegislatura, inicioLegislatura } from "../../../pipeline/src/modelo/legislatura.js";
 import type {
   ProjetoVotado,
   VotoEmProjeto,
@@ -124,4 +125,89 @@ type Palacio = import("../../../pipeline/src/palacio/rotina.js").ResumoPalacio;
 export function palacio(): Palacio | null {
   const arq = join(DIR, "palacio", "resumo.json");
   return existsSync(arq) ? (JSON.parse(readFileSync(arq, "utf8")) as Palacio) : null;
+}
+
+type Composicao = import("../../../pipeline/src/rotina/composicao.js").Composicao;
+/** Quem ocupa as cadeiras, uma entrada por legislatura (story 9.1), da mais nova para a mais antiga. */
+export function composicoes(): Composicao[] {
+  const pasta = join(DIR, "composicao");
+  if (!existsSync(pasta)) return [];
+  return readdirSync(pasta)
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => JSON.parse(readFileSync(join(pasta, f), "utf8")) as Composicao)
+    .sort((a, b) => b.legislatura - a.legislatura);
+}
+
+/** Resumos guardados das legislaturas encerradas (story 9.2), da mais nova para a mais antiga. */
+let cacheArquivo:
+  | {
+      leg: number;
+      resumos: ResumoParlamentar[];
+      medias: Record<"camara" | "senado", Medias> | null;
+    }[]
+  | null = null;
+export function arquivo() {
+  if (cacheArquivo) return cacheArquivo;
+  const pasta = join(DIR, "arquivo");
+  cacheArquivo = existsSync(pasta)
+    ? readdirSync(pasta)
+        .filter((d) => /^\d+$/.test(d) && existsSync(join(pasta, d, "resumo")))
+        .map((d) => ({
+          leg: Number(d),
+          resumos: readdirSync(join(pasta, d, "resumo"))
+            .filter((f) => f.endsWith(".json"))
+            .map((f) => ler<ResumoParlamentar>(`arquivo/${d}/resumo/${f}`))
+            .map((r) => ({
+              ...r,
+              parlamentar: { ...r.parlamentar, urlFoto: fotoSegura(r.parlamentar.urlFoto) },
+            })),
+          medias: existsSync(join(pasta, d, "medias.json"))
+            ? ler<Record<"camara" | "senado", Medias>>(`arquivo/${d}/medias.json`)
+            : null,
+        }))
+        .sort((a, b) => b.leg - a.leg)
+    : [];
+  return cacheArquivo;
+}
+
+export interface Mandato {
+  numero: number;
+  inicio: string;
+  /** null = em andamento. */
+  fim: string | null;
+  partido: string;
+  href: string;
+  /** Só senadores: o mandato de 8 anos. */
+  mandatoSenado?: { inicio: string; fim: string };
+}
+
+/** Uma entrada por legislatura em que a pessoa aparece (atual e guardadas), da mais nova para a mais antiga. */
+export function mandatosDe(id: string): Mandato[] {
+  const atual = dados().resumos.find((r) => r.parlamentar.id === id);
+  const lista: Mandato[] = [];
+  if (atual) {
+    const n = atual.parlamentar.idLegislatura;
+    lista.push({
+      numero: n,
+      inicio: inicioLegislatura(n),
+      fim: null,
+      partido: atual.parlamentar.partido,
+      href: `/p/${id}/`,
+      mandatoSenado: atual.parlamentar.mandato,
+    });
+  }
+  for (const a of arquivo()) {
+    const r = a.resumos.find((x) => x.parlamentar.id === id);
+    if (!r || (atual && a.leg === atual.parlamentar.idLegislatura)) continue;
+    const encerradoAqui = !atual && lista.length === 0;
+    lista.push({
+      numero: a.leg,
+      inicio: inicioLegislatura(a.leg),
+      fim: fimLegislatura(a.leg),
+      partido: r.parlamentar.partido,
+      href: encerradoAqui ? `/p/${id}/` : `/p/${id}/${a.leg}/`,
+      mandatoSenado: r.parlamentar.mandato,
+    });
+  }
+  return lista;
 }

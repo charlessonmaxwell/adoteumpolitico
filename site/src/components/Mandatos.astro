@@ -1,0 +1,44 @@
+---
+/** Mandatos no Congresso (story 9.2): um cartão por legislatura; o marcado é o que a página mostra. */
+import type { Mandato } from "../lib/dados";
+import { diaBr } from "../lib/formato";
+
+interface Props {
+  mandatos: Mandato[];
+  /** Legislatura mostrada na página. */
+  atual: number | null;
+}
+const { mandatos, atual } = Astro.props;
+const ano = (iso: string) => iso.slice(0, 4);
+---
+{mandatos.length > 0 && (
+  <section class="mandatos" aria-labelledby="t-mandatos">
+    <h2 id="t-mandatos">Mandatos no Congresso</h2>
+    {mandatos.length > 1 && <p class="dica">Escolha o período para ver os números de cada um.</p>}
+    <ul>
+      {mandatos.map((m) => (
+        <li>
+          <a href={m.href} aria-current={m.numero === atual ? "page" : undefined} class={m.numero === atual ? "ativo" : undefined}>
+            <span class="linha1"><b>{m.numero}ª legislatura</b><span class={m.fim ? "etiqueta" : "etiqueta aberta"}>{m.fim ? "encerrado" : "em andamento"}</span></span>
+            <span>{m.fim ? `${diaBr(m.inicio)} a ${diaBr(m.fim)}` : `${diaBr(m.inicio)} até hoje`}</span>
+            <span class="detalhe">Partido: {m.partido}{m.mandatoSenado && ` · mandato de senador de ${ano(m.mandatoSenado.inicio)} a ${ano(m.mandatoSenado.fim)}`}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+<style>
+  .mandatos { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 1.2rem 1.3rem; margin: 0 0 1.5rem; }
+  h2 { font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.3rem; margin: 0 0 0.3rem; }
+  .dica { margin: 0 0 0.8rem; color: var(--tinta-suave); }
+  ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 0.75rem; }
+  a { display: flex; flex-direction: column; gap: 0.2rem; min-height: 44px; padding: 0.85rem 1rem; border: 1px solid var(--linha); border-radius: 10px; color: var(--tinta); text-decoration: none; }
+  a:hover { border-color: var(--dado); }
+  a.ativo { border: 2px solid var(--dado); background: var(--dado-fundo); }
+  .linha1 { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+  .linha1 b { font-family: var(--numeros); font-size: 1.1rem; }
+  .etiqueta { font-size: 0.8rem; font-weight: 700; padding: 0.05rem 0.55rem; border-radius: 999px; background: var(--trilho); color: var(--tinta-suave); }
+  .etiqueta.aberta { background: var(--dado); color: var(--folha); }
+  .detalhe { font-size: 0.85rem; color: var(--grafite); }
+</style>

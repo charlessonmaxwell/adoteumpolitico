@@ -1,5 +1,6 @@
 import { getJson, type OpcoesHttp } from "../util/http.js";
 import { idParlamentar, type Parlamentar } from "../modelo/parlamentar.js";
+import { fimLegislatura, inicioLegislatura } from "../modelo/legislatura.js";
 
 export const BASE_SENADO = "https://legis.senado.leg.br/dadosabertos";
 
@@ -39,6 +40,14 @@ function legislaturaAtual(mandato: MandatoApi | undefined, padrao: number): numb
   return numeros.length ? Math.max(...numeros) : padrao;
 }
 
+/** Período do mandato (8 anos): do início da 1ª ao fim da 2ª legislatura do mandato. */
+export function periodoMandato(mandato: MandatoApi | undefined): Parlamentar["mandato"] {
+  const a = Number(mandato?.PrimeiraLegislaturaDoMandato?.NumeroLegislatura);
+  const b = Number(mandato?.SegundaLegislaturaDoMandato?.NumeroLegislatura);
+  if (!(a > 0 && b > 0)) return undefined;
+  return { inicio: inicioLegislatura(a), fim: fimLegislatura(b) };
+}
+
 export async function coletarSenadores(
   coletadoEm: string,
   legislaturaVigente: number,
@@ -57,6 +66,7 @@ export async function coletarSenadores(
       uf: p.UfParlamentar,
       urlFoto: p.UrlFotoParlamentar?.replace(/^http:\/\//, "https://") ?? null,
       idLegislatura: legislaturaAtual(s.Mandato, legislaturaVigente),
+      ...(periodoMandato(s.Mandato) && { mandato: periodoMandato(s.Mandato) }),
       urlFonte: `${BASE_SENADO}/senador/${p.CodigoParlamentar}.json`,
       coletadoEm,
     };

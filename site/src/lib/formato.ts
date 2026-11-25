@@ -115,3 +115,6 @@ export const iniciais = (nome: string) =>
     .slice(0, 2)
     .map((p) => p[0]!.toUpperCase())
     .join("");
+
+/** Data sem horário (AAAA-MM-DD) em dd/mm/aaaa, sem passar por fuso horário. */
+export const diaBr = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
