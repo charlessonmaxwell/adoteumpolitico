@@ -14,6 +14,8 @@ export interface Parlamentar {
   uf: string;
   urlFoto: string | null;
   idLegislatura: number;
+  /** Só senadores: o mandato de 8 anos atravessa duas legislaturas (story 9.2). */
+  mandato?: { inicio: string; fim: string };
   urlFonte: string;
   coletadoEm: string;
 }

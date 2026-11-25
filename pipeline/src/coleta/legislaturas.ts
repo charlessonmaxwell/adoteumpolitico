@@ -1,12 +1,14 @@
 /**
  * Todos os parlamentares das legislaturas recentes, inclusive quem já saiu do cargo.
  * Uso: saber se o autor de uma emenda é "conhecido" (atual ou ex) — regra dos 99% das emendas.
- * Emendas de 2023 foram apresentadas em 2022, pela legislatura 56; por isso entram 56 e 57.
+ * Emendas de 2023 foram apresentadas em 2022, pela legislatura 56; por isso a lista começa
+ * na 56 e vai até a legislatura em curso (a 58ª entra sozinha em 01/02/2027 — story 9.2).
  */
 import { getJson, type OpcoesHttp } from "../util/http.js";
 import { idParlamentar, type Casa } from "../modelo/parlamentar.js";
 import { BASE_CAMARA } from "./camara.js";
 import { BASE_SENADO } from "./senado.js";
+import { legislaturaNaData } from "../modelo/legislatura.js";
 
 export interface MembroLegislatura {
   id: string;
@@ -16,7 +18,10 @@ export interface MembroLegislatura {
   uf: string;
 }
 
-export const LEGISLATURAS = [56, 57];
+export const PRIMEIRA_LEGISLATURA = 56;
+export const legislaturasAte = (atual: number) =>
+  Array.from({ length: atual - PRIMEIRA_LEGISLATURA + 1 }, (_, i) => PRIMEIRA_LEGISLATURA + i);
+export const LEGISLATURAS = legislaturasAte(legislaturaNaData());
 
 export async function coletarDeputadosLegislaturas(
   legs = LEGISLATURAS,
