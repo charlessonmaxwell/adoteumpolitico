@@ -6,6 +6,7 @@ Consultas feitas direto nas APIs oficiais (navegador), não em documentação de
 | Dado | Resultado | Situação |
 |---|---|---|
 | Cadastro | 513 deputados; nome, partido, UF, foto, e-mail | ✅ OK |
+| Cadastro filtrado por sexo (`/deputados?siglaSexo=F`) | Mesmo endpoint do cadastro, com filtro. Usado só para **contar** mulheres por casa (story 9.1); nada por pessoa é guardado | ⚠️ A confirmar na 1ª execução (25/11/2026) |
 | Votos individuais (endpoint) | Funciona para votações recentes (ex.: 14/10/2026 com 429 e 466 votos). Hipótese de "vazio após 05/2024" **refutada** | ✅ OK |
 | Votações nominais | Plenário set–out/2026: 80 votações, só **6 nominais** (resto simbólicas, sem voto individual) | ⚠️ Limitação estrutural |
 | Arquivo em lote de votos 2026 | Disponível, atualizado hoje (06:56) | ✅ Melhor via de ingestão |
@@ -18,6 +19,7 @@ Consultas feitas direto nas APIs oficiais (navegador), não em documentação de
 ## Senado Federal (legis.senado.leg.br/dadosabertos)
 | Dado | Resultado | Situação |
 |---|---|---|
+| Sexo do senador (`SexoParlamentar` em `/senador/lista/atual`) | Usado só para **contar** senadoras (story 9.1); sem o campo, o portal diz que o dado não está disponível | ⚠️ A confirmar na 1ª execução (25/11/2026) |
 | Cadastro | 81 senadores; foto, partido, UF, bloco | ✅ OK |
 | Votos por senador | 426 votos de um senador, último em 15/10/2026 | ✅ OK (resposta pesada: ~900 KB por senador) |
 | Votações do plenário | OK; out/2026: 3 votações nominais, nenhuma secreta | ✅ OK |
