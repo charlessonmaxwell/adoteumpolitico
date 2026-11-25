@@ -52,7 +52,7 @@ jobs:
           git clone -q --depth 1 --filter=blob:none --sparse --branch data \
             "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" dados
           cd dados
-          git sparse-checkout set --no-cone '/resumo/' '/votos/' '/projetos/' '/medias.json' '/panorama.json' '/emendas/' '/palacio/' '/meta.json' '/parlamentares.json'
+          git sparse-checkout set --no-cone '/resumo/' '/votos/' '/projetos/' '/medias.json' '/panorama.json' '/emendas/' '/palacio/' '/meta.json' '/parlamentares.json' '/composicao/' '/arquivo/'
           echo "Perfis: $(ls resumo | wc -l)"
 
       - name: Situação das atualizações (página Quando os dados foram atualizados)

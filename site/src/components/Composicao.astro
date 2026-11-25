@@ -1,0 +1,138 @@
+---
+/**
+ * Quem ocupa as cadeiras (story 9.1): gênero em grade (uma cadeira por quadradinho) e partidos
+ * em ordem alfabética. Troca de legislatura sem JavaScript (rádio + :has).
+ */
+import Icone from "./Icone.astro";
+import type { Composicao } from "../../../pipeline/src/rotina/composicao";
+import { anoInicioLegislatura, inicioLegislatura } from "../../../pipeline/src/modelo/legislatura";
+import { dataBr, formatarNumero } from "../lib/formato";
+
+interface Props {
+  casa: "camara" | "senado";
+  quem: string;
+  lista: Composicao[];
+  /** Data da publicação: decide se a próxima legislatura já aparece como aviso. */
+  hoje: string;
+}
+const { casa, quem, lista, hoje } = Astro.props;
+const atual = lista[0];
+const pct = (n: number, t: number) => `${Math.round((n / t) * 100)}%`;
+const nomePartido = (n: string) => (/^s\/ ?partido$/i.test(n) ? "Sem partido" : n);
+// A próxima legislatura aparece (com aviso) nos 6 meses antes de começar
+const proxima = atual ? atual.legislatura + 1 : null;
+const mostraProxima =
+  proxima !== null &&
+  inicioLegislatura(proxima) > hoje.slice(0, 10) &&
+  (Date.parse(inicioLegislatura(proxima)) - Date.parse(hoje)) / 864e5 <= 183;
+const abas = [
+  ...(mostraProxima && proxima ? [{ n: proxima, futura: true }] : []),
+  ...lista.map((c) => ({ n: c.legislatura, futura: false })),
+].sort((a, b) => a.n - b.n);
+// Mostra o painel da legislatura marcada (sem JavaScript; navegador sem :has fica na atual)
+const regras = abas
+  .map((a) => `.composicao:has(input[value="${a.n}"]:checked) .comp-painel.leg-${a.n}{display:block}`)
+  .join("");
+const periodo = (n: number) => `${anoInicioLegislatura(n)} a ${anoInicioLegislatura(n) + 4}`;
+---
+{atual && (
+  <div class="composicao">
+    <div class="comp-topo">
+      <h3 class="comp-titulo">Quem ocupa as cadeiras</h3>
+      {abas.length > 1 && (
+        <fieldset class="comp-legs">
+          <legend class="sr">Escolha a legislatura</legend>
+          {abas.map((a) => (
+            <label>
+              <input type="radio" name={`leg-${casa}`} value={a.n} checked={a.n === atual.legislatura} />
+              <span>{a.n}ª · {periodo(a.n)}</span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+    </div>
+
+    {abas.filter((a) => a.futura).map((a) => (
+      <div class={`comp-painel leg-${a.n}`}>
+        <p class="comp-aviso"><strong>A {a.n}ª legislatura começa em {dataBr(inicioLegislatura(a.n))}.</strong> Os números aparecem aqui no primeiro dia de trabalho dos novos {quem}. A composição de hoje continua guardada na aba {atual.legislatura}ª.</p>
+      </div>
+    ))}
+
+    {lista.map((comp) => {
+      const c = comp[casa];
+      const g = c.genero;
+      const max = Math.max(...c.partidos.map((p) => p.parlamentares), 1);
+      return (
+        <div class={`comp-painel leg-${comp.legislatura}${comp === atual ? " leg-atual" : ""}`}>
+          <div class="grade">
+            <article class="cartao">
+              <h4><span class="selo"><Icone nome="pessoas" /></span>Mulheres e homens</h4>
+              {g ? (
+                <>
+                  <p class="destaque"><strong>{formatarNumero(g.mulheres)} mulheres</strong> <span>{`de ${formatarNumero(c.total)} ${quem} (${pct(g.mulheres, c.total)})`}</span></p>
+                  <p>De cada 10 cadeiras, cerca de {Math.max(1, Math.round((g.mulheres / c.total) * 10))} são ocupadas por mulheres.</p>
+                  <div class={`cadeiras ${casa}`} role="img" aria-label={`${g.mulheres} mulheres e ${g.homens} homens, de ${c.total} cadeiras`}>
+                    {Array.from({ length: c.total }, (_, i) => <span class={i < g.mulheres ? "m" : "h"} />)}
+                  </div>
+                  <p class="legenda"><span><i class="m" />Mulheres <b>{formatarNumero(g.mulheres)}</b></span><span><i class="h" />Homens <b>{formatarNumero(g.homens)}</b></span></p>
+                  <p class="nota">Cada quadradinho é uma cadeira. Conta quem estava no cargo, inclusive suplentes. O sexo vem do cadastro oficial de cada casa.</p>
+                </>
+              ) : (
+                <p>O cadastro oficial não informou o sexo dos {quem} nesta atualização. Preferimos não mostrar um número que pode estar errado.</p>
+              )}
+            </article>
+            <article class="cartao">
+              <h4><span class="selo"><Icone nome="barras" /></span>Cadeiras por partido</h4>
+              <p class="destaque"><strong>{c.partidos.length} partidos</strong> <span>{`com ${quem} no cargo`}</span></p>
+              <ul class="partidos">
+                {c.partidos.map((p) => (
+                  <li>
+                    <span>{nomePartido(p.nome)}</span>
+                    <span class="num"><b>{p.parlamentares}</b> ({pct(p.parlamentares, c.total)})</span>
+                    <span class="trilho"><span style={`width:${Math.max((p.parlamentares / max) * 100, 1)}%`} /></span>
+                  </li>
+                ))}
+              </ul>
+              <p class="nota">Ordem alfabética. O partido é o atual de cada um: quem trocou de partido aparece no novo. A barra é proporcional ao número de cadeiras.</p>
+            </article>
+          </div>
+          {comp !== atual && <p class="nota">Composição guardada no fim da {comp.legislatura}ª legislatura ({dataBr(comp.fim)}).</p>}
+        </div>
+      );
+    })}
+    <style is:inline set:html={regras} />
+  </div>
+)}
+<style>
+  .composicao { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
+  .comp-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; }
+  .comp-titulo { font-family: var(--numeros); font-stretch: 90%; font-weight: 800; font-size: 1.45rem; margin: 0; }
+  .comp-legs { display: flex; flex-wrap: wrap; gap: 0.4rem; border: 0; padding: 0; margin: 0; }
+  .comp-legs label { position: relative; }
+  .comp-legs input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .comp-legs span { display: inline-flex; align-items: center; min-height: 44px; padding: 0.4rem 0.9rem; border: 1px solid var(--linha); border-radius: 8px; background: var(--folha); color: var(--grafite); font-size: 0.9rem; font-weight: 600; }
+  .comp-legs input:checked + span { border-color: var(--dado); background: var(--dado-fundo); color: var(--acento-texto); }
+  .comp-legs input:focus-visible + span { outline: 3px solid var(--foco); outline-offset: 2px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .comp-painel { display: none; }
+  .comp-painel.leg-atual { display: block; }
+  .composicao:has(input:checked) .comp-painel { display: none; }
+  .comp-aviso { margin: 0; background: var(--folha); border: 1px dashed var(--dado); border-radius: 10px; padding: 1.1rem 1.3rem; }
+  .composicao h4 { display: flex; align-items: center; gap: 0.6rem; font-family: var(--numeros); font-stretch: 90%; font-weight: 750; font-size: 1.25rem; margin: 0; }
+  .cadeiras { display: flex; flex-wrap: wrap; gap: 3px; }
+  .cadeiras span { width: 13px; height: 13px; border-radius: 2px; }
+  .cadeiras.senado { max-width: 22rem; }
+  .cadeiras.senado span { width: 22px; height: 22px; }
+  .m { background: var(--dado); }
+  .h { background: var(--dado-claro); }
+  .legenda { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; font-size: 0.92rem; color: var(--grafite); }
+  .legenda span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .legenda i { width: 0.8rem; height: 0.8rem; border-radius: 2px; display: inline-block; }
+  .legenda b { color: var(--tinta); }
+  .partidos { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: 0.55rem 1.25rem; }
+  .partidos li { display: grid; grid-template-columns: 1fr auto; gap: 0.15rem 0.75rem; font-size: 0.92rem; }
+  .partidos .num { font-family: var(--numeros); font-variant-numeric: tabular-nums; color: var(--grafite); }
+  .partidos .num b { color: var(--tinta); }
+  .partidos .trilho { grid-column: 1 / -1; height: 0.5rem; background: var(--trilho); border-radius: 3px; overflow: hidden; }
+  .partidos .trilho span { display: block; height: 100%; background: var(--dado); }
+</style>

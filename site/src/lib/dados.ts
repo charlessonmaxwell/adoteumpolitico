@@ -125,3 +125,14 @@ export function palacio(): Palacio | null {
   const arq = join(DIR, "palacio", "resumo.json");
   return existsSync(arq) ? (JSON.parse(readFileSync(arq, "utf8")) as Palacio) : null;
 }
+
+type Composicao = import("../../../pipeline/src/rotina/composicao.js").Composicao;
+/** Quem ocupa as cadeiras, uma entrada por legislatura (story 9.1), da mais nova para a mais antiga. */
+export function composicoes(): Composicao[] {
+  const pasta = join(DIR, "composicao");
+  if (!existsSync(pasta)) return [];
+  return readdirSync(pasta)
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => JSON.parse(readFileSync(join(pasta, f), "utf8")) as Composicao)
+    .sort((a, b) => b.legislatura - a.legislatura);
+}
