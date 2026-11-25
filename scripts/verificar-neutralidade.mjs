@@ -7,8 +7,8 @@ import { join } from "node:path";
 const PROIBIDOS = [
   /\branking\b/i,
   // "nota" como nota dada a alguém. Liberados (story 9.3): nota fiscal, e "nota" como texto
-  // público de um grupo (nota dizendo, nota de repúdio), comum nas explicações de projetos.
-  /\bnota (?!fiscal|dizendo|de rep[úu]dio)\w/i,
+  // público de um grupo (nota dizendo, a nota registra, nota de repúdio), comum nas explicações de projetos.
+  /\bnota (?!fiscal|dizendo|registra|de rep[úu]dio)\w/i,
   /\bmelhor(es)? (deputad|senador|parlamentar)/i,
   /\bpior(es)?\b/i,
   /\bacima da média\b/i,
