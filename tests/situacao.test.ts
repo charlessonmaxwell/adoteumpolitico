@@ -26,7 +26,7 @@ describe("Story 2.8 — situação das fontes", () => {
     expect(s.estado).toBe("em-dia");
     expect(s.ultimaAtualizacao).toBe("10/11 às 10:30");
     expect(s.aviso).toBeNull();
-    expect(s.proximaTentativa).toBe("amanhã, 11/11, às 10:07");
+    expect(s.proximaTentativa).toBe("amanhã, 11/11, às 05:30");
   });
 
   it("CA2: última tentativa falhou → atrasada, motivo simples e de quando são os números", () => {
@@ -44,7 +44,7 @@ describe("Story 2.8 — situação das fontes", () => {
       "O site de dados da Câmara não respondeu na tentativa de 10/11. Os números mostrados são de 09/11.",
     );
     expect(s.aviso).not.toMatch(/http|503|leg\.br/i);
-    expect(s.proximaTentativa).toBe("amanhã, 11/11, às 10:07");
+    expect(s.proximaTentativa).toBe("amanhã, 11/11, às 05:30");
   });
 
   it("CA2: motivos sem termos técnicos", () => {
@@ -61,12 +61,12 @@ describe("Story 2.8 — situação das fontes", () => {
     expect(motivoPopular("Process completed with exit code 1.")).toBe("A atualização não terminou");
   });
 
-  it("diária ainda sem sucesso hoje: próxima tentativa é a repescagem das 16:07 ou a das 10:07", () => {
-    const manha = new Date("2026-11-10T12:00:00Z"); // 09:00
-    const tarde = new Date("2026-11-10T15:00:00Z"); // 12:00
+  it("diária ainda sem sucesso hoje: próxima tentativa é a das 05:30 ou a repescagem das 11:30", () => {
+    const manha = new Date("2026-11-10T07:00:00Z"); // 04:00
+    const tarde = new Date("2026-11-10T12:00:00Z"); // 09:00
     const t = [ok("2026-11-09T18:53:00Z")];
-    expect(situacaoDaFonte(fonte("diario"), t, manha).proximaTentativa).toBe("hoje, às 10:07");
-    expect(situacaoDaFonte(fonte("diario"), t, tarde).proximaTentativa).toBe("hoje, às 16:07");
+    expect(situacaoDaFonte(fonte("diario"), t, manha).proximaTentativa).toBe("hoje, às 05:30");
+    expect(situacaoDaFonte(fonte("diario"), t, tarde).proximaTentativa).toBe("hoje, às 11:30");
   });
 
   it("CA3: últimos 14 dias da rotina diária (mais antigo primeiro)", () => {

@@ -94,15 +94,15 @@ export const FONTES: Fonte[] = [
     frequencia: "Todo dia",
     prazoDias: 2,
     historico: true,
-    // .github/workflows/diario.yml: 10:07 e repescagem às 16:07
+    // .github/workflows/diario.yml: 05:30 e repescagem às 11:30
     proxima: (agora, okHoje) => {
       const min = agora.getUTCHours() * 60 + agora.getUTCMinutes();
       const hoje = new Date(
         Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()),
       );
       const amanha = new Date(hoje.getTime() + DIA_MS);
-      if (okHoje || min >= 16 * 60 + 7) return { dia: amanha, hora: "10:07" };
-      return { dia: hoje, hora: min < 10 * 60 + 7 ? "10:07" : "16:07" };
+      if (okHoje || min >= 11 * 60 + 30) return { dia: amanha, hora: "05:30" };
+      return { dia: hoje, hora: min < 5 * 60 + 30 ? "05:30" : "11:30" };
     },
   },
   {
