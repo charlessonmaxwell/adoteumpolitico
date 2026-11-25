@@ -27,5 +27,6 @@
 | 8.1 | Frente de segurança (Fase 1) | 8 | 2.6 | Concluída |
 | 9.1 | Quem ocupa as cadeiras: partido e gênero | 9 | 1.5, 2.6 | Concluída |
 | 9.2 | Virada de legislatura: guardar a 57ª e mostrar os mandatos | 9 | 1.5, 2.2, 2.6 | Concluída |
+| 9.3 | Checagem de neutralidade: "nota" de grupo | 9 | 2.2 | Concluída |
 
 1.2, 1.3 e 1.4 podem ser feitas em paralelo após 1.1.
