@@ -1,0 +1,59 @@
+name: Congelar legislatura
+
+# Story 9.2: guarda a publicação inteira (branch `data`) como Release do GitHub, sem custo e
+# sem pesar no site. Rodar à mão em 01/02/2027 e de novo por volta de maio/2027 (gastos de
+# janeiro chegam atrasados). Cada execução acrescenta um .zip com a data; nada é apagado.
+
+on:
+  workflow_dispatch:
+    inputs:
+      legislatura:
+        description: "Número da legislatura que está sendo guardada"
+        default: "57"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dados # não roda junto com a rotina diária
+  cancel-in-progress: false
+
+jobs:
+  congelar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Baixar a publicação atual (branch data)
+        run: |
+          git clone -q --depth 1 --branch data \
+            "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" dados
+          rm -rf dados/.git
+          echo "Arquivos: $(find dados -type f | wc -l); tamanho: $(du -sh dados | cut -f1)"
+
+      - name: Compactar
+        id: zip
+        run: |
+          LEG="${{ github.event.inputs.legislatura }}"
+          [[ "$LEG" =~ ^[0-9]+$ ]] || { echo "::error::Legislatura inválida: $LEG"; exit 1; }
+          DIA=$(TZ=America/Sao_Paulo date +%F)
+          ARQ="dados-legislatura-${LEG}-${DIA}.zip"
+          (cd dados && zip -qr9 "../$ARQ" .)
+          echo "arquivo=$ARQ" >> "$GITHUB_OUTPUT"
+          echo "leg=$LEG" >> "$GITHUB_OUTPUT"
+          echo "dia=$DIA" >> "$GITHUB_OUTPUT"
+          ls -lh "$ARQ"
+
+      - name: Publicar na Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          TAG="legislatura-${{ steps.zip.outputs.leg }}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target main \
+              --title "Dados da ${{ steps.zip.outputs.leg }}ª legislatura" \
+              --notes "Cópia da publicação do portal (branch data), guardada quando a legislatura terminou. Dados oficiais da Câmara, do Senado e do Portal da Transparência, sem dados pessoais. Cada arquivo traz a data em que foi guardado."
+          fi
+          gh release upload "$TAG" "${{ steps.zip.outputs.arquivo }}" --clobber
+          echo "### Guardado: ${{ steps.zip.outputs.arquivo }} em $TAG" >> "$GITHUB_STEP_SUMMARY"
