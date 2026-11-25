@@ -1,0 +1,17 @@
+---
+import Perfil from "../../../components/Perfil.astro";
+import { arquivo, dados } from "../../../lib/dados";
+
+/** Legislatura encerrada de quem continua no Congresso (story 9.2): /p/<id>/<legislatura>/ */
+export function getStaticPaths() {
+  const atuais = new Map(dados().resumos.map((r) => [r.parlamentar.id, r.parlamentar.idLegislatura]));
+  return arquivo().flatMap((a) =>
+    a.resumos
+      .filter((r) => atuais.has(r.parlamentar.id) && atuais.get(r.parlamentar.id) !== a.leg)
+      .map((r) => ({ params: { id: r.parlamentar.id, leg: String(a.leg) }, props: { r, leg: a.leg } })),
+  );
+}
+
+const { r, leg } = Astro.props;
+---
+<Perfil r={r} leg={leg} />

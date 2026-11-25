@@ -269,6 +269,8 @@ export async function executarRotina(
       const v = await lerJson<unknown>(join(o.anterior, "resumo", arq));
       if (v !== null) arquivos.set(`arquivo/${legAnterior}/resumo/${arq}`, v);
     }
+    const medias = await lerJson<unknown>(join(o.anterior, "medias.json"));
+    if (medias !== null) arquivos.set(`arquivo/${legAnterior}/medias.json`, medias);
     log(`✓ Resumos da ${legAnterior}ª legislatura guardados em arquivo/${legAnterior}/`);
   }
 

@@ -1,0 +1,206 @@
+---
+import Base from "../layouts/Base.astro";
+import Bloco from "./Bloco.astro";
+import BarraEmpilhada from "./BarraEmpilhada.astro";
+import Colunas from "./Colunas.astro";
+import Linhas from "./Linhas.astro";
+import Compartilhar from "./Compartilhar.astro";
+import Mandatos from "./Mandatos.astro";
+import UltimasVotacoes from "./UltimasVotacoes.astro";
+import { dados, arquivo, cargo, mandatosDe, paginaOficial, emendasDe, resumoEmendas, votosDe, explicacoesDosProjetos } from "../lib/dados";
+import { ultimasVotacoes } from "../lib/ultimas";
+import { mensagemPerfil } from "../lib/compartilhar";
+import { frasesEmendas, pagoTotal, idCidade } from "../lib/emendas";
+import { frasesGastos, frasesPresenca, frasesProjetos, frasesVotacoes, VOTO_ROTULO } from "../lib/frases";
+import { dataBr, diaBr, formatarMoeda, formatarMoedaCurta, humanizarCategoria, iniciais, pelaUf } from "../lib/formato";
+import type { ResumoParlamentar } from "../../../pipeline/src/rotina/agregacao";
+import { anoInicioLegislatura, fimLegislatura, inicioLegislatura } from "../../../pipeline/src/modelo/legislatura";
+
+/**
+ * Corpo do perfil (story 2.2), usado também para a legislatura encerrada (story 9.2).
+ * `leg` = número da legislatura guardada; null = mandato em curso.
+ */
+interface Props {
+  r: ResumoParlamentar;
+  leg: number | null;
+}
+const { r, leg } = Astro.props;
+const { meta } = dados();
+const guardado = leg !== null ? arquivo().find((a) => a.leg === leg) : undefined;
+const medias = guardado?.medias ?? dados().medias;
+const p = r.parlamentar;
+const m = medias[p.casa];
+const mandatos = mandatosDe(p.id);
+const emCurso = mandatos.some((x) => x.fim === null);
+const atualizado = leg !== null ? diaBr(fimLegislatura(leg)) : dataBr(meta.atualizadoEm);
+const camara = p.casa === "camara";
+const oficial = paginaOficial(p);
+
+const pres = frasesPresenca(r);
+const gas = frasesGastos(r, m);
+const proj = frasesProjetos(r, m);
+const vot = frasesVotacoes(r);
+const em = leg === null ? emendasDe(p.id) : null;
+const resEm = resumoEmendas();
+const emf = frasesEmendas(em, resEm?.anoInicial ?? 2023);
+
+// Presença: dias (Câmara) ou votações (Senado), somados no período
+let fatiasPresenca: { rotulo: string; valor: number; cor: string }[] = [];
+if (r.presenca.metrica === "sessao") {
+  const soma = (k: "diasPresente" | "diasAusenciaJustificada" | "diasAusenciaNaoJustificada") =>
+    r.presenca.metrica === "sessao" ? r.presenca.porAno.reduce((a, y) => a + (y[k] ?? 0), 0) : 0;
+  fatiasPresenca = [
+    { rotulo: "Presente", valor: soma("diasPresente"), cor: "var(--dado)" },
+    { rotulo: "Falta justificada", valor: soma("diasAusenciaJustificada"), cor: "var(--justificada)" },
+    { rotulo: "Falta sem justificativa", valor: soma("diasAusenciaNaoJustificada"), cor: "var(--falta)" },
+  ];
+} else {
+  const anos = Object.values(r.presenca.porAno);
+  const s = (k: string) => anos.reduce((a, c) => a + (c[k] ?? 0), 0);
+  fatiasPresenca = [
+    { rotulo: "Presente", valor: s("presente"), cor: "var(--dado)" },
+    { rotulo: "Falta justificada", valor: s("ausencia_justificada"), cor: "var(--justificada)" },
+    { rotulo: "Falta sem justificativa", valor: s("ausente"), cor: "var(--falta)" },
+    { rotulo: "Sem classificação", valor: s("outro"), cor: "var(--linha)" },
+  ];
+}
+
+const anosGasto = Object.entries(r.gastos.porAno).sort(([a], [b]) => a.localeCompare(b));
+const topCategorias = r.gastos.porCategoria.slice(0, 5);
+const v = r.votacoes.votos;
+const fatiasVotos = [
+  { rotulo: "Sim", valor: v.sim ?? 0, cor: "var(--dado)" },
+  { rotulo: "Não", valor: v.nao ?? 0, cor: "var(--tinta-suave)" },
+  { rotulo: "Votou (secreta)", valor: v.votou ?? 0, cor: "var(--dado-claro)" },
+  { rotulo: "Abstenção ou obstrução", valor: (v.abstencao ?? 0) + (v.obstrucao ?? 0), cor: "var(--linha)" },
+];
+const listaVotos = leg === null ? votosDe(p.id) : [];
+const ultimas = ultimasVotacoes(listaVotos, explicacoesDosProjetos());
+const ini = iniciais(p.nome);
+const titulo = leg === null ? `${p.nome} (${p.partido}-${p.uf}): o que fez no mandato` : `${p.nome} (${p.partido}-${p.uf}) na ${leg}ª legislatura`;
+const cargoTexto = emCurso ? cargo(p) : `Ex-${cargo(p).toLowerCase()}`;
+---
+<Base titulo={titulo} imagem={leg === null ? `/og/${p.id}.png` : "/og/inicio.png"} descricao={`Presença, gastos, projetos e votos de ${p.nome}, ${cargo(p).toLowerCase()} ${pelaUf(p.uf)}. Dados oficiais, sem nota nem ranking.`}>
+  <div class="conteiner">
+    <header class="cabecalho">
+      <div class="foto" aria-hidden={p.urlFoto ? undefined : "true"} data-iniciais={ini}>
+        {p.urlFoto && <img src={p.urlFoto} alt={`Foto de ${p.nome}`} width="160" height="200" loading="eager" />}
+      </div>
+      <div>
+        <p class="cargo">{cargoTexto} <a href={`/uf/${p.uf.toLowerCase()}/`}>{pelaUf(p.uf)}</a></p>
+        <h1>{p.nome}</h1>
+        <p class="partido">Partido: {p.partido}</p>
+        {leg === null ? (
+          <p class="extrato">Tudo o que fez no mandato desde 2023, com dados oficiais atualizados em {atualizado}.</p>
+        ) : (
+          <p class="extrato">O que fez na {leg}ª legislatura, de {anoInicioLegislatura(leg)} a {anoInicioLegislatura(leg) + 4}. Números guardados no fim do período ({atualizado}).</p>
+        )}
+        {leg === null && <Compartilhar texto={mensagemPerfil(r, em?.total.empenhado ?? null, resEm?.anoInicial ?? 2023)} url={new URL(`/p/${p.id}/`, Astro.site).toString()} />}
+      </div>
+    </header>
+
+    <Mandatos mandatos={mandatos} atual={leg ?? mandatos.find((x) => x.fim === null)?.numero ?? null} />
+    {leg !== null && <p class="aviso-encerrado"><strong>Período encerrado.</strong> {`Estes números vão de ${diaBr(inicioLegislatura(leg))} até ${atualizado} e não mudam mais.`}</p>}
+
+    {leg === null && <UltimasVotacoes idParlamentar={p.id} itens={ultimas} total={listaVotos.length} fonte={{ nome: camara ? "Câmara dos Deputados, votações do plenário" : "Senado Federal, votações nominais", url: oficial }} atualizadoEm={atualizado} />}
+
+    <div class="grade">
+      <Bloco
+        titulo={camara ? "Foi trabalhar?" : "Apareceu nas votações?"}
+        icone="calendario"
+        destaque={pres?.destaque}
+        principal={pres?.principal ?? null}
+        detalhes={pres?.detalhes}
+        vazio={camara ? "Ainda não puxamos a presença deste deputado. Ela é atualizada uma vez por semana, direto do site da Câmara." : "Não tem votação com registro de voto para este senador no período."}
+        fonte={{ nome: camara ? "Câmara dos Deputados, página de presença" : "Senado Federal, votações nominais", url: camara ? `https://www.camara.leg.br/deputados/${p.idOrigem}/presenca-plenario/${new Date().getFullYear()}` : oficial }}
+        atualizadoEm={atualizado}
+      >
+        <BarraEmpilhada slot="grafico" fatias={fatiasPresenca} descricao={pres?.principal ?? ""} />
+        {r.presenca.metrica === "sessao" && r.presenca.porAno.length > 0 && (
+          <table slot="numeros">
+            <thead><tr><th>Ano</th><th>Dias de votação</th><th>Presente</th><th>Falta justificada</th><th>Falta sem justificativa</th></tr></thead>
+            <tbody>{r.presenca.porAno.map((y) => <tr><td>{y.ano}</td><td>{y.diasComSessao}</td><td>{y.diasPresente}</td><td>{y.diasAusenciaJustificada}</td><td>{y.diasAusenciaNaoJustificada}</td></tr>)}</tbody>
+          </table>
+        )}
+      </Bloco>
+
+      <Bloco titulo="Quanto gastou?" icone="dinheiro" destaque={gas.destaque} principal={gas.principal} detalhes={gas.detalhes} fonte={{ nome: camara ? "Câmara dos Deputados, cota parlamentar" : "Senado Federal, CEAPS", url: camara ? `https://www.camara.leg.br/transparencia/gastos-parlamentares?ano=${new Date().getFullYear()}&deputado=${p.idOrigem}` : "https://www12.senado.leg.br/transparencia/sen/" }} atualizadoEm={atualizado}>
+        <div slot="grafico" class="duplo">
+          <Colunas itens={anosGasto.map(([ano, val]) => ({ rotulo: ano, valor: val, texto: formatarMoedaCurta(val).replace("R$ ", "") }))} descricao={`Gasto por ano: ${anosGasto.map(([a, val]) => `${a}, ${formatarMoedaCurta(val)}`).join("; ")}`} />
+          <Linhas itens={topCategorias.map((c) => ({ rotulo: humanizarCategoria(c.categoria), valor: c.total, texto: formatarMoedaCurta(c.total) }))} />
+        </div>
+        {r.gastos.quantidade > 0 && (
+          <table slot="numeros">
+            <thead><tr><th>Categoria</th><th>Total</th></tr></thead>
+            <tbody>{r.gastos.porCategoria.map((c) => <tr><td>{humanizarCategoria(c.categoria)}</td><td class="num">{formatarMoeda(c.total)}</td></tr>)}</tbody>
+          </table>
+        )}
+      </Bloco>
+
+      {leg === null && <Bloco
+        titulo="Para onde mandou dinheiro?"
+        icone="mapa"
+        destaque={emf?.destaque}
+        principal={emf?.principal ?? null}
+        detalhes={emf?.detalhes}
+        vazio={resEm ? `Não encontramos emendas individuais de ${p.nome} desde ${resEm.anoInicial}. Quem assumiu o mandato há pouco ou estava como ministro costuma não ter.` : "As emendas aparecem depois da próxima atualização quinzenal."}
+        link={em ? { href: `/p/${p.id}/emendas/`, texto: "Ver todas as emendas" } : undefined}
+        fonte={{ nome: "Portal da Transparência (CGU), emendas parlamentares", url: "https://portaldatransparencia.gov.br/emendas" }}
+        atualizadoEm={resEm ? dataBr(resEm.atualizadoEm) : atualizado}
+      >
+        {em && (
+          <BarraEmpilhada slot="grafico" descricao={emf?.principal ?? ""} fatias={[
+            { rotulo: "Já pago", valor: Math.round(pagoTotal(em.total)), cor: "var(--dado)" },
+            { rotulo: "Reservado, ainda não pago", valor: Math.round(Math.max(em.total.empenhado - pagoTotal(em.total), 0)), cor: "var(--linha)" },
+          ]} />
+        )}
+        {em && (
+          <table slot="numeros">
+            <thead><tr><th>Destino</th><th>Reservado</th><th>Já pago</th></tr></thead>
+            <tbody>{em.destinos.slice(0, 15).map((d) => <tr><td>{d.nivel === "municipio" && d.uf ? <a href={`/cidade/${idCidade(d.uf, d.nome)}/`}>{d.nome} ({d.uf})</a> : d.nome}</td><td class="num">{formatarMoeda(d.valores.empenhado)}</td><td class="num">{formatarMoeda(pagoTotal(d.valores))}</td></tr>)}</tbody>
+          </table>
+        )}
+      </Bloco>}
+
+      <Bloco titulo="O que propôs?" icone="documento" destaque={proj.destaque} principal={proj.principal} detalhes={proj.detalhes} fonte={{ nome: camara ? "Câmara dos Deputados, proposições" : "Senado Federal, processos", url: oficial }} atualizadoEm={atualizado}>
+        <BarraEmpilhada slot="grafico" descricao={proj.principal} fatias={[
+          { rotulo: "Criou", valor: r.projetos.legislativas.autor, cor: "var(--dado)" },
+          { rotulo: "Assinou junto", valor: r.projetos.legislativas.coautor, cor: "var(--dado-claro)" },
+          { rotulo: "Homenagens", valor: r.projetos.homenagens, cor: "var(--linha)" },
+        ]} />
+      </Bloco>
+
+      <Bloco titulo="Como votou?" icone="urna" destaque={vot.destaque} principal={vot.principal} link={leg === null ? { href: `/p/${p.id}/votos/`, texto: "Ver o voto em cada projeto" } : undefined} detalhes={vot.detalhes} fonte={{ nome: camara ? "Câmara dos Deputados, votações" : "Senado Federal, votações", url: oficial }} atualizadoEm={atualizado}>
+        <BarraEmpilhada slot="grafico" fatias={fatiasVotos} descricao={vot.principal} />
+        <table slot="numeros">
+          <thead><tr><th>Registro</th><th>Vezes</th></tr></thead>
+          <tbody>{Object.entries(v).sort(([, a], [, b]) => b - a).map(([k, n]) => <tr><td>{VOTO_ROTULO[k] ?? k}</td><td class="num">{n}</td></tr>)}</tbody>
+        </table>
+      </Bloco>
+    </div>
+  </div>
+</Base>
+<style>
+  .cabecalho { display: grid; grid-template-columns: auto 1fr; gap: 1.25rem 1.75rem; align-items: end; padding: 2.5rem 0 2rem; }
+  .foto { width: 7.5rem; aspect-ratio: 4 / 5; border-radius: 10px; overflow: hidden; background: var(--trilho); position: relative; }
+  .foto::before { content: attr(data-iniciais); position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--numeros); font-size: 2rem; font-weight: 700; color: var(--grafite); }
+  .foto img { position: relative; width: 100%; height: 100%; object-fit: cover; color: transparent; font-size: 0; }
+  .cargo { margin: 0; color: var(--grafite); }
+  h1 { font-family: var(--numeros); font-stretch: 80%; font-weight: 800; font-size: clamp(2.2rem, 6vw, 3.8rem); line-height: 0.98; margin: 0.15rem 0 0.4rem; letter-spacing: -0.01em; }
+  .partido { margin: 0; font-weight: 700; }
+  .aviso-encerrado { margin: 0 0 1.5rem; background: var(--dado-fundo); color: var(--acento-texto); border-radius: 10px; padding: 0.9rem 1.2rem; }
+  .extrato { margin: 0.6rem 0 1rem; color: var(--grafite); font-size: 0.95rem; }
+  .grade { display: grid; gap: 1.25rem; }
+  @media (min-width: 60rem) {
+    /* Colunas (estilo "masonry"): blocos de alturas diferentes sem buracos */
+    .grade { display: block; columns: 2; column-gap: 1.25rem; }
+    .grade > :global(.bloco) { break-inside: avoid; margin-bottom: 1.25rem; }
+    .foto { width: 9.5rem; }
+  }
+  @media (max-width: 30rem) { .cabecalho { grid-template-columns: 1fr; } }
+  .duplo { display: grid; gap: 1.5rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin-top: 0.6rem; }
+  th, td { text-align: left; padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--linha); }
+  th { color: var(--grafite); font-weight: 700; }
+  td.num, th:not(:first-child), td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+</style>

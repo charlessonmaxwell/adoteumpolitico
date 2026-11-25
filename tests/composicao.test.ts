@@ -179,6 +179,7 @@ describe("Story 9.2 — virada de legislatura na rotina", () => {
       "camara-3.json",
       "senado-9.json",
     ]);
+    expect(await readdir(join(b, "arquivo/57"))).toEqual(expect.arrayContaining(["medias.json"]));
     expect(await readdir(join(b, "composicao"))).toEqual(
       expect.arrayContaining(["57.json", "58.json"]),
     );

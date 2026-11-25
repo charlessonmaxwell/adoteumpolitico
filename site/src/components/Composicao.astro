@@ -6,7 +6,7 @@
 import Icone from "./Icone.astro";
 import type { Composicao } from "../../../pipeline/src/rotina/composicao";
 import { anoInicioLegislatura, inicioLegislatura } from "../../../pipeline/src/modelo/legislatura";
-import { dataBr, formatarNumero } from "../lib/formato";
+import { diaBr, formatarNumero } from "../lib/formato";
 
 interface Props {
   casa: "camara" | "senado";
@@ -54,7 +54,7 @@ const periodo = (n: number) => `${anoInicioLegislatura(n)} a ${anoInicioLegislat
 
     {abas.filter((a) => a.futura).map((a) => (
       <div class={`comp-painel leg-${a.n}`}>
-        <p class="comp-aviso"><strong>A {a.n}ª legislatura começa em {dataBr(inicioLegislatura(a.n))}.</strong> Os números aparecem aqui no primeiro dia de trabalho dos novos {quem}. A composição de hoje continua guardada na aba {atual.legislatura}ª.</p>
+        <p class="comp-aviso"><strong>A {a.n}ª legislatura começa em {diaBr(inicioLegislatura(a.n))}.</strong> Os números aparecem aqui no primeiro dia de trabalho dos novos {quem}. A composição de hoje continua guardada na aba {atual.legislatura}ª.</p>
       </div>
     ))}
 
@@ -96,7 +96,7 @@ const periodo = (n: number) => `${anoInicioLegislatura(n)} a ${anoInicioLegislat
               <p class="nota">Ordem alfabética. O partido é o atual de cada um: quem trocou de partido aparece no novo. A barra é proporcional ao número de cadeiras.</p>
             </article>
           </div>
-          {comp !== atual && <p class="nota">Composição guardada no fim da {comp.legislatura}ª legislatura ({dataBr(comp.fim)}).</p>}
+          {comp !== atual && <p class="nota">Composição guardada no fim da {comp.legislatura}ª legislatura ({diaBr(comp.fim)}).</p>}
         </div>
       );
     })}
